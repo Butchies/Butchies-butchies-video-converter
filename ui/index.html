@@ -959,7 +959,7 @@ function showTab(v){const view=v==='cmp'?'cmp':'conv';if(REAL&&INFO&&!RESTORING)
   if(v==='play')setMode('play');else if(v==='ab')setMode('ab');if(view!=='conv')pPause();if(view==='cmp'||v==='conv')window.scrollTo(0,0);else if(matchMedia('(min-width:1301px) and (min-height:760px)').matches){$('.studio .center').scrollTop=0}else $('#stageCard').scrollIntoView({block:'start',behavior:'smooth'})}
 function setMode(m){if(m==='ab'){try{playerMini(false)}catch(e){}}$$('#stMode button').forEach(b=>b.classList.toggle('on',b.dataset.m===m));$('#mPlay').hidden=m!=='play';$('#mAb').hidden=m!=='ab';$('#plName').hidden=m!=='play';$('#abInfo').hidden=m!=='ab';
   if(m==='ab'){pPause();fillAbFile();if(!AB.before){const q=selQ();if(REAL&&q&&q.fid&&!(q.bad&&!q.force))realAB(q,.5);else if(q&&!(q.bad&&!q.force))grabFrame(q,.5).then(c=>setBefore(c,q,`Probestelle 50 % · ${q.name}`));else demoBefore()}else applyAb()}}
-$$('#stMode button').forEach(b=>b.onclick=()=>setMode(b.dataset.m));
+$$('#stMode button').forEach(b=>b.onclick=()=>{KV.set('bvc-pmode',b.dataset.m);setMode(b.dataset.m)});
 $$('.tab').forEach(b=>b.onclick=()=>showTab(b.dataset.v));
 
 /* ---------- Encoder-Daten ---------- */
@@ -1281,6 +1281,9 @@ function autoSize(f,s,dur,srcW,srcH,ar,fps,aK,known){
   if(known&&f.size){const src=f.size/1048576*.97;if(hi>src){hi=Math.max(lo,src);capped=true}if(lo>src){lo=src*.8;capped=true}}
   const r=x=>x<100?Math.max(1,Math.round(x)):Math.round(x/10)*10;lo=r(lo);hi=Math.max(r(hi),lo);
   return {lo,hi,qLo:Math.round(sc(lo)),qHi:Math.round(sc(hi)),capped}}
+/* Wie viel Bitrate braucht der Ziel-Codec im Vergleich zur Quelle für dieselbe Qualität? (H.265 ≈ 62 % von H.264) */
+const CEFF={h264:1,hevc:.62,av1:.52,vp9:.65,mpeg2video:2,mpeg4:1.5,vc1:1.3,wmv3:1.5};
+function codecRatio(f,s){const src=CEFF[f.vcodec]||1,tgt=s.fam==='h265'?.62:1;return Math.min(1.1,tgt/src)}
 function analyze(f,s){
   s=perFile(f,s);const tips=s.notes.slice();
   const known=f.w>0&&f.dur>0;
@@ -1305,7 +1308,7 @@ function analyze(f,s){
     if(s.mode==='size'){const aim=(lo+hi)/2;vk=aim*MBk/dur*.99-aK;est=aim}
     else{vk=s.cbr;est=(vk+aK)*dur/MBk}
     if(vk<150){tips.push(['bad',`Für ${fmtT(dur)} Laufzeit ist die Zielgröße viel zu klein – nur ${Math.max(0,Math.round(vk))} kbit/s fürs Bild übrig. Größe erhöhen.`]);vk=Math.max(vk,150)}
-    if(s.mode==='size'){const cw=Math.min(srcW,s.maxH?Math.round(s.maxH*16/9):srcW),ch=Math.round(cw/ar),ceil=.16*cw*ch*fps/1000*EFF[s.enc]*Math.pow(cw*ch/2073600,-.25),lim=Math.round(Math.min(ceil,known&&srcV>300?srcV*1.05:ceil));
+    if(s.mode==='size'){const cw=Math.min(srcW,s.maxH?Math.round(s.maxH*16/9):srcW),ch=Math.round(cw/ar),ceil=.16*cw*ch*fps/1000*EFF[s.enc]*Math.pow(cw*ch/2073600,-.25),cr=codecRatio(f,s),lim=Math.round(Math.min(ceil,known&&srcV>300?srcV*cr*1.05:ceil));
       if(vk>lim){tips.push(['info',`Die Zielgröße ist größer als nötig: Mehr als ca. ${lim.toLocaleString('de-DE')} kbit/s bringt bei diesem Video keine sichtbare Qualität${known&&lim<ceil?' (die Quelle hat selbst nicht mehr)':''}. Die KI begrenzt die Bitrate – die Datei wird dadurch kleiner als „von“.`]);vk=lim;est=(vk+aK)*dur/MBk}}
     for(const h of cands){const c=mk(h,vk);if(!best||c.score>best.score)best=c}
   } else {
@@ -1360,7 +1363,9 @@ function analyze(f,s){
   let encFps=s.kind==='sw'?SPEED[s.pre]*(s.fam==='h265'?.28:1):({amf:330,nvenc:420,qsv:300}[s.kind])*(s.fam==='h265'?.85:1);
   encFps=encFps/Math.max(.2,pxF); if(s.twoPass&&s.mode==='size') encFps/=1.7;
   const frames=dur*fps, encTime=frames/encFps;
-  return {outW,outH,vk:Math.round(vk),aK,est,score,span,tips,fps,dur,srcW,srcH,known,encFps,encTime,crf:crfUsed,sugCrf:best.sugCrf,lo,hi,trk:s.trk,hdr:s.hdr,det:s.det,...(()=>{const cj=buildCmd(f,s,outW,outH,srcW,Math.round(vk),aK,fps);cj.notes.forEach(n=>tips.push(['warn',n]));return {cmd:cj.text,job:cj}})()};
+  const noGain=known&&!s.yt&&f.size>0&&est>=f.size/1048576*.95;
+  if(noGain)tips.unshift(['warn',`Diese Datei würde kaum kleiner (${fmtMB(f.size/1048576)} → ~${fmtMB(est)}). Umwandeln lohnt sich hier nicht – die Quelle ist schon sparsam kodiert.`]);
+  return {noGain,outW,outH,vk:Math.round(vk),aK,est,score,span,tips,fps,dur,srcW,srcH,known,encFps,encTime,crf:crfUsed,sugCrf:best.sugCrf,lo,hi,trk:s.trk,hdr:s.hdr,det:s.det,...(()=>{const cj=buildCmd(f,s,outW,outH,srcW,Math.round(vk),aK,fps);cj.notes.forEach(n=>tips.push(['warn',n]));return {cmd:cj.text,job:cj}})()};
 }
 
 const TEXT_SUBS=new Set(['subrip','srt','ass','ssa','mov_text','webvtt','text']);
@@ -1508,7 +1513,7 @@ function renderQ(){
   $$('[data-qprobe]').forEach(b=>b.onclick=e=>{e.stopPropagation();const q=Q.find(x=>x.id==b.dataset.qprobe);if(!q)return;selId=q.id;renderQ();update();runProbe(q,q.a)});
   $$('[data-qab]').forEach(b=>b.onclick=e=>{e.stopPropagation();const q=Q.find(x=>x.id==b.dataset.qab);if(!q)return;selId=q.id;openInPlayer(q);showTab('play');setMode('ab')});
   $$('[data-qsrc]').forEach(b=>b.onclick=e=>{e.stopPropagation();const q=Q.find(x=>x.id==b.dataset.qsrc);if(q)api('/api/show',{path:q.path}).catch(()=>{})});
-  $$('#queue .qi').forEach(el=>el.onclick=()=>{selId=+el.dataset.id;if(!RUN.on)anaFold(false);renderQ();update()});
+  $$('#queue .qi').forEach(el=>el.onclick=()=>{selId=+el.dataset.id;if(!RUN.on)anaFold(ANA_SHUT);renderQ();update()});
   $$('[data-show]').forEach(b=>b.onclick=e=>{e.stopPropagation();const q=Q.find(x=>x.id==b.dataset.show);if(q&&q.out)api('/api/show',{path:q.out}).catch(()=>{})});
   $$('[data-play]').forEach(b=>b.onclick=e=>{e.stopPropagation();openInPlayer(Q.find(x=>x.id==b.dataset.play));showTab('play')});
   $$('[data-rm]').forEach(b=>b.onclick=e=>{e.stopPropagation();const q=Q.find(x=>x.id==b.dataset.rm);if(q)rmQ(q)});
@@ -2188,7 +2193,7 @@ const wIcon=slot=>slot==='cpu'?'🖥':'🎮';
 function parSlots(){
   const ok=WK().map(w=>w.slot);if(!PARSEL)PARSEL=new Set(ok);
   if(AUTO.par){
-    if(!AUTO.codec){const k=encKind($('#sEnc').value);return k==='sw'?['cpu']:ok.filter(x=>x!=='cpu')}
+    if(!AUTO.codec){const k=encKind($('#sEnc').value);const r=k==='sw'?['cpu']:ok.filter(x=>x!=='cpu');return r.length?r:(ok.length?ok:['cpu'])}
     return ok;
   }
   const mode=$('#parMode').value,sel=ok.filter(x=>PARSEL.has(x));
@@ -2205,7 +2210,7 @@ function settingsFor(slot){
   return s;
 }
 function planJobs(todo){
-  const slots=parSlots(),load={},plan=[];slots.forEach(x=>load[x]=0);
+  let slots=parSlots();if(!slots.length)slots=['cpu'];const load={},plan=[];slots.forEach(x=>load[x]=0);
   const mode=AUTO.par?'auto':$('#parMode').value;
   const opts=todo.map(q=>({q,by:Object.fromEntries(slots.map(sl=>[sl,analyze(q,settingsFor(sl))]))}));
   opts.sort((x,y)=>(y.by[slots[0]].encTime)-(x.by[slots[0]].encTime));
@@ -2259,8 +2264,14 @@ function anaFold(shut){
   const c=$('#anaCard');if(!c)return;c.classList.toggle('shut',shut);
   if(shut){const col=c.closest('.col');if(col)col.scrollTo({top:0,behavior:'smooth'})}
 }
-$('#anaHead').onclick=()=>anaFold(!$('#anaCard').classList.contains('shut'));
+let ANA_SHUT=KV.get('bvc-anafold')==='1';
+$('#anaHead').onclick=()=>{ANA_SHUT=!$('#anaCard').classList.contains('shut');KV.set('bvc-anafold',ANA_SHUT?'1':'0');anaFold(ANA_SHUT)};
+anaFold(ANA_SHUT);
 async function realStart(){
+  try{await realStart0()}
+  catch(e){console.error(e);log('bad','Start fehlgeschlagen: '+esc(e.message||String(e)));RUN.on=false;$('#bStart').disabled=!Q.length;$('#bPause').disabled=true;$('#bStop').disabled=true;try{pgEnd('stop')}catch(_){}toast('Umwandlung konnte nicht starten: '+(e.message||e))}
+}
+async function realStart0(){
   const todo=Q.filter(q=>!['done','run','queued'].includes(q.state)&&!(q.bad&&!q.force));if(!todo.length){log('ok','Alles schon fertig.');return}
   const s=settings();
   await askSwap(todo);
@@ -2499,6 +2510,7 @@ $('#pMiniAb').onclick=e=>{e.stopPropagation();playerMini(false);setMode('ab')};
 $('#pClose').onclick=()=>{try{pPause()}catch(e){}playerMini(true)};
 makeDrop($('#pMini'),addPlayerFiles,'play');
 playerMini(KV.get('bvc-pmini')!=='0');
+{const pm=KV.get('bvc-pmode');if(pm==='ab'){const mini=$('#stageCard').classList.contains('mini');try{setMode('ab')}catch(e){}if(mini)playerMini(true)}}
 
 /* ---------- KI-Autopilot einklappen ---------- */
 function apMini(){const m=$('#apMini');if(!m)return;const s=settings();const man=Object.keys(AUTO_DEF).filter(k=>k!=='probe'&&k!=='cmp'&&!AUTO[k]).length;

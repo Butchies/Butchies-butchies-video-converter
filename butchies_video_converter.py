@@ -10,7 +10,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 APP_NAME = 'Butchies Video Converter'
-VERSION = '1.3.2'
+VERSION = '1.3.3'
 FROZEN = getattr(sys, 'frozen', False)
 BASE = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent))
 UI = BASE / 'ui'
@@ -1724,7 +1724,35 @@ class WinFrame:
     def minimize(self):
         self.win.minimize()
 
+    def _cur_monitor(self):
+        mons = self.monitors()
+        x, y, w, h = self._rect()
+        cx, cy = x + w // 2, y + h // 2
+        return next((m for m in mons if m[0] <= cx < m[0] + m[2] and m[1] <= cy < m[1] + m[3]), mons[0] if mons else None)
+
+    def save_state(self):
+        """Bildschirm, Vollbild und Maximiert merken – beim nächsten Start geht das Fenster genau so wieder auf."""
+        try:
+            conf = load_config()
+            conf['win'] = {'mon': list(self._cur_monitor() or []), 'full': bool(self.full), 'max': bool(self.saved)}
+            save_config(conf)
+        except Exception:  # noqa: BLE001
+            pass
+
+    def restore_state(self):
+        st = load_config().get('win') or {}
+        mon = tuple(st.get('mon') or ())
+        mons = self.monitors()
+        if mon and mon in mons and self._cur_monitor() != mon:
+            x, y, w, h = self._rect()
+            self._place(mon[0] + 40, mon[1] + 40, min(w, mon[2] - 80), min(h, mon[3] - 80))
+            if self.saved:
+                self._place(*self._work_area())
+        if st.get('full') and not self.full:
+            self.toggle_full()
+
     def close(self):
+        self.save_state()
         stop_all()
         self.win.destroy()
 
@@ -1760,7 +1788,9 @@ def native_window(url):
 
         def toggle_fullscreen(self):
             try:
-                return frame.toggle_full()
+                r = frame.toggle_full()
+                frame.save_state()
+                return r
             except Exception:  # noqa: BLE001
                 return False
 
@@ -1775,7 +1805,9 @@ def native_window(url):
 
         def next_monitor(self):
             try:
-                return frame.next_monitor()
+                r = frame.next_monitor()
+                frame.save_state()
+                return r
             except Exception:  # noqa: BLE001
                 return False
 
@@ -1824,6 +1856,7 @@ def native_window(url):
         try:
             if not frame.is_max():
                 frame.toggle_max()
+            frame.restore_state()
         except Exception:  # noqa: BLE001
             pass
     if os.name == 'nt':

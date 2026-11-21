@@ -35,6 +35,12 @@ FFmpeg mit allen Codecs ist dabei (inklusive VMAF-Messung und HDR). WebView2 wir
 **Neu in 1.1.3**
 - Das Programm **merkt sich jetzt alles** bis zum nächsten Start: Design, Start-Animation an/aus, Auto/Manuell-Schalter, eigene Einstellungen (Codec, Zielgröße, Zeitplan …) und eigene Vorlagen. Bisher ging das beim Neustart verloren
 
+**Neu in 1.3.3**
+- 💾 **Alles wird gemerkt**: Bildschirm (Monitor), Vollbild/maximiert, KI-Analyse auf/zu und Player-Modus sind beim nächsten Start genauso wie beim Beenden
+- 📏 **Klügere Größen-Grenze**: Bei H.264 → H.265 rechnet die KI ein, dass H.265 sparsamer ist – vorher konnte die Datei bei „gleicher Bitrate wie die Quelle“ sogar größer werden
+- ⚠️ **Hinweis „lohnt sich kaum“**, wenn eine Datei nicht mindestens 5 % kleiner würde
+- 🛠 Fehler behoben: Start konnte hängen bleiben, wenn keine Arbeiter (Prozessor/Grafikkarte) ausgewählt waren; Fehler beim Start setzen jetzt alles sauber zurück
+
 **Neu in 1.3.2**
 - 📋 **Knopf „Warteschlange“ oben in der Kopfzeile** (mit Zähler bzw. Prozent beim Umwandeln): eigenes Fenster mit allen Dateien, Summe vorher → nachher, Ersparnis, geschätzter Dauer, Reihenfolge ↑↓ ändern, „Größte Ersparnis zuerst“, Details, Entfernen, Start/Pause/Stopp
 - ⓘ **Details als eigenes Fenster**: Quelle, Ziel, Probe-Messung mit Probebildern (Klick → Vorher/Nachher), Ausgabe, Status, KI-Hinweise; mit ◀ ▶ (auch Pfeiltasten) zum nächsten Film blättern
