@@ -1,0 +1,15 @@
+# Notizen für Claude – Butchies Video Converter AI
+Eigenständiges Windows-Programm (früher Ordner `video-converter/` im Repo Butchies/Butchies-ffmpeg-encode-studio, seit 21.11.2026 hier – ALLE Quelldateien und Installer nur noch in diesem Repo). NICHT mit dem Encode Studio zusammenlegen, aber gleicher Look (7 Designs, Schriften, Start/Abschied).
+Nutzer schreibt Deutsch, technisch unerfahren – einfach erklären. Bei Releases Fortschritt in Prozent (ca. alle 5 %) als Ladebalken angeben.
+
+## Build / Release
+- Push auf `main` → `.github/workflows/build.yml` (windows-latest): PyInstaller, FFmpeg BtbN GPL-shared, WebView2, `--selftest` + `--check-native`, Inno Setup → Release `v<VERSION>` mit `Butchies_Video_Converter-Setup.exe`. Nur-Doku-Änderungen (*.md, design-kit/) bauen nicht.
+- Neue Version: `VERSION` in `butchies_video_converter.py` erhöhen, `RELEASE.md` „Neu in …“ oben ergänzen.
+- Lokal testen: `python3 butchies_video_converter.py --no-window` + Playwright (`/usr/bin/google-chrome`), Dateien per `window.dropZone='conv';window.nativeDrop([...])`.
+
+## Aufbau
+- `butchies_video_converter.py`: stdlib-Server + pywebview (Fenster-Code `WinFrame` wie Encode Studio). ffprobe-Prüfung (`probe`, `tail_check` = Defekt-Check), Jobs mit `-progress` (Platzhalter `{IN}` `{OUT}` `{NULL}` `{PASSLOG}`, cwd = Job-Ordner wegen x265 `stats=`), Player `/api/stream` (Live-Umwandlung fragmented MP4) bzw. `/api/file`, Standbild `/api/frame`, VMAF-Probe `task_vmaf` (libvmaf, sonst SSIM), Vorher/Nachher `task_abshot`, Abgleich `/api/scan|hash|fp|delete|restore|rename`, TMDB optional, ntfy, `power`. Drop: pywebview DOMEventHandler -> `window.nativeDrop(paths)` + `window.dropZone`.
+- `--selftest` (im Workflow) testet alles mit echtem Video. Lokal: `python3 butchies_video_converter.py --no-window` + Playwright, `window.nativeDrop([...])` zum Hinzufügen.
+- UI `ui/index.html` (eine Datei): gleicher Code wie die Vorschau-Seite, `REAL`-Modus (Token im Hash) ruft die API; Demo-Knöpfe `.demo-only`. `buildCmd` liefert `{text, passes, vargs, outname}`.
+- Installer `installer.iss`: sucht Laufwerk mit meistem freien Speicher (Programm + Video-Ordner), schreibt `{app}\install.json` (outdir). Workflow `.github/workflows/build.yml` -> Release `v<VERSION>` (latest).
+- 1.1.0 (Converter): `detect_gpus` -> `gpu_info` (dgpu/igpu), `prepare_gpu_exes`: Registry `HKCU\Software\Microsoft\DirectX\UserGpuPreferences` ffmpeg.exe=GpuPreference=2 (eigene Karte), Kopie `ffmpeg-igpu.exe`=1 (Prozessor-Grafik). `WORKERS` (cpu/gpu1/gpu2) mit Encoder je Hersteller, ein `worker(slot)`-Thread pro Arbeiter, Job-Feld `slot`. UI: Zeile `data-sec="par"`, `parSlots`/`settingsFor`/`planJobs` (Greedy nach `encTime`, Qualität ≥ 70 bei Auto), `#monRun`. Test ohne Grafikkarte: Umgebungsvariable `BVC_FAKE_GPU=1`. Nutzer-PC: AMD Radeon 760M + Radeon RX 7000.
