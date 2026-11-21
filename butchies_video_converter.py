@@ -10,7 +10,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 APP_NAME = 'Butchies Video Converter'
-VERSION = '1.3.3'
+VERSION = '1.4.0'
 FROZEN = getattr(sys, 'frozen', False)
 BASE = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent))
 UI = BASE / 'ui'
@@ -71,16 +71,42 @@ def popen(args, cwd=None):
                             creationflags=NO_WINDOW)
 
 
+CONF_LOCK = threading.RLock()
+
+
 def load_config():
-    try:
-        return json.loads(CONFIG_FILE.read_text(encoding='utf-8'))
-    except (OSError, ValueError):
-        return {}
+    for _ in range(5):
+        try:
+            with CONF_LOCK:
+                return json.loads(CONFIG_FILE.read_text(encoding='utf-8'))
+        except FileNotFoundError:
+            return {}
+        except (OSError, ValueError):
+            time.sleep(0.05)
+    return {}
 
 
 def save_config(conf):
-    HOME.mkdir(parents=True, exist_ok=True)
-    CONFIG_FILE.write_text(json.dumps(conf, indent=1, ensure_ascii=False), encoding='utf-8')
+    """Sicher speichern: erst in eine Hilfsdatei, dann austauschen – so kann die Einstellungsdatei nie halb leer sein."""
+    with CONF_LOCK:
+        HOME.mkdir(parents=True, exist_ok=True)
+        tmp = CONFIG_FILE.with_suffix('.tmp')
+        tmp.write_text(json.dumps(conf, indent=1, ensure_ascii=False), encoding='utf-8')
+        for i in range(10):
+            try:
+                os.replace(tmp, CONFIG_FILE)
+                return
+            except PermissionError:
+                time.sleep(0.05 * (i + 1))
+        CONFIG_FILE.write_text(json.dumps(conf, indent=1, ensure_ascii=False), encoding='utf-8')
+
+
+def update_config(**kw):
+    with CONF_LOCK:
+        conf = load_config()
+        conf.update(kw)
+        save_config(conf)
+        return conf
 
 
 def videos_folder():
@@ -433,10 +459,47 @@ PLACE = {'{NULL}': 'NUL' if os.name == 'nt' else '/dev/null', '{PASSLOG}': 'ffpa
 ALLOWED_OUT = {'.mkv', '.mp4', '.mov'}
 
 
+# ---------- Ton-Aufbereiter: Stimmen verständlicher, jeder Film gleich laut ----------
+SND_LAYOUT = {'1.0': 'mono', '2.0': 'stereo', '2.1': '2.1', '5.1': '5.1', '6.1': '6.1', '7.1': '7.1'}
+SND_CENTER = {'5.1': 'FL|FR|FC|LFE|BL|BR', '7.1': 'FL|FR|FC|LFE|BL|BR|SL|SR'}
+SND_VOICE = {'light': (1.41, 3), 'strong': (2.0, 5)}      # Center-Verstärkung (≈ +3/+6 dB), Präsenz-Anhebung Stereo in dB
+SND_LOUD = {'tv': 'I=-23:TP=-2:LRA=14', 'loud': 'I=-18:TP=-1.5:LRA=11'}
+
+
+def snd_filter(ch='2.0', voice='off', loud='off', night=False):
+    """FFmpeg-Tonfilter. Stimme: bei 5.1/7.1 wird der Center-Kanal (Dialoge) lauter, bei Stereo die Sprach-Frequenzen.
+    Nachtmodus: leise Stellen lauter, laute leiser. Lautstärke: EBU R128 (loudnorm) – jeder Film klingt gleich laut."""
+    ch = str(ch)
+    f = []
+    if voice in SND_VOICE:
+        g, db = SND_VOICE[voice]
+        if ch in SND_CENTER:
+            names = SND_CENTER[ch].split('|')
+            f.append('aformat=sample_fmts=fltp:channel_layouts=%s' % ch)
+            f.append('pan=%s|' % ch + '|'.join('%s=%s%s' % (c, ('%.2f*' % g) if c == 'FC' else '', c) for c in names))
+        else:
+            f.append('highpass=f=70,equalizer=f=250:t=q:w=1:g=-2,equalizer=f=2600:t=q:w=1.2:g=%d' % db)
+    if night:
+        f.append('acompressor=threshold=-28dB:ratio=3:attack=15:release=250:makeup=2')
+    if loud in SND_LOUD:
+        f.append('loudnorm=%s' % SND_LOUD[loud])
+        f.append('aresample=48000')
+    elif f:
+        f.append('alimiter=limit=0.95:level=false')
+    return ','.join(f) or 'anull'
+
+
+SND_RE = re.compile(r'\{SND:([0-9.]{3}):(off|light|strong):(off|tv|loud):([01])\}')
+
+
 def fill_args(args, src, out):
     res = []
     for a in args:
         a = str(a)
+        m = SND_RE.fullmatch(a)
+        if m:
+            res.append(snd_filter(m.group(1), m.group(2), m.group(3), m.group(4) == '1'))
+            continue
         if a == '{IN}':
             a = src
         elif a == '{OUT}':
@@ -461,7 +524,9 @@ def new_job(item):
     slot = item.get('slot') if item.get('slot') in ('cpu', 'gpu1', 'gpu2') else 'cpu'
     j = {'id': jid, 'slot': slot, 'fid': e['id'], 'src': e['path'], 'name': e['name'], 'folder': str(folder), 'outname': name, 'passes': passes,
          'dur': e.get('dur') or 0, 'state': 'wartet', 'pct': 0.0, 'fps': 0, 'speed': 0, 'kbps': 0, 'size': 0, 'eta': None,
-         'error': '', 'out': '', 'proc': None, 'paused': False, 'cancel': False, 'started': 0, 'pass': 0}
+         'error': '', 'out': '', 'proc': None, 'paused': False, 'cancel': False, 'started': 0, 'pass': 0,
+         'held': 0.0, 'hold': '', 'frames': 0, 'kind': str(item.get('kind') or 'video')[:10], 'enc': str(item.get('enc') or '')[:20],
+         'score': fnum(item.get('score')), 'ssize': e.get('size') or 0}
     with QLOCK:
         JOBS[jid] = j
         QUEUE.append(jid)
@@ -512,29 +577,80 @@ def apply_limit(p, pct=None):
         pass
 
 
+def plan_conf():
+    p = load_config().get('plan') or {}
+    return {'idle': bool(p.get('idle')), 'mins': int(fnum(p.get('mins'), 10)) or 10, 'game': bool(p.get('game')), 'night': bool(p.get('night'))}
+
+
+def fullscreen_app():
+    """Läuft gerade ein Spiel/Programm im Vollbild (nicht unser eigenes Fenster)?"""
+    if os.name != 'nt':
+        return False
+    try:
+        import ctypes
+        st = ctypes.c_int(0)
+        if ctypes.windll.shell32.SHQueryUserNotificationState(ctypes.byref(st)) != 0 or st.value not in (2, 3):
+            return False
+        pid = ctypes.c_ulong(0)
+        ctypes.windll.user32.GetWindowThreadProcessId(ctypes.windll.user32.GetForegroundWindow(), ctypes.byref(pid))
+        return pid.value != os.getpid()
+    except Exception:  # noqa: BLE001
+        return False
+
+
+def plan_state(now=None):
+    """Nacht-Planer: (Auslastung in %, Grund für Pause aller Jobs, Grund für Pause der Grafikkarten-Jobs)."""
+    pc = plan_conf()
+    pct = load_pct()
+    hour = (now or time.localtime()).tm_hour
+    if pc['night'] and (hour >= 23 or hour < 7):
+        pct = 100
+    hold_all = hold_gpu = ''
+    if pc['idle'] and os.name == 'nt' and idle_seconds() < pc['mins'] * 60:
+        hold_all = 'Pause – du benutzt den PC (geht weiter nach %d Min. ohne Eingabe)' % pc['mins']
+    if pc['game'] and fullscreen_app():
+        hold_gpu = 'Pause – Spiel/Vollbild läuft (Grafikkarte frei)'
+    return pct, hold_all, hold_gpu
+
+
 def throttle_loop():
     """Auslastungsgrenze: alle Kerne werden genutzt, aber FFmpeg macht in jeder Sekunde eine kurze Pause
-    (z. B. 90 % = 0,9 s rechnen, 0,1 s Pause). Vom Nutzer pausierte Jobs bleiben unberührt."""
-    pct, last = 90, 0
+    (z. B. 90 % = 0,9 s rechnen, 0,1 s Pause). Nacht-Planer: komplette Pause, solange der PC benutzt wird bzw.
+    die Grafikkarten-Jobs, solange ein Spiel läuft. Vom Nutzer pausierte Jobs bleiben unberührt."""
+    pct, ha, hg, last, tick = 90, '', '', 0, time.time()
     while True:
         try:
-            if time.time() - last > 3:
-                pct, last = load_pct(), time.time()
+            if time.time() - last > 2:
+                pct, ha, hg = plan_state()
+                last = time.time()
+            now = time.time()
+            dt, tick = now - tick, now
             run = [j for j in JOBS.values() if j.get('state') == 'läuft' and j.get('proc') is not None]
-            if pct >= 100 or not run:
-                for j in run:
+            free = []
+            for j in run:
+                j['hold'] = ha or (hg if j.get('slot') in ('gpu1', 'gpu2') else '')
+                if j.get('paused') or j['hold']:
+                    j['held'] = j.get('held', 0) + dt
+                if j['hold'] and not j.get('paused') and not j.get('cancel'):
+                    if not j.get('thr'):
+                        suspend(j['proc'], True)
+                        j['thr'] = True
+                else:
+                    free.append(j)
+            if pct >= 100 or not free:
+                for j in free:
                     if j.get('thr'):
                         suspend(j['proc'], False)
                         j['thr'] = False
                 time.sleep(0.5)
                 continue
             time.sleep(pct / 100.0)
-            for j in run:
+            for j in free:
                 if not j.get('paused') and not j.get('thr') and not j.get('cancel'):
                     suspend(j['proc'], True)
                     j['thr'] = True
             time.sleep(1 - pct / 100.0)
-            for j in JOBS.values():
+            for j in free:
                 if j.get('thr'):
                     suspend(j.get('proc'), False)
                     j['thr'] = False
@@ -579,6 +695,7 @@ def run_job(j):
                 j['speed'] = fnum((cur.get('speed') or '0').rstrip('x'))
                 j['kbps'] = fnum((cur.get('bitrate') or '0').replace('kbits/s', ''))
                 j['size'] = int(fnum(cur.get('total_size')))
+                j['frames'] = int(fnum(cur.get('frame')))
                 j['t'] = t
                 el = time.time() - j['started']
                 j['eta'] = round(el / (j['pct'] / 100) - el) if j['pct'] > 0.5 else None
@@ -597,7 +714,37 @@ def run_job(j):
             return
     tmp.replace(final)
     j['out'], j['pct'], j['state'], j['size'] = str(final), 100.0, 'fertig', final.stat().st_size
+    j['secs'] = round(max(1.0, time.time() - j['started'] - j.get('held', 0)), 1)
+    j['load'] = 100 if plan_state()[0] >= 100 else load_pct()
     shutil.rmtree(work, ignore_errors=True)
+    stats_add(j)
+
+
+# ---------- Spar-Statistik ----------
+STATS_FILE = HOME / 'stats.json'
+STATS_LOCK = threading.Lock()
+
+
+def stats_load():
+    try:
+        d = json.loads(STATS_FILE.read_text(encoding='utf-8'))
+        return d if isinstance(d, list) else []
+    except (OSError, ValueError):
+        return []
+
+
+def stats_add(j):
+    rec = {'t': int(time.time()), 'name': j['name'], 'src': j.get('ssize') or 0, 'out': j.get('size') or 0, 'secs': j.get('secs') or 0,
+           'frames': j.get('frames') or 0, 'dur': j.get('dur') or 0, 'slot': j.get('slot'), 'enc': j.get('enc') or '', 'kind': j.get('kind'),
+           'q': j.get('score') or 0, 'load': j.get('load') or 100}
+    with STATS_LOCK:
+        d = stats_load()
+        d.append(rec)
+        try:
+            HOME.mkdir(parents=True, exist_ok=True)
+            STATS_FILE.write_text(json.dumps(d[-5000:], ensure_ascii=False), encoding='utf-8')
+        except OSError:
+            pass
 
 
 def worker(slot='cpu'):
@@ -655,6 +802,39 @@ def idle_seconds():
     return (ctypes.windll.kernel32.GetTickCount() - li.dwTime) / 1000.0
 
 
+def display_wanted():
+    """Will ein anderes Programm den Bildschirm an haben? (YouTube im Browser, VLC, Netflix, Präsentation …)
+    Video-Player melden das bei Windows an (ES_DISPLAY_REQUIRED bzw. Power-Request „Anzeige“). Dazu: Vollbild-Programm.
+    Dann werden die Monitore NICHT ausgeschaltet."""
+    if os.name != 'nt':
+        return False
+    try:
+        import ctypes
+        st = ctypes.c_ulong(0)
+        # CallNtPowerInformation(SystemExecutionState = 16): Summe aller Anforderungen aller Programme
+        if ctypes.windll.powrprof.CallNtPowerInformation(16, None, 0, ctypes.byref(st), ctypes.sizeof(st)) == 0 and st.value & 0x2:
+            return True
+    except Exception:  # noqa: BLE001
+        pass
+    try:
+        return fullscreen_app() or media_playing()
+    except Exception:  # noqa: BLE001
+        return False
+
+
+def media_playing():
+    """Läuft gerade Ton/Video in einem anderen Programm? (Windows-Medienwiedergabe, z. B. YouTube im Browser)"""
+    try:
+        r = run(['powershell', '-NoProfile', '-NonInteractive', '-Command',
+                 '[Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager,Windows.Media.Control,ContentType=WindowsRuntime]|Out-Null;'
+                 '$m=[Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager]::RequestAsync();'
+                 'while($m.Status -eq 0){Start-Sleep -m 50};'
+                 '$x=$m.GetResults().GetSessions()|?{$_.GetPlaybackInfo().PlaybackStatus -eq 4};if($x){1}else{0}'], timeout=15)
+        return r.stdout.strip().endswith(b'1')
+    except Exception:  # noqa: BLE001
+        return False
+
+
 def awake_loop():
     """Solange umgewandelt wird: kein Ruhezustand. Monitore nach X Minuten ohne Eingabe aus
     (Einstellung 'monoff' in Minuten, 0 = nie). Die Aktion 'Danach' kommt erst am Ende der Liste (UI)."""
@@ -669,7 +849,7 @@ def awake_loop():
                     AWAKE['state'] = want
                 mins = load_config().get('monoff', 5)
                 idle = idle_seconds()
-                if b and mins and idle >= mins * 60 and AWAKE['off_at'] < time.time() - idle:
+                if b and mins and idle >= mins * 60 and AWAKE['off_at'] < time.time() - idle and not display_wanted():
                     # SC_MONITORPOWER = 2 -> Monitore aus (gehen bei Mausbewegung wieder an)
                     ctypes.windll.user32.PostMessageW(0xFFFF, 0x0112, 0xF170, 2)
                     AWAKE['off_at'] = time.time()
@@ -733,8 +913,8 @@ def clean_vargs(vargs):
     return out
 
 
-def encode_sample(e, vargs, t, seg, out):
-    cmd = [FFMPEG, '-hide_banner', '-v', 'error', '-y', '-ss', '%.3f' % t, '-i', e['path'], '-t', str(seg), '-map', '0:v:0'] + \
+def encode_sample(e, vargs, t, seg, out, exe=None):
+    cmd = [exe or FFMPEG, '-hide_banner', '-v', 'error', '-y', '-ss', '%.3f' % t, '-i', e['path'], '-t', str(seg), '-map', '0:v:0'] + \
         clean_vargs(vargs) + ['-an', '-sn', '-dn', str(out)]
     r = run(cmd, timeout=1800, cwd=str(STAGE))
     if r.returncode != 0:
@@ -811,6 +991,113 @@ def task_abshot(tid, e, vargs, frac):
     grab(enc, 1, a, ('%s,' % TONEMAP if e.get('hdr') and FILTERS['zscale'] and 'bt2020' in ' '.join(map(str, vargs)) else '') +
          'scale=%d:%d:flags=bicubic' % (W, H))
     T['result'] = {'before': img_url(b), 'after': img_url(a), 't': t + 1, 'kbps': round(enc.stat().st_size * 8 / 2 / 1000)}
+    T['pct'], T['state'] = 100, 'fertig'
+
+
+# ---------- Ziel „Qualität“: kleinste Datei, die die Wunsch-Qualität (VMAF) erreicht ----------
+def set_q(vargs, q):
+    out = [str(a) for a in vargs]
+    for i in range(len(out) - 1):
+        if out[i] in ('-crf', '-cq', '-global_quality', '-qp_i'):
+            out[i + 1] = str(q)
+        elif out[i] == '-qp_p':
+            out[i + 1] = str(q + 2)
+    return out
+
+
+def task_qsearch(tid, e, vargs, target, start=23, slot='cpu', fracs=(.2, .5, .8), seg=6, qmin=12, qmax=40, tries=5):
+    """Probestücke mit verschiedenen CRF/QP kodieren, mit VMAF messen und die höchste Stufe (= kleinste Datei) nehmen,
+    die das Ziel erreicht. Gewertet wird 60 % Mittelwert + 40 % schlechtestes Stück, damit auch dunkle/schnelle Szenen halten."""
+    T = TASKS[tid]
+    dur = e.get('dur') or 0
+    seg = min(seg, max(2, dur / 6)) if dur else seg
+    W = min(1920, e.get('w') or 1920) // 2 * 2
+    H = int(round(W * (e.get('h') or 1080) / max(1, e.get('w') or 1920) / 2)) * 2
+    out_hdr = bool(e.get('hdr')) and 'bt2020' in ' '.join(map(str, vargs))
+    exe = FFMPEG_IGPU[0] if slot == 'gpu2' and FFMPEG_IGPU[0] else FFMPEG
+    tried = {}
+
+    def score(q):
+        vals, bits = [], 0
+        for i, f in enumerate(fracs):
+            check_abort(T)
+            T['phase'] = 'Teste Stufe %d · Probestück %d von %d' % (q, i + 1, len(fracs))
+            t = max(0, dur * f - seg / 2) if dur else 0
+            enc = STAGE / ('qs-%s-%d-%d.mkv' % (tid, q, i))
+            encode_sample(e, set_q(vargs, q), t, seg, enc, exe)
+            bits += enc.stat().st_size * 8
+            v, method = measure(e, enc, t, seg, W, H, out_hdr)
+            T['method'] = method
+            enc.unlink(missing_ok=True)
+            vals.append(v)
+        avg = sum(vals) / len(vals)
+        use = round(avg * .6 + min(vals) * .4, 2)
+        tried[q] = {'q': q, 'v': use, 'avg': round(avg, 2), 'min': round(min(vals), 2), 'kbps': round(bits / (seg * len(fracs)) / 1000)}
+        T['tried'] = sorted(tried.values(), key=lambda x: x['q'])
+        return use
+
+    q = max(qmin, min(qmax, int(start)))
+    for n in range(tries):
+        T['pct'] = round(n / tries * 100)
+        v = score(q)
+        ok = [x for x in tried.values() if x['v'] >= target]
+        bad = [x for x in tried.values() if x['v'] < target]
+        hi_ok = max((x['q'] for x in ok), default=None)
+        lo_bad = min((x['q'] for x in bad), default=None)
+        if hi_ok is not None and lo_bad is not None and lo_bad - hi_ok <= 1:
+            break
+        step = max(1, min(6, int(round(abs(v - target) / 1.2)) or 1))
+        nq = q + step if v >= target else q - step
+        if hi_ok is not None:
+            nq = max(nq, hi_ok + 1)
+        if lo_bad is not None:
+            nq = min(nq, lo_bad - 1)
+        nq = max(qmin, min(qmax, nq))
+        if nq in tried or nq == q:
+            break
+        q = nq
+    ok = [x for x in tried.values() if x['v'] >= target]
+    best = max(ok, key=lambda x: x['q']) if ok else min(tried.values(), key=lambda x: x['q'])
+    T['result'] = {'crf': best['q'], 'vmaf': best['v'], 'kbps': best['kbps'], 'reached': bool(ok), 'tried': T['tried'],
+                   'method': T.get('method', 'vmaf')}
+    T['pct'], T['state'] = 100, 'fertig'
+
+
+# ---------- Hardware-Test: wie schnell sind Prozessor und Grafikkarten wirklich? ----------
+BENCH_ARGS = {'libx265': ['-preset', 'slow', '-crf', '24'], 'libx264': ['-preset', 'slow', '-crf', '22'],
+              'amf': ['-quality', 'quality', '-rc', 'cqp', '-qp_i', '24', '-qp_p', '26'], 'nvenc': ['-preset', 'p6', '-cq', '24'],
+              'qsv': ['-preset', 'slow', '-global_quality', '24']}
+
+
+def task_bench(tid, frames=120):
+    T = TASKS[tid]
+    src = STAGE / ('bench-1080p-%d.mkv' % frames)
+    T['phase'] = 'Erzeuge Testbild (1080p) …'
+    if not src.is_file():
+        r = run([FFMPEG, '-hide_banner', '-v', 'error', '-y', '-f', 'lavfi', '-i', 'testsrc2=s=1920x1080:r=25', '-vf', 'noise=alls=10:allf=t',
+                 '-frames:v', str(frames), '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '12', '-pix_fmt', 'yuv420p', str(src)], timeout=300)
+        if r.returncode != 0:
+            raise ValueError('Testbild konnte nicht erzeugt werden')
+    todo = [(w, fam) for w in WORKERS if w.get('ok') for fam in ('h265', 'h264')]
+    res = {}
+    for n, (w, fam) in enumerate(todo):
+        check_abort(T)
+        enc = w['enc'][fam]
+        if not (HW.get(enc) or HW2.get(enc)):
+            continue
+        T['phase'] = 'Teste %s · %s' % (w['name'], 'H.265' if fam == 'h265' else 'H.264')
+        T['pct'] = round(n / max(1, len(todo)) * 100)
+        exe = FFMPEG_IGPU[0] if w['slot'] == 'gpu2' and FFMPEG_IGPU[0] else FFMPEG
+        kind = enc if enc.startswith('lib') else enc.split('_')[-1]
+        t0 = time.time()
+        r = run([exe, '-hide_banner', '-v', 'error', '-y', '-i', str(src), '-c:v', enc] + BENCH_ARGS.get(kind, []) + ['-an', '-f', 'null', '-'],
+                timeout=900)
+        el = time.time() - t0
+        if r.returncode == 0 and el > 0:
+            res.setdefault(w['slot'], {'name': w['name'], 'kind': w['kind']})[fam] = round(frames / el, 1)
+            res[w['slot']]['enc_' + fam] = enc
+    conf = update_config(bench={'at': int(time.time()), 'res': res, 'cores': os.cpu_count() or 4})
+    T['result'] = conf['bench']
     T['pct'], T['state'] = 100, 'fertig'
 
 
@@ -1102,7 +1389,19 @@ def power(action):
         subprocess.Popen(['shutdown', '/a'], creationflags=NO_WINDOW)
 
 
-def stream_cmd(e, t, aidx):
+def snd_args(e, aidx, snd):
+    """Player: Ton-Aufbereiter live (Vorher/Nachher-Vergleich). snd = 'stimme,lautstärke,nacht' z. B. 'light,tv,0'."""
+    if not snd:
+        return []
+    parts = (str(snd).split(',') + ['off', 'off', '0'])[:3]
+    voice = parts[0] if parts[0] in SND_VOICE else 'off'
+    loud = parts[1] if parts[1] in SND_LOUD else 'off'
+    aud = (e.get('tracks') or {}).get('audio') or []
+    ch = aud[aidx]['ch'] if 0 <= aidx < len(aud) else '2.0'
+    return ['-af', snd_filter(ch, voice, loud, parts[2] == '1')]
+
+
+def stream_cmd(e, t, aidx, snd=None):
     enc = next((x for x in ('h264_nvenc', 'h264_qsv', 'h264_amf') if HW.get(x)), 'libx264')
     vf = []
     if e.get('hdr') and FILTERS['zscale']:
@@ -1113,7 +1412,7 @@ def stream_cmd(e, t, aidx):
     q = {'libx264': ['-preset', 'veryfast', '-crf', '21'], 'h264_nvenc': ['-preset', 'p3', '-cq', '22'],
          'h264_qsv': ['-preset', 'veryfast', '-global_quality', '22'], 'h264_amf': ['-quality', 'speed', '-rc', 'cqp', '-qp_i', '22', '-qp_p', '24']}[enc]
     return [FFMPEG, '-hide_banner', '-v', 'error', '-ss', '%.3f' % t, '-i', e['path'], '-map', '0:v:0', '-map', '0:a:%d?' % aidx,
-            '-vf', ','.join(vf), '-c:v', enc] + q + ['-g', '50', '-c:a', 'aac', '-ac', '2', '-b:a', '192k',
+            '-vf', ','.join(vf), '-c:v', enc] + q + ['-g', '50'] + snd_args(e, aidx, snd) + ['-c:a', 'aac', '-ac', '2', '-b:a', '192k',
                                                    '-f', 'mp4', '-movflags', 'frag_keyframe+empty_moov+default_base_moof', 'pipe:1']
 
 
@@ -1253,6 +1552,8 @@ class Handler(BaseHTTPRequestHandler):
                 conf = load_config()
                 return self.send_json(200, {'version': VERSION, 'ffmpeg': bool(FFMPEG and FFPROBE), 'hw': HW, 'filters': FILTERS, 'gpus': GPU, 'workers': WORKERS, 'cores': os.cpu_count() or 4,
                                             'disks': disks(), 'outdir': outdir(), 'config': conf, 'native': NATIVE[0]})
+            if path == '/api/stats':
+                return self.send_json(200, {'stats': stats_load(), 'bench': load_config().get('bench'), 'plan': plan_conf()})
             if path == '/api/jobs':
                 return self.send_json(200, {'jobs': [job_view(JOBS[j]) for j in QUEUE if j in JOBS]})
             m = re.fullmatch(r'/api/task/([0-9a-f]+)', path)
@@ -1275,7 +1576,7 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send_file(e['path'], 'video/mp4' if Path(e['path']).suffix.lower() in ('.mp4', '.m4v', '.mov') else None)
             if path == '/api/stream':
                 e = fpath(q.get('id', ''))
-                return self.send_stream(stream_cmd(e, fnum(q.get('t')), int(fnum(q.get('a')))), q.get('c', 'x'))
+                return self.send_stream(stream_cmd(e, fnum(q.get('t')), int(fnum(q.get('a'))), q.get('snd')), q.get('c', 'x'))
             return self.send_json(404, {'error': 'Unbekannt'})
         except ValueError as ex:
             return self.send_json(400, {'error': str(ex)})
@@ -1318,6 +1619,17 @@ class Handler(BaseHTTPRequestHandler):
                 e = fpath(d.get('id', ''))
                 fr = [f for f in d.get('fracs', [.25, .5, .75]) if 0 <= fnum(f) <= 1][:5] or [.5]
                 return self.send_json(200, {'task': start_task(task_vmaf, e, list(d.get('vargs') or []), fr, int(fnum(d.get('seg'), 8)))})
+            if path == '/api/qsearch':
+                e = fpath(d.get('id', ''))
+                tg = max(70.0, min(99.0, fnum(d.get('target'), 90)))
+                return self.send_json(200, {'task': start_task(task_qsearch, e, list(d.get('vargs') or []), tg, int(fnum(d.get('start'), 23)),
+                                                               d.get('slot') if d.get('slot') in ('cpu', 'gpu1', 'gpu2') else 'cpu')})
+            if path == '/api/bench':
+                return self.send_json(200, {'task': start_task(task_bench)})
+            if path == '/api/stats-reset':
+                with STATS_LOCK:
+                    STATS_FILE.unlink(missing_ok=True)
+                return self.send_json(200, {'ok': True})
             if path == '/api/abshot':
                 e = fpath(d.get('id', ''))
                 return self.send_json(200, {'task': start_task(task_abshot, e, list(d.get('vargs') or []), fnum(d.get('frac'), .5))})
@@ -1378,11 +1690,7 @@ class Handler(BaseHTTPRequestHandler):
                 power(d.get('action', 'cancel'))
                 return self.send_json(200, {'ok': True})
             if path == '/api/config':
-                conf = load_config()
-                for k in ('outdir', 'theme', 'intro', 'tmdb', 'ntfy', 'auto', 'presets', 'ls', 'monoff', 'load'):
-                    if k in d:
-                        conf[k] = d[k]
-                save_config(conf)
+                update_config(**{k: d[k] for k in ('outdir', 'theme', 'intro', 'tmdb', 'ntfy', 'auto', 'presets', 'ls', 'monoff', 'load', 'plan') if k in d})
                 return self.send_json(200, {'ok': True, 'outdir': outdir()})
             if path == '/api/show':
                 target = d.get('path') or outdir()
@@ -1733,9 +2041,7 @@ class WinFrame:
     def save_state(self):
         """Bildschirm, Vollbild und Maximiert merken – beim nächsten Start geht das Fenster genau so wieder auf."""
         try:
-            conf = load_config()
-            conf['win'] = {'mon': list(self._cur_monitor() or []), 'full': bool(self.full), 'max': bool(self.saved)}
-            save_config(conf)
+            update_config(win={'mon': list(self._cur_monitor() or []), 'full': bool(self.full), 'max': bool(self.saved)})
         except Exception:  # noqa: BLE001
             pass
 
@@ -1970,6 +2276,44 @@ def selftest():
     got = p.stdout.read(200000)
     p.kill()
     check('Player-Stream', len(got) > 20000, len(got))
+    p = popen(stream_cmd(e, 1, 0, 'strong,tv,1'))
+    got = p.stdout.read(200000)
+    p.kill()
+    check('Player-Stream mit Ton-Aufbereiter', len(got) > 20000, len(got))
+    s51 = work / 'ton51.mkv'
+    run([FFMPEG, '-hide_banner', '-v', 'error', '-y', '-f', 'lavfi', '-i', 'testsrc2=s=320x180:r=25:d=4', '-f', 'lavfi', '-i',
+         'sine=f=300:d=4', '-filter_complex', '[1:a]pan=5.1(side)|FL=c0|FR=c0|FC=c0|LFE=c0|SL=c0|SR=c0[a]', '-map', '0:v', '-map', '[a]',
+         '-c:v', 'libx264', '-preset', 'ultrafast', '-c:a', 'ac3', str(s51)], timeout=60)
+    e51 = file_entry(s51)
+    for ch, ent in (('5.1', e51), (e['tracks']['audio'][0]['ch'], e)):
+        for voice, loud, night in (('strong', 'tv', '1'), ('light', 'off', '0'), ('off', 'loud', '0')):
+            tj = new_job({'id': ent['id'], 'kind': 'snd', 'outname': 'ton-%s-%s-%s.mkv' % (ch, voice, loud), 'outdir': str(outd),
+                          'passes': [['-i', '{IN}', '-map', '0:v:0', '-map', '0:a:0', '-c:v', 'copy', '-c:a:0', 'eac3' if ch == '5.1' else 'aac',
+                                      '-filter:a:0', '{SND:%s:%s:%s:%s}' % (ch, voice, loud, night), '{OUT}']]})
+            with QLOCK:
+                QUEUE.remove(tj['id'])
+            run_job(tj)
+            ok_ = tj['state'] == 'fertig' and probe(tj['out'])['tracks']['audio'][0]['ch'] == ch
+            check('Ton-Aufbereiter %s · Stimme %s · Lautstärke %s' % (ch, voice, loud), ok_, tj.get('error', '')[-300:])
+    check('Statistik gespeichert', len(stats_load()) > 0, len(stats_load()))
+    tid = secrets.token_hex(4)
+    TASKS[tid] = {'state': 'läuft'}
+    try:
+        task_qsearch(tid, e, ['-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '23'], 90, 26, 'cpu', (.5,), 2, 12, 40, 4)
+        rq = TASKS[tid]['result']
+        check('Ziel Qualität: Stufe gesucht', 12 <= rq['crf'] <= 40 and len(rq['tried']) >= 2, '%s %s' % (rq['crf'], [(x['q'], x['v']) for x in rq['tried']]))
+    except Exception as ex:  # noqa: BLE001
+        check('Ziel Qualität: Stufe gesucht', False, ex)
+    TASKS[tid] = {'state': 'läuft'}
+    try:
+        task_bench(tid, 12)
+        br = TASKS[tid]['result']['res']
+        check('Hardware-Test', br.get('cpu', {}).get('h265', 0) > 0, br)
+    except Exception as ex:  # noqa: BLE001
+        check('Hardware-Test', False, ex)
+    check('Monitor-Schutz bei anderen Playern', display_wanted() in (True, False), display_wanted())
+    ps = plan_state()
+    check('Nacht-Planer', ps[0] in LOAD_STEPS, ps)
     d = disks()
     check('Laufwerke', bool(d), ['%s %.0f GB frei' % (x['drive'], x['free'] / 1e9) for x in d])
     print('selftest ok' if ok else 'selftest FEHLER', flush=True)

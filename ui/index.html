@@ -61,6 +61,17 @@ button{cursor:pointer}
 .atx small{display:block;font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .arow:not(.man) .atx small::before{content:"✨ ";}
 .am{display:inline-flex;padding:3px;border-radius:10px;background:var(--inset);border:1px solid var(--line);flex:none}
+.stbody{display:grid;gap:14px;overflow:auto;padding-right:4px}
+.stsec{padding:14px;border-radius:16px;background:var(--panel);border:1px solid var(--line)}
+.stsec h3{margin:0 0 10px;font:800 15px var(--fh);display:flex;align-items:center;gap:8px}.stsec h3 .sp{flex:1}
+.kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.kpi div{padding:11px 12px;border-radius:13px;background:var(--inset)}.kpi small{display:block;color:var(--muted);font-size:12px}.kpi b{font:800 21px var(--fh)}
+.bars{display:flex;align-items:flex-end;gap:6px;height:100px;margin-top:12px}.bars i{flex:1;border-radius:6px 6px 2px 2px;background:linear-gradient(180deg,var(--a),var(--b));min-height:2px;position:relative}
+.bars i[data-v]:hover::after{content:attr(data-v);position:absolute;bottom:100%;left:50%;transform:translateX(-50%);font:700 11px var(--fb);color:var(--text);white-space:nowrap;margin-bottom:3px}
+.lbls{display:flex;gap:6px;font-size:10.5px;color:var(--muted);margin-top:4px}.lbls span{flex:1;text-align:center}
+.hwb{display:grid;grid-template-columns:minmax(150px,auto) 1fr 80px;gap:7px 12px;align-items:center;font-size:13px}
+.hwb .b{height:11px;border-radius:9px;background:var(--inset);overflow:hidden}.hwb .b i{display:block;height:100%;background:linear-gradient(90deg,var(--a),var(--b))}
+.hold{color:var(--warn);font-weight:700}
+select.plmins{display:inline-block;width:74px;height:30px;min-height:0;padding:0 26px 0 10px;margin:0 4px;vertical-align:middle;font-size:13px}
 .am button{border:0;background:transparent;color:var(--muted);font-weight:700;font-size:11.5px;padding:5px 9px;border-radius:7px}
 .am button.on{color:var(--on);background:linear-gradient(110deg,var(--a),var(--b));box-shadow:0 3px 10px var(--glow)}
 .adrawer{display:grid;grid-template-rows:0fr;transition:grid-template-rows .35s ease}
@@ -548,6 +559,7 @@ dialog[open]{animation:dlg .3s ease}
  </nav>
  <div class="top-actions">
   <button type="button" class="btn ghost" id="queueBtn" title="Warteschlange öffnen"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg><span class="lbl">Warteschlange</span><span class="qbadge" id="qBadge" hidden>0</span></button>
+  <button type="button" class="btn ghost" id="statBtn" title="Spar-Statistik, Hardware-Test und was die KI gelernt hat"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span class="lbl">Statistik</span></button>
   <button type="button" class="btn ghost" id="themeBtn"><span class="theme-dot" aria-hidden="true"></span><span class="lbl">Design</span></button>
   <button type="button" class="btn ghost quit" id="quitBtn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v9M6.3 6.3a8 8 0 1 0 11.4 0"/></svg><span class="lbl">Beenden</span></button>
  </div>
@@ -592,6 +604,10 @@ dialog[open]{animation:dlg .3s ease}
           <div class="ldsteps" id="ldSteps"></div>
           <div class="ldscale"><span>0 %</span><span>25</span><span>50</span><span>75</span><span>100 %</span></div></div>
         <div class="f full"><div class="hint" id="ldInfo" style="margin:0"></div></div>
+        <div class="f full real-only"><label>🌙 Nacht-Planer &amp; Spielmodus</label>
+          <label class="chk"><input type="checkbox" id="plIdle"> <span>Nur umwandeln, wenn der PC nicht benutzt wird – sonst automatisch Pause. Weiter nach <select id="plMins" class="plmins"><option>5</option><option selected>10</option><option>20</option><option>30</option></select> Min. ohne Maus/Tastatur</span></label>
+          <label class="chk" style="margin-top:6px"><input type="checkbox" id="plGame"> <span>🎮 Spiel im Vollbild erkannt → Grafikkarten-Jobs pausieren</span></label>
+          <label class="chk" style="margin-top:6px"><input type="checkbox" id="plNight"> <span>Nachts (23–7 Uhr) volle Leistung (100 %), tagsüber die Grenze oben</span></label></div>
         </div></div></div>
       </div>
       <div class="arow" data-sec="codec">
@@ -613,9 +629,11 @@ dialog[open]{animation:dlg .3s ease}
           <div class="am"><button data-a="auto" class="on">Auto</button><button data-a="man">Manuell</button></div></div>
         <div class="adrawer"><div class="adin"><div class="form">
         <div class="f full"><label>Steuerung</label>
-          <div class="seg" id="sMode"><button data-v="size" class="on">Zielgröße von–bis</button><button data-v="crf">Qualität (CRF)</button><button data-v="cbr">Feste Bitrate</button></div>
+          <div class="seg" id="sMode"><button data-v="size" class="on">Zielgröße von–bis</button><button data-v="vmaf">🎯 Ziel-Qualität</button><button data-v="crf">CRF</button><button data-v="cbr">Feste Bitrate</button></div>
         </div>
         <div class="f full">          <label class="chk" style="margin-top:6px"><input type="checkbox" id="s2p" checked> 2-Pass (trifft die Größe genauer, nur Software)</label></div>
+        <div class="f full" id="wVm" hidden><label>Gewünschte Qualität (VMAF)</label><select id="sVm"><option value="85">85 · gut</option><option value="90" selected>90 · sehr gut</option><option value="93">93 · kaum ein Unterschied</option><option value="96">96 · wie das Original</option></select>
+          <div class="hint" style="margin:6px 0 0">Vor dem Umwandeln testet die KI an Probestücken mehrere Stufen und nimmt für jeden Film die <b>kleinste Datei</b>, die dieses Ziel sicher erreicht – auch in dunklen und schnellen Szenen. Kostet pro Film 1–4 Minuten Test.</div></div>
         <div class="f full" id="wCrf" hidden><label>CRF / CQ: <b id="crfV">22</b> <span id="crfHint" style="color:var(--mut)"></span></label><input type="range" id="sCrf" min="10" max="40" value="22"></div>
         <div class="f full" id="wCbr" hidden><label>Video-Bitrate (kbit/s)</label><input type="number" id="sCbr" value="6000" min="100"></div>
         </div></div></div>
@@ -654,6 +672,17 @@ dialog[open]{animation:dlg .3s ease}
         <div class="f full"><label>Spuren der gewählten Datei</label><div id="trkList" class="trk"></div></div>
         </div></div></div>
       </div>
+      <div class="arow" data-sec="snd">
+        <div class="ahead"><span class="aic">🎙️</span><div class="atx"><b>Ton-Aufbereiter</b><small id="sum-snd">–</small></div>
+          <div class="am"><button data-a="auto" class="on">Auto</button><button data-a="man">Manuell</button></div></div>
+        <div class="adrawer"><div class="adin"><div class="form">
+        <div class="f"><label>Stimmen verständlicher</label><select id="sVoice"><option value="off">Aus</option><option value="light" selected>Leicht</option><option value="strong">Stark</option></select></div>
+        <div class="f"><label>Jeder Film gleich laut</label><select id="sLoud"><option value="off">Aus</option><option value="tv" selected>Normal (wie Fernsehen)</option><option value="loud">Lauter</option></select></div>
+        <div class="f full"><label class="chk"><input type="checkbox" id="sNight"> <span>🌙 Nachtmodus: leise Stellen lauter, Explosionen leiser</span></label></div>
+        <div class="f full"><div class="hint" style="margin:0">Bei 5.1/7.1 wird der <b>Center-Kanal</b> (dort sind die Stimmen) lauter, bei Stereo die Sprach-Frequenzen. Die Lautstärke wird nach dem Fernseh-Standard (EBU R128) angeglichen. Im Player kannst du mit <b>🎙️</b> zwischen Original und aufbereitet umschalten.</div></div>
+        <div class="f full real-only"><button type="button" class="btn sm" id="sndOnly">🎙️ Nur Ton überarbeiten (Bild bleibt 1:1)</button><div class="hint" style="margin:6px 0 0">Für schon umgewandelte Filme: Bild und Untertitel werden nur kopiert, nur die Tonspuren werden neu gemacht – dauert pro Film etwa 1–3 Minuten. Es entsteht eine neue Datei „… (Ton)“ im Ausgabeordner.</div></div>
+        </div></div></div>
+      </div>
       <div class="arow" data-sec="out">
         <div class="ahead"><span class="aic">📁</span><div class="atx"><b>Ausgabe &amp; Zeitplan</b><small id="sum-out">–</small></div>
           <div class="am"><button data-a="auto" class="on">Auto</button><button data-a="man">Manuell</button></div></div>
@@ -663,7 +692,7 @@ dialog[open]{animation:dlg .3s ease}
         <div class="f full"><label>Steht ein Codec im Namen (z. B. x264)?</label><select id="oSwap"><option value="ask">Vorher fragen, ob er angepasst werden soll</option><option value="yes">Immer anpassen (x264 → x265, Original-Name bleibt)</option><option value="no">Nie anpassen</option></select></div>
         <div class="f"><label>Start</label><select id="oStart"><option value="now">Sofort</option><option value="22">Heute 22:00</option><option value="1">Nachts 01:00</option><option value="3">Nachts 03:00</option></select></div>
         <div class="f"><label>Danach</label><select id="oAfter"><option value="none">Nichts</option><option value="sleep">Ruhezustand</option><option value="off">PC herunterfahren</option></select></div>
-        <div class="f full real-only"><label>Beim Umwandeln</label><select id="oMon"><option value="5">Kein Ruhezustand · Monitore nach 5 Min. ohne Eingabe aus</option><option value="10">Kein Ruhezustand · Monitore nach 10 Min. aus</option><option value="15">Kein Ruhezustand · Monitore nach 15 Min. aus</option><option value="30">Kein Ruhezustand · Monitore nach 30 Min. aus</option><option value="0">Kein Ruhezustand · Monitore nie ausschalten</option></select><div class="hint" style="margin:4px 0 0">Der PC geht beim Umwandeln nie von selbst in den Ruhezustand. „Danach“ wird erst ausgeführt, wenn die ganze Liste fertig ist.</div></div>
+        <div class="f full real-only"><label>Beim Umwandeln</label><select id="oMon"><option value="5">Kein Ruhezustand · Monitore nach 5 Min. ohne Eingabe aus</option><option value="10">Kein Ruhezustand · Monitore nach 10 Min. aus</option><option value="15">Kein Ruhezustand · Monitore nach 15 Min. aus</option><option value="30">Kein Ruhezustand · Monitore nach 30 Min. aus</option><option value="0">Kein Ruhezustand · Monitore nie ausschalten</option></select><div class="hint" style="margin:4px 0 0">Der PC geht beim Umwandeln nie von selbst in den Ruhezustand. Läuft gerade ein anderer Player (z. B. YouTube, Netflix, VLC) oder ein Vollbild-Programm, bleiben die Monitore an. „Danach“ wird erst ausgeführt, wenn die ganze Liste fertig ist.</div></div>
         <div class="f full"><label class="chk"><input type="checkbox" id="oPush"> 📱 Nachricht aufs Handy, wenn alles fertig ist</label></div>
         <div class="f full real-only" id="wTopic"><label>ntfy-Thema</label><input type="text" id="oTopic"><div class="hint" style="margin:0">Auf dem Handy die kostenlose App „ntfy“ installieren und genau dieses Thema abonnieren.</div></div>
         </div></div></div>
@@ -702,7 +731,7 @@ dialog[open]{animation:dlg .3s ease}
         <span class="tm" id="pTime">0:00 / 0:00</span>
         <span style="flex:1"></span>
         <select id="pRate" style="width:auto" title="Geschwindigkeit"><option value="0.25">0,25×</option><option value="0.5">0,5×</option><option value="0.75">0,75×</option><option value="1" selected>1×</option><option value="1.25">1,25×</option><option value="1.5">1,5×</option><option value="2">2×</option></select>
-        <button class="btn" id="pMute">🔊</button><input type="range" id="pVol" min="0" max="1" step="0.05" value="1" style="width:70px;flex:none">
+        <button class="btn real-only" id="pSnd" title="Ton-Aufbereiter: zwischen Original und aufbereitetem Ton umschalten (Einstellungen aus „Ton-Aufbereiter“)">🎙️ Original</button><button class="btn" id="pMute">🔊</button><input type="range" id="pVol" min="0" max="1" step="0.05" value="1" style="width:70px;flex:none">
         <span class="upsc" title="KI-Schärfe beim Abspielen: Die Datei bleibt klein – geschärft wird nur beim Anschauen. Geschärft wird beim Anschauen über die Grafikkarte des Fensters – die Datei selbst bleibt unverändert.">✨<select id="pUp"><option value="0">Aus</option><option value="1" selected>Leicht</option><option value="2">Stark</option><option value="3">Max.</option></select><button class="btn sm" id="pOrig" title="Gedrückt halten zeigt das Original">👁</button></span>
         <button class="btn" id="pShot" title="Standbild in den Vorher/Nachher-Vergleich">📸</button>
         <button class="btn" id="pFull" title="Vollbild (F)">⛶</button>
@@ -863,6 +892,10 @@ dialog[open]{animation:dlg .3s ease}
   <div class="qdact"><div class="row" style="gap:8px"><button class="btn sm" id="qdSort" title="Wartende Filme nach Ersparnis sortieren – die größten Platzgewinne zuerst">⇅ Größte Ersparnis zuerst</button><button class="btn sm" id="qdAdd">➕ Dateien hinzufügen</button></div>
    <div class="row" style="gap:8px"><button class="btn sm" id="qdClear">Liste leeren</button><button class="btn sm" id="qdPause">⏸ Pause</button><button class="btn sm" id="qdStop">⏹ Stopp</button><button class="btn sm pri" id="qdStart">▶ Umwandlung starten</button></div></div>
 </div></dialog>
+<dialog id="statDlg" class="qdlg" aria-labelledby="stTitle"><div class="dlg">
+  <div class="dlg-head"><h2 id="stTitle">📊 Statistik &amp; KI</h2><button type="button" class="x" id="stClose" aria-label="Schließen"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <div id="stBody" class="stbody"></div>
+</div></dialog>
 <dialog id="themeDlg" aria-labelledby="thTitle">
  <div class="dlg wide">
   <div class="dlg-head"><h2 id="thTitle">Design wählen</h2><button type="button" class="x" id="thClose" aria-label="Schließen"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
@@ -996,9 +1029,9 @@ function refreshPre(){
   $('#s2p').disabled=k!=='sw';
 }
 $$('#sFam button').forEach(b=>b.onclick=()=>{S.fam=b.dataset.v;$$('#sFam button').forEach(x=>x.classList.toggle('on',x===b));refreshEnc();update()});
-$$('#sMode button').forEach(b=>b.onclick=()=>{S.mode=b.dataset.v;$$('#sMode button').forEach(x=>x.classList.toggle('on',x===b));$('#wCrf').hidden=S.mode!=='crf';$('#wCbr').hidden=S.mode!=='cbr';update()});
+$$('#sMode button').forEach(b=>b.onclick=()=>{S.mode=b.dataset.v;$$('#sMode button').forEach(x=>x.classList.toggle('on',x===b));$('#wCrf').hidden=S.mode!=='crf';$('#wCbr').hidden=S.mode!=='cbr';$('#wVm').hidden=S.mode!=='vmaf';update()});
 $('#sEnc').onchange=()=>{refreshPre();update()};
-['#parMode','#sProf','#sPre','#sTune','#sLvl','#sCont','#sMin','#sMax','#sAutoSz','#s2p','#sCrf','#sCbr','#sRes','#sFps','#sAud','#sAbr','#sAuto','#sYt','#sHdr','#oDir','#oName','#oStart','#oAfter','#oPush'].forEach(id=>{$(id).addEventListener('input',update);$(id).addEventListener('change',update)});
+['#sVm','#sVoice','#sLoud','#sNight','#parMode','#sProf','#sPre','#sTune','#sLvl','#sCont','#sMin','#sMax','#sAutoSz','#s2p','#sCrf','#sCbr','#sRes','#sFps','#sAud','#sAbr','#sAuto','#sYt','#sHdr','#oDir','#oName','#oStart','#oAfter','#oPush'].forEach(id=>{$(id).addEventListener('input',update);$(id).addEventListener('change',update)});
 refreshEnc();
 
 function settings(){
@@ -1007,11 +1040,20 @@ function settings(){
     pre:$('#sPre').value,tune:$('#sTune').value,lvl:$('#sLvl').value,cont:$('#sCont').value,
     min:+$('#sMin').value||1,max:+$('#sMax').value||1,autoSz:$('#sAutoSz').checked,twoPass:$('#s2p').checked&&!$('#s2p').disabled,
     crf:+$('#sCrf').value,cbr:+$('#sCbr').value||1000,maxH:+$('#sRes').value,fps:+$('#sFps').value,
+    vm:+$('#sVm').value||90,snd:sndCfg(),
     aud:$('#sAud').value,abr:+$('#sAbr').value,auto:$('#sAuto').checked,yt:$('#sYt').checked,hdrMode:$('#sHdr').value,
     out:{dir:$('#oDir').value.trim(),name:$('#oName').value,start:$('#oStart').value,after:$('#oAfter').value,push:$('#oPush').checked}};
 }
+/* Ton-Aufbereiter: Auto = Stimmen leicht + gleiche Lautstärke */
+function sndCfg(){let au=false;try{au=AUTO.snd}catch(e){}if(au)return {voice:'light',loud:'tv',night:false};
+  const c={voice:$('#sVoice').value,loud:$('#sLoud').value,night:$('#sNight').checked};return c.voice==='off'&&c.loud==='off'&&!c.night?null:c}
+const sndTxt=c=>c?[c.voice!=='off'?'Stimmen '+(c.voice==='light'?'leicht':'stark'):'',c.loud!=='off'?(c.loud==='tv'?'gleich laut':'gleich laut (lauter)'):'',c.night?'Nachtmodus':''].filter(Boolean).join(' · '):'aus – Ton bleibt original';
+const sndArg=c=>c?`${c.voice},${c.loud},${c.night?1:0}`:'';
+const sndPh=(ch,c)=>`{SND:${/^\d\.\d$/.test(ch||'')?ch:'2.0'}:${c.voice}:${c.loud}:${c.night?1:0}}`;
+function sndTrackArgs(t,i,s){const n=parseFloat(t.ch)||2,multi=n>2.1,c=s.aud==='copy'?(multi?'eac3':'aac'):s.aud==='opus'?'libopus':s.aud;
+  const r=['-c:a:'+i,c,'-b:a:'+i,trackKbps(t,s)+'k','-filter:a:'+i,sndPh(t.ch,s.snd)];if((c==='eac3'||c==='ac3')&&n>6)r.push('-ac:a:'+i,'6');return r}
 /* ================= KI-AUTOPILOT (Auto / Manuell) ================= */
-const AUTO_DEF={load:true,par:true,codec:true,quality:true,res:true,content:true,hdr:true,tracks:true,out:true,probe:true,cmp:true};
+const AUTO_DEF={snd:true,load:true,par:true,codec:true,quality:true,res:true,content:true,hdr:true,tracks:true,out:true,probe:true,cmp:true};
 let AUTO=Object.assign({},AUTO_DEF);
 try{const sv=JSON.parse(KV.get('bvc-auto')||'null');if(sv)Object.assign(AUTO,sv)}catch(e){}
 const saveAuto=()=>KV.set('bvc-auto',JSON.stringify(AUTO));
@@ -1022,7 +1064,7 @@ function rowShut(k,v){SHUT[k]=!!v;saveShut();$$(`.arow[data-sec="${k}"]`).forEac
 function setFam(f){if(S.fam!==f){S.fam=f;$$('#sFam button').forEach(x=>x.classList.toggle('on',x.dataset.v===f));refreshEnc()}}
 function setEnc(v){if($('#sEnc').value!==v&&[...$('#sEnc').options].some(o=>o.value===v)){$('#sEnc').value=v;refreshPre()}}
 function setSel(id,v){const e=$(id);if(e&&e.value!=v&&[...e.options].some(o=>o.value==v))e.value=v}
-function setModeS(m){if(S.mode!==m){S.mode=m;$$('#sMode button').forEach(x=>x.classList.toggle('on',x.dataset.v===m));$('#wCrf').hidden=m!=='crf';$('#wCbr').hidden=m!=='cbr'}}
+function setModeS(m){if(S.mode!==m){S.mode=m;$$('#sMode button').forEach(x=>x.classList.toggle('on',x.dataset.v===m));$('#wCrf').hidden=m!=='crf';$('#wCbr').hidden=m!=='cbr';$('#wVm').hidden=m!=='vmaf'}}
 /* ---------- PC-Auslastung: 25/50/75 %, dann 80–100 % in 5er-Schritten, Standard 90 % ---------- */
 const LD_STEPS=[25,50,75,80,85,90,95,100];
 let LOAD=90;try{const v=+KV.get('bvc-load');if(LD_STEPS.includes(v))LOAD=v}catch(e){}
@@ -1042,6 +1084,7 @@ function applyAuto(){
   if(AUTO.res){setSel('#sRes','0');setSel('#sFps','0');$('#sAuto').checked=true}
   if(AUTO.content)setSel('#sTune','–');
   if(AUTO.tracks){setSel('#sAud','aac');setSel('#sAbr','160')}
+  if(AUTO.snd){setSel('#sVoice','light');setSel('#sLoud','tv');$('#sNight').checked=false}
   if(AUTO.out){$('#oDir').value=REAL&&INFO?INFO.outdir:'Videos\\Butchies Converter';setSel('#oName','db');setSel('#oStart','now');setSel('#oAfter','none')}
   $$('.arow').forEach(r=>{const k=r.dataset.sec;r.classList.toggle('man',!AUTO[k]);r.classList.toggle('shut',!!SHUT[k]);r.querySelectorAll('.am button').forEach(b=>b.classList.toggle('on',(b.dataset.a==='auto')===!!AUTO[k]))});
 }
@@ -1077,7 +1120,7 @@ function autoTracks(f){
   return {a:A,s:Sb};
 }
 function keptTracks(f){if(!f.tracks)return null;if(AUTO.tracks||!f.keepA)return autoTracks(f);return {a:f.keepA,s:f.keepS}}
-function trackKbps(t,s){if(s.aud==='copy')return t.kbps;const multi=parseFloat(t.ch)>2.1;return multi?(s.aud==='opus'?192:s.aud==='ac3'?448:256):s.abr}
+function trackKbps(t,s){if(s.aud==='copy'&&!s.snd)return t.kbps;if(s.aud==='copy')return parseFloat(t.ch)>2.1?640:192;const multi=parseFloat(t.ch)>2.1;return multi?(s.aud==='opus'?192:s.aud==='ac3'?448:256):s.abr}
 function renderTracks(){
   const q=selQ(),box=$('#trkList');if(!box)return;
   if(!q){box.innerHTML='<div class="hint" style="margin:0">Erst eine Datei wählen.</div>';return}
@@ -1192,9 +1235,10 @@ function updSums(){
   const encS={libx264:'x264',libx265:'x265',h264_amf:'AMD',hevc_amf:'AMD',h264_nvenc:'NVIDIA',hevc_nvenc:'NVIDIA',h264_qsv:'Intel',hevc_qsv:'Intel'}[s.enc];
   const set=(k,t)=>{const e=$('#sum-'+k);if(e)e.textContent=(AUTO[k]?'KI: ':'Manuell: ')+t};
   if(REAL&&INFO&&INFO.workers){const sl=parSlots();set('par',sl.map(x=>wName(x)).join(' + ')+(sl.length>1?' – parallel':''));try{renderPar()}catch(e){}}
-  set('load',LOAD>=100?'volle Leistung':`höchstens ${LOAD} %`+(AUTO.load?' (Standard)':''));try{renderLoad()}catch(e){}
+  {const pt=typeof planTxt==='function'?planTxt():'';set('load',(LOAD>=100?'volle Leistung':`höchstens ${LOAD} %`+(AUTO.load?' (Standard)':''))+(pt?' · '+pt:''))}try{renderLoad()}catch(e){}
   set('codec',`${s.fam==='h265'?'H.265':'H.264'} · ${encS} ${s.pre} · ${s.profName.split(' (')[0]} · ${s.cont.toUpperCase()}`);
-  set('quality',S.mode==='size'?`Zielgröße treffen${s.twoPass?' · 2-Pass':''}`:S.mode==='crf'?`Qualität CRF ${s.crf}`:`Feste Bitrate ${s.cbr} kbit/s`);
+  set('snd',sndTxt(s.snd));
+  set('quality',S.mode==='vmaf'?`Ziel-Qualität ${s.vm} (VMAF) – KI testet vorher`:S.mode==='size'?`Zielgröße treffen${s.twoPass?' · 2-Pass':''}`:S.mode==='crf'?`Qualität CRF ${s.crf}`:`Feste Bitrate ${s.cbr} kbit/s`);
   set('res',(s.maxH?`max. ${s.maxH}p`:'Original')+(s.auto?', skaliert bei Bedarf':'')+(s.fps?` · ${s.fps} fps`:''));
   set('content',d?(AUTO.content?`${CNAME[d.content]}`:`Tune ${s.tune}`):'erkennt Zeichentrick & Filmkorn');
   set('hdr',d?(d.hdr?(perFile(q,s).hdr==='keep'?'HDR erkannt → bleibt HDR':'HDR erkannt → wird SDR'):'kein HDR in dieser Datei'):'erkennt HDR selbst');
@@ -1284,8 +1328,22 @@ function autoSize(f,s,dur,srcW,srcH,ar,fps,aK,known){
 /* Wie viel Bitrate braucht der Ziel-Codec im Vergleich zur Quelle für dieselbe Qualität? (H.265 ≈ 62 % von H.264) */
 const CEFF={h264:1,hevc:.62,av1:.52,vp9:.65,mpeg2video:2,mpeg4:1.5,vc1:1.3,wmv3:1.5};
 function codecRatio(f,s){const src=CEFF[f.vcodec]||1,tgt=s.fam==='h265'?.62:1;return Math.min(1.1,tgt/src)}
+/* ---------- KI lernt mit: Tempo je Arbeiter, Restzeit, Note, Qualitätsstufen ---------- */
+let LEARN={spd:{},sn:{},n:0,eta:null,qOff:0,qn:0,crf:{}};
+try{Object.assign(LEARN,JSON.parse(KV.get('bvc-learn')||'{}')||{})}catch(e){}
+const saveLearn=()=>KV.set('bvc-learn',JSON.stringify(LEARN));
+const ema=(old,v,a)=>old==null?v:old*(1-a)+v*a;
+const spdKey=s=>(s.slot||(s.kind==='sw'?'cpu':'gpu1'))+'|'+s.enc;
+const vmKey=s=>s.enc+'|'+s.vm;
+function vmGuess(s){const k=vmKey(s);if(LEARN.crf[k]!=null)return Math.round(LEARN.crf[k]);
+  return (s.fam==='h265'?24:22)+({85:3,90:0,93:-2,96:-5}[s.vm]||0)-(s.kind==='sw'?0:1)}
+function baseFps(enc,pre){const k=encKind(enc),h=/265|hevc/.test(enc);return k==='sw'?SPEED[pre||'slow']*(h?.28:1):({amf:330,nvenc:420,qsv:300}[k]||300)*(h?.85:1)}
+/* Hardware-Test -> Startwerte fürs Tempo (echte Umwandlungen haben Vorrang) */
+function benchLearn(b){if(!b||!b.res)return;for(const [slot,r] of Object.entries(b.res))for(const fam of ['h265','h264']){const enc=r['enc_'+fam];if(!enc||!r[fam])continue;
+  const k=slot+'|'+enc;if(LEARN.sn[k])continue;LEARN.spd[k]=Math.max(.05,Math.min(20,r[fam]/baseFps(enc,'slow')))}saveLearn()}
 function analyze(f,s){
   s=perFile(f,s);const tips=s.notes.slice();
+  if(s.mode==='vmaf'){const k=vmKey(s),got=f.vmCrf&&f.vmCrf[k];s.crf=got?got.crf:vmGuess(s)}
   const known=f.w>0&&f.dur>0;
   const dur=f.dur>0?f.dur:5400, srcW=f.w||1920, srcH=f.h||1080, srcFps=f.fps||25;
   if(!known&&!f.bad) tips.push(['warn','Metadaten konnte der Browser nicht lesen (oft bei MKV/AVI). Annahme: 1920×1080, 25 fps, 90 Min. Im Windows-Programm liest ffprobe die echten Werte.']);
@@ -1323,6 +1381,8 @@ function analyze(f,s){
     if(est>hi||est<lo){const sug=Math.round(clamp(s.crf+6*Math.log2(vk/Math.max(need,100)),0,51));
       tips.push(['warn',`Mit CRF ${s.crf} landet die Datei bei ca. ${fmtMB(est)} – außerhalb ${fmtMB(lo)}–${fmtMB(hi)}. KI-Vorschlag: CRF ${sug}.`]); best.sugCrf=sug}
     else tips.push(['ok',`Geschätzte Größe ${fmtMB(est)} liegt im Zielbereich.`]);
+    if(s.mode==='vmaf'){tips.pop();const got=f.vmCrf&&f.vmCrf[vmKey(s)];
+      tips.push(got?['ok',`🎯 Gemessen: Stufe ${got.crf} erreicht ${got.method==='ssim'?'Qualität':'VMAF'} ${String(got.vmaf).replace('.',',')} (Ziel ${s.vm}) – ca. ${fmtMB(est)}.`]:['info',`🎯 Ziel-Qualität ${s.vm}: Vor dem Umwandeln testet die KI die Stufe (Schätzung: ${s.crf}, ca. ${fmtMB(est)}).`])}
   }
   if(s.yt){
     const keep=tips.filter(t=>t[1].startsWith('Metadaten'));tips.length=0;tips.push(...keep);
@@ -1336,7 +1396,9 @@ function analyze(f,s){
     if(s.fam==='h265')tips.push(['info','YouTube nimmt H.265 an, empfiehlt aber H.264 High – beides funktioniert.']);
     if(s.fps&&s.fps>srcFps+.5)tips.push(['warn',`Bildrate ${s.fps} ist höher als die Quelle (${srcFps}).`]);
   }
-  const outH=best.h,outW=best.w,score=Math.round(clamp(best.score,0,100));
+  const score0=Math.round(clamp(best.score,0,100)),qOff=clamp(LEARN.qn>=2?LEARN.qOff:0,-12,12);
+  const vmGot=s.mode==='vmaf'&&f.vmCrf&&f.vmCrf[vmKey(s)];
+  const outH=best.h,outW=best.w,score=vmGot?Math.round(vmGot.vmaf):Math.round(clamp(best.score+qOff,0,100));
   // Spanne
   let span='';
   if(s.mode==='size'&&!s.yt){const qa=k=>Math.round(clamp(mk(outW,k*MBk/dur*.99-aK).score,0,100));span=`${qa(lo)} → ${qa(hi)}`}
@@ -1362,10 +1424,11 @@ function analyze(f,s){
   const pxF=outW*outH/2073600;
   let encFps=s.kind==='sw'?SPEED[s.pre]*(s.fam==='h265'?.28:1):({amf:330,nvenc:420,qsv:300}[s.kind])*(s.fam==='h265'?.85:1);
   encFps=encFps/Math.max(.2,pxF); if(s.twoPass&&s.mode==='size') encFps/=1.7;
+  const encFps0=encFps;encFps*=LEARN.spd[spdKey(s)]||1;
   const frames=dur*fps, encTime=frames/encFps;
   const noGain=known&&!s.yt&&f.size>0&&est>=f.size/1048576*.95;
   if(noGain)tips.unshift(['warn',`Diese Datei würde kaum kleiner (${fmtMB(f.size/1048576)} → ~${fmtMB(est)}). Umwandeln lohnt sich hier nicht – die Quelle ist schon sparsam kodiert.`]);
-  return {noGain,outW,outH,vk:Math.round(vk),aK,est,score,span,tips,fps,dur,srcW,srcH,known,encFps,encTime,crf:crfUsed,sugCrf:best.sugCrf,lo,hi,trk:s.trk,hdr:s.hdr,det:s.det,...(()=>{const cj=buildCmd(f,s,outW,outH,srcW,Math.round(vk),aK,fps);cj.notes.forEach(n=>tips.push(['warn',n]));return {cmd:cj.text,job:cj}})()};
+  return {noGain,outW,outH,vk:Math.round(vk),aK,est,score,score0,encFps0,spdKey:spdKey(s),slot:s.slot,span,tips,fps,dur,srcW,srcH,known,encFps,encTime,crf:crfUsed,sugCrf:best.sugCrf,lo,hi,trk:s.trk,hdr:s.hdr,det:s.det,...(()=>{const cj=buildCmd(f,s,outW,outH,srcW,Math.round(vk),aK,fps);cj.notes.forEach(n=>tips.push(['warn',n]));return {cmd:cj.text,job:cj}})()};
 }
 
 const TEXT_SUBS=new Set(['subrip','srt','ass','ssa','mov_text','webvtt','text']);
@@ -1378,7 +1441,7 @@ function buildCmd(f,s,w,h,srcW,vk,aK,fps){
   else if(k==='amf')V.push('-quality',s.pre); else if(k==='nvenc')V.push('-preset',s.pre,'-tune','hq'); else V.push('-preset',s.pre);
   V.push('-profile:v',s.prof); if(s.lvl!=='auto')V.push('-level:v',s.lvl);
   V.push('-pix_fmt',k==='sw'?pix:(s.bits>8?'p010le':'nv12'));
-  if(s.mode==='crf'&&!s.yt){
+  if((s.mode==='crf'||s.mode==='vmaf')&&!s.yt){
     if(k==='sw')V.push('-crf',String(s.crf)); else if(k==='amf')V.push('-rc','cqp','-qp_i',String(s.crf),'-qp_p',String(s.crf+2)); else if(k==='nvenc')V.push('-rc','vbr','-cq',String(s.crf),'-b:v','0'); else V.push('-global_quality',String(s.crf));
   } else {
     const mx=Math.round(vk*(s.mode==='cbr'?1:1.6)),bf=mx*2;
@@ -1397,11 +1460,12 @@ function buildCmd(f,s,w,h,srcW,vk,aK,fps){
     const subs=s.trk.s.filter(i=>s.cont==='mkv'||!f.tracks.subs[i].codec||TEXT_SUBS.has(f.tracks.subs[i].codec));
     if(subs.length<s.trk.s.length)notes.push('Bild-Untertitel passen nicht in '+s.cont.toUpperCase()+' – für alle Untertitel MKV wählen.');
     s.trk.a.forEach(i=>M.push('-map','0:a:'+i));subs.forEach(i=>M.push('-map','0:s:'+i));
-    if(s.aud==='copy')A.push('-c:a','copy');else{A.push('-c:a',s.aud==='opus'?'libopus':s.aud);s.trk.list.forEach((t,i)=>A.push('-b:a:'+i,trackKbps(t,s)+'k'))}
+    if(s.snd)s.trk.list.forEach((t,i)=>A.push(...sndTrackArgs(t,i,s)));
+    else if(s.aud==='copy')A.push('-c:a','copy');else{A.push('-c:a',s.aud==='opus'?'libopus':s.aud);s.trk.list.forEach((t,i)=>A.push('-b:a:'+i,trackKbps(t,s)+'k'))}
     if(subs.length)A.push('-c:s',s.cont==='mkv'?'copy':'mov_text');
     const fi=subs.findIndex(i=>f.tracks.subs[i].forced);if(fi>=0)A.push('-disposition:s:'+fi,'forced');
     if(s.trk.chap)A.push('-map_chapters','0');
-  } else {M.push('-map','0:a?');A.push(...(s.aud==='copy'?['-c:a','copy']:['-c:a',s.aud==='opus'?'libopus':s.aud,'-b:a',aK+'k']))}
+  } else {M.push('-map','0:a?');A.push(...(s.snd?['-c:a',s.aud==='copy'?'aac':s.aud==='opus'?'libopus':s.aud,'-b:a',(s.aud==='copy'?192:aK)+'k','-af',sndPh('2.0',s.snd)]:s.aud==='copy'?['-c:a','copy']:['-c:a',s.aud==='opus'?'libopus':s.aud,'-b:a',aK+'k']))}
   if(s.cont==='mkv')M.push('-map','0:t?');
   const C=[];if(s.cont==='mp4'||s.cont==='mov')C.push('-movflags','+faststart');if(s.fam==='h265'&&s.cont!=='mkv')C.push('-tag:v','hvc1');
   const xp=extra=>{const all=[...x265,...extra];return all.length?['-x265-params',all.join(':')]:[]};
@@ -2202,7 +2266,7 @@ function parSlots(){
   return sel.length?sel:['cpu'];
 }
 function settingsFor(slot){
-  const s=settings();if(slot==='cpu'){if(s.kind!=='sw'){s.enc=s.fam==='h264'?'libx264':'libx265';s.kind='sw';s.pre='slow'}return s}
+  const s=settings();s.slot=slot;if(slot==='cpu'){if(s.kind!=='sw'){s.enc=s.fam==='h264'?'libx264':'libx265';s.kind='sw';s.pre='slow'}return s}
   const w=INFO.workers.find(x=>x.slot===slot);let fam=s.fam;if(fam==='h265'&&!w.hevc)fam='h264';
   const enc=w.enc[fam],k=encKind(enc);
   Object.assign(s,{fam,enc,kind:k,pre:k==='sw'?'veryfast':{amf:'quality',nvenc:'p6',qsv:'slow'}[k],twoPass:false,tune:'–'});
@@ -2267,13 +2331,31 @@ function anaFold(shut){
 let ANA_SHUT=KV.get('bvc-anafold')==='1';
 $('#anaHead').onclick=()=>{ANA_SHUT=!$('#anaCard').classList.contains('shut');KV.set('bvc-anafold',ANA_SHUT?'1':'0');anaFold(ANA_SHUT)};
 anaFold(ANA_SHUT);
-async function realStart(){
-  try{await realStart0()}
+async function realStart(opts){
+  try{await realStart0(opts)}
   catch(e){console.error(e);log('bad','Start fehlgeschlagen: '+esc(e.message||String(e)));RUN.on=false;$('#bStart').disabled=!Q.length;$('#bPause').disabled=true;$('#bStop').disabled=true;try{pgEnd('stop')}catch(_){}toast('Umwandlung konnte nicht starten: '+(e.message||e))}
 }
-async function realStart0(){
-  const todo=Q.filter(q=>!['done','run','queued'].includes(q.state)&&!(q.bad&&!q.force));if(!todo.length){log('ok','Alles schon fertig.');return}
+/* Nur Ton überarbeiten: Bild/Untertitel kopieren, nur die Tonspuren neu */
+function sndJob(q,c){
+  const ext=(q.name.match(/\.(mkv|mp4|mov|m4v)$/i)||[,'mkv'])[1].toLowerCase(),cont=ext==='m4v'?'mp4':ext;
+  const s={aud:'copy',snd:c,abr:192},aud=(q.tracks&&q.tracks.audio)||[];
+  const M=cont==='mkv'?['-map','0']:['-map','0:v','-map','0:a?','-map','0:s?'],A=[];
+  if(aud.length)aud.forEach((t,i)=>A.push(...sndTrackArgs(t,i,s)));else A.push('-c:a','aac','-b:a','192k','-af',sndPh('2.0',c));
+  const outname=q.name.replace(/\.[^.]+$/,'')+' (Ton).'+cont;
+  const passes=[['-i','{IN}',...M,'-c','copy',...A,'-map_metadata','0','-map_chapters','0',...(cont==='mkv'?[]:['-movflags','+faststart']),'{OUT}']];
+  return {outW:q.w,outH:q.h,vk:0,aK:0,dur:q.dur||1,lo:0,hi:0,est:0,score:0,encTime:(q.dur||600)/120,encFps0:0,job:{passes,outname,vargs:[]},snd:true};
+}
+async function realStart0(opts){
+  opts=opts||{};
+  const todo=Q.filter(q=>(opts.snd?!['run','queued'].includes(q.state):!['done','run','queued'].includes(q.state))&&!(q.bad&&!q.force));
+  if(!todo.length){log('ok',opts.snd?'Keine Datei in der Liste.':'Alles schon fertig.');return}
   const s=settings();
+  if(opts.snd){
+    const c=s.snd||{voice:'light',loud:'tv',night:false};
+    RUN.on=true;RUN.pause=false;$('#bStart').disabled=true;$('#bPause').disabled=false;$('#bStop').disabled=false;anaFold(true);pgShow();
+    const plan=todo.map(q=>({q,slot:'cpu',a:sndJob(q,c)}));
+    return realRun({plan,slots:['cpu'],single:0,par:0},s,`🎙️ Nur Ton überarbeiten (${sndTxt(c)}) · ${todo.length} Datei(en)`);
+  }
   await askSwap(todo);
   RUN.on=true;RUN.pause=false;$('#bStart').disabled=true;$('#bPause').disabled=true;$('#bStop').disabled=false;anaFold(true);pgShow();try{playerMini(true)}catch(e){}
   if(s.out.start!=='now'){
@@ -2283,12 +2365,32 @@ async function realStart0(){
     if(!RUN.on)return;
   }
   const pl=planJobs(todo);
-  const items=pl.plan.map(p=>{p.q.a=p.a;p.q.slot=p.slot;return {id:p.q.fid,passes:p.a.job.passes,outname:p.a.job.outname,outdir:settings().out.dir,slot:p.slot}});
+  if(s.mode==='vmaf'&&!s.yt){if(!await vmSearch(pl,s))return}
+  return realRun(pl,s);
+}
+/* Ziel-Qualität: für jeden Film die passende Stufe messen (KI testet Probestücke) */
+async function vmSearch(pl,s){
+  for(let i=0;i<pl.plan.length;i++){const p=pl.plan[i],q=p.q,ss=settingsFor(p.slot);ss.mode='vmaf';const k=vmKey(ss);
+    q.vmCrf=q.vmCrf||{};if(q.vmCrf[k]){p.a=analyze(q,ss);continue}
+    if(!RUN.on)return false;
+    $('#monFile').textContent=`🎯 KI sucht die Qualitätsstufe · ${q.name} (${i+1}/${pl.plan.length})`;log('ai',`🎯 Teste Qualitätsstufen für „${esc(q.name)}“ (Ziel ${s.vm}) …`);
+    try{const {task}=await api('/api/qsearch',{id:q.fid,vargs:p.a.job.vargs,target:s.vm,start:vmGuess(ss),slot:p.slot});
+      const r=await waitTask(task,t=>{if(!RUN.on)api('/api/task-cancel',{id:task}).catch(()=>{});$('#mPct').textContent=(t.pct||0)+' %';$('#mSpd').textContent=t.phase||'';setSeg((i+(t.pct||0)/100)/pl.plan.length*100)},true);
+      q.vmCrf[k]={crf:r.crf,vmaf:r.vmaf,method:r.method};LEARN.crf[k]=ema(LEARN.crf[k],r.crf,.35);saveLearn();
+      p.a=analyze(q,ss);
+      log(r.reached?'ok':'warn',`🎯 ${esc(q.name)}: Stufe ${r.crf} → ${r.method==='ssim'?'Qualität':'VMAF'} ${String(r.vmaf).replace('.',',')}${r.reached?'':` (Ziel ${s.vm} nicht ganz erreicht – beste Stufe genommen)`} · ca. ${fmtMB(p.a.est)} · getestet: ${r.tried.map(x=>x.q+'→'+Math.round(x.v)).join(', ')}`);
+    }catch(e){if(e.abort||!RUN.on){log('bad','Qualitäts-Test abgebrochen.');return false}log('bad',`Qualitäts-Test für „${esc(q.name)}“ fehlgeschlagen – nehme die Schätzung (Stufe ${vmGuess(ss)}): ${esc(e.message)}`)}
+  }
+  return RUN.on;
+}
+async function realRun(pl,s,startMsg){
+  const items=pl.plan.map(p=>{p.q.a=p.a;p.q.run=p.a;p.q.slot=p.slot;return {id:p.q.fid,passes:p.a.job.passes,outname:p.a.job.outname,outdir:settings().out.dir,slot:p.slot,
+    kind:p.a.snd?'snd':'video',enc:p.a.snd?'':(p.a.job.vargs[p.a.job.vargs.indexOf('-c:v')+1]||''),score:p.a.score||0}});
   if(pl.slots.length>1){log('ai','KI verteilt: '+pl.plan.map(p=>`${esc(p.q.name)} → ${wIcon(p.slot)} ${esc(wName(p.slot))}${p.slot==='cpu'?' (x265)':''}`).join(' · '));
     if(pl.single>pl.par*1.1)log('ai',`Geschätzt fertig in ${fmtT(pl.par)} statt ${fmtT(pl.single)} nacheinander.`)}
   try{const r=await api('/api/convert',{items});r.jobs.forEach((j,i)=>{const q=pl.plan[i].q;q.jid=j.id;q.state='queued';q.prog=0})}
   catch(err){toast('Start fehlgeschlagen: '+err.message);RUN.on=false;$('#bStart').disabled=false;$('#bStop').disabled=true;return}
-  log('ai',`KI: Starte ${todo.length} Datei(en) mit ${$('#sEnc').selectedOptions[0].text} → ${esc(s.out.dir)}`);
+  log('ai',startMsg||`KI: Starte ${items.length} Datei(en) mit ${$('#sEnc').selectedOptions[0].text} → ${esc(s.out.dir)}`);
   $('#bPause').disabled=false;renderQ();
   const pts=[];let last=null,warned={};
   clearInterval(POLL);POLL=setInterval(async()=>{
@@ -2298,8 +2400,8 @@ async function realStart0(){
     for(const q of Q){const j=q.jid&&byId[q.jid];if(!j)continue;
       const ns={läuft:'run',wartet:'queued',fertig:'done',fehler:'err',abgebrochen:'stop'}[j.state]||q.state;
       if(ns!==q.state){
-        if(ns==='run'){log('',`▶ ${esc(q.name)} → ${q.a.outW}×${q.a.outH}, ${q.a.vk} kbit/s`);pts.length=0;warned={}}
-        if(ns==='done'){log('ok',`✓ Fertig: ${esc(q.name)} · ${fmtMB(j.size/1048576)} → ${esc(j.out)}`);q.out=j.out}
+        if(ns==='run'){log('',(q.run||q.a).snd?`▶ 🎙️ Ton überarbeiten: ${esc(q.name)}`:`▶ ${esc(q.name)} → ${(q.run||q.a).outW}×${(q.run||q.a).outH}, ${(q.run||q.a).vk} kbit/s`);pts.length=0;warned={}}
+        if(ns==='done'){log('ok',`✓ Fertig: ${esc(q.name)} · ${fmtMB(j.size/1048576)} → ${esc(j.out)}`);q.out=j.out;learnJob(q,j)}
         if(ns==='err'){q.err=j.error;log('bad',`✕ Fehler bei ${esc(q.name)}: ${esc((j.error||'').split('\n')[0])}`)}
         if(ns==='stop')log('bad',`Abgebrochen: ${esc(q.name)}`);
         q.state=ns;renderQ();
@@ -2311,21 +2413,29 @@ async function realStart0(){
     const all=mine.length?mine.reduce((s,q)=>s+q.prog,0)/mine.length*100:0;setSeg(all);
     $('#monRun').innerHTML=runs.length>1?runs.map(({q,j})=>`<div>${wIcon(q.slot)} <b>${esc(wName(q.slot))}</b> · ${esc(q.name)} · ${Math.floor(j.pct)} % · ${Math.round(j.fps)} fps</div>`).join(''):'';
     PGX={running,runs,all};
-    if(running){const {q,j}=running,a=q.a;$('#monFile').textContent=q.name+(j.pass&&q.a.job.passes.length>1?` · Durchgang ${j.pass}/2`:'');
+    if(running){const {q,j}=running,a=q.run||q.a;$('#monFile').textContent=q.name+(j.pass&&(q.run||q.a).job.passes.length>1?` · Durchgang ${j.pass}/2`:'');
       $('#mPct').textContent=Math.floor(j.pct)+' %';$('#mSpd').textContent=`${Math.round(j.fps)} fps · ${String(j.speed.toFixed(2)).replace('.',',')}×`;
+      if(j.hold)$('#mSpd').innerHTML=`<span class="hold">⏸ ${esc(j.hold)}</span>`;
       $('#mBr').textContent=j.kbps?Math.round(j.kbps).toLocaleString('de-DE')+' kbit/s':'–';$('#mEta').textContent=j.eta!=null?fmtT(j.eta):'–';
       const inPass2=a.job.passes.length<2||j.pass===2;
       if(inPass2&&j.kbps>0){pts.push(j.kbps);if(pts.length>160)pts.shift()}
       const maxL=S.mode==='size'?(a.hi*8388.608/a.dur-a.aK):0;draw(pts,a.vk,maxL);
       const frac=inPass2?((j.t||0)/Math.max(1,a.dur)):0,proj=frac>.03&&j.size?j.size/1048576/frac:0;
       $('#mProj').textContent=proj?'Prognose Endgröße: '+fmtMB(proj):'';
-      if(proj&&frac>.2&&!warned.big&&proj>a.hi*1.03){warned.big=1;log('bad',`KI: Prognose ${fmtMB(proj)} überschreitet Max ${fmtMB(a.hi)}${S.mode==='crf'?' – nächstes Mal CRF höher wählen':''}.`)}
-      if(proj&&frac>.2&&!warned.small&&proj<a.lo*.97){warned.small=1;log('warn',`KI: Prognose ${fmtMB(proj)} unter Min ${fmtMB(a.lo)} – Qualität wäre steigerbar.`)}
-      if(j.kbps>a.vk*1.7&&inPass2&&!warned['s'+Math.floor(frac*10)]){warned['s'+Math.floor(frac*10)]=1;log('ai',`KI: Komplexe Szene bei ${fmtT(j.t||0)} – Bitrate ${(j.kbps/a.vk).toFixed(1).replace('.',',')}× vom Ziel.`)}
+      const chk=!a.snd&&S.mode!=='vmaf';
+      if(chk&&proj&&frac>.2&&!warned.big&&proj>a.hi*1.03){warned.big=1;log('bad',`KI: Prognose ${fmtMB(proj)} überschreitet Max ${fmtMB(a.hi)}${S.mode==='crf'?' – nächstes Mal CRF höher wählen':''}.`)}
+      if(chk&&proj&&frac>.2&&!warned.small&&proj<a.lo*.97){warned.small=1;log('warn',`KI: Prognose ${fmtMB(proj)} unter Min ${fmtMB(a.lo)} – Qualität wäre steigerbar.`)}
+      if(!a.snd&&j.kbps>a.vk*1.7&&inPass2&&!warned['s'+Math.floor(frac*10)]){warned['s'+Math.floor(frac*10)]=1;log('ai',`KI: Komplexe Szene bei ${fmtT(j.t||0)} – Bitrate ${(j.kbps/a.vk).toFixed(1).replace('.',',')}× vom Ziel.`)}
       [25,50,75].forEach(m=>{if(!warned['p'+m]&&j.pct>=m){warned['p'+m]=1;log('',`${m} % · ${esc(q.name)}`)}});
     }
     if(!mine.some(q=>['run','queued'].includes(q.state))){clearInterval(POLL);POLL=null;finishAll()}
   },700);
+}
+function learnJob(q,j){
+  const a=q.run||q.a;if(!a||a.snd||!j.secs||!a.encFps0||(a.dur||q.dur)<120)return;
+  const frames=(a.dur||q.dur)*(a.fps||q.fps||25),real=frames/j.secs/Math.max(.25,(j.load||100)/100),ratio=Math.max(.05,Math.min(20,real/a.encFps0));
+  const k=a.spdKey;LEARN.sn[k]=(LEARN.sn[k]||0)+1;LEARN.spd[k]=LEARN.sn[k]===1&&!LEARN.spd[k]?ratio:ema(LEARN.spd[k],ratio,.35);
+  const err=Math.abs(a.encTime-j.secs)/j.secs;LEARN.eta=ema(LEARN.eta,Math.min(2,err),.3);LEARN.n++;saveLearn();
 }
 /* Vor dem Start: Codec im Dateinamen anpassen? */
 async function askSwap(todo){
@@ -2349,13 +2459,13 @@ async function realAfterAll(){
     toast(`${so.after==='off'?'PC fährt':'PC geht'} in 60 s ${so.after==='off'?'herunter':'in den Ruhezustand'}.`,'Abbrechen',()=>api('/api/power',{action:'cancel'}).then(()=>log('ok','Herunterfahren abgebrochen.')))}catch(e){}}
 }
 /* ---------- Player: direkt oder live über ffmpeg ---------- */
-const streamUrl=t=>`/api/stream?id=${P.item.fid}&t=${t.toFixed(2)}&a=0&c=player`;
+const streamUrl=t=>`/api/stream?id=${P.item.fid}&t=${t.toFixed(2)}&a=0&c=player${P.snd?'&snd='+P.snd:''}`;
 function realOpen(q){
   if(q.bad&&!q.force){$('#plMsg').style.display='grid';$('#plMsg').innerHTML=`<div><b style="color:var(--warn)">Diese Datei ist defekt.</b><br>${esc(q.name)}<br><small>${esc(q.bad)}</small></div>`;vid.hidden=true;return}
   pPause();P.item=q;P.fps=q.fps||25;$('#plName').textContent=q.name;$('#plMsg').style.display='none';dcv.hidden=true;vid.hidden=false;P.off=0;
   vid.onerror=()=>{if(P.mode==='video'){P.mode='stream';vid.src=streamUrl(0);plInfo('Live-Wiedergabe über ffmpeg');return}
     $('#plMsg').style.display='grid';$('#plMsg').innerHTML=`<div><b style="color:var(--warn)">Wiedergabe nicht möglich.</b><br>${esc(q.name)}</div>`};
-  if(q.direct){P.mode='video';vid.src=`/api/file?id=${q.fid}`}else{P.mode='stream';vid.src=streamUrl(0)}
+  if(q.direct&&!P.snd){P.mode='video';vid.src=`/api/file?id=${q.fid}`}else{P.mode='stream';vid.src=streamUrl(0)}
   vid.playbackRate=+$('#pRate').value;
   plInfo(`${q.w}×${q.h} · ${fmtT(q.dur)} · ${(q.vcodec||'').toUpperCase()}${q.hdr?' HDR':''} · ${P.mode==='video'?'direkte Wiedergabe':'Live-Wiedergabe über ffmpeg (alle Codecs)'}`);
   vid.play().catch(()=>{});renderPL();
@@ -2374,6 +2484,7 @@ async function realProbe(q,a){
     const res=await waitTask(task,t=>{const b=$('#prBar'),x=$('#prTxt');if(b)b.style.width=(t.pct||0)+'%';if(x)x.textContent=`${t.phase||''} … ${t.pct||0} %`});
     const samples=[];for(const s of res.samples){samples.push({frac:s.frac,v:s.v,c:await loadImg(s.before),ca:await loadImg(s.after)})}
     PROBE[key]={vmaf:res.vmaf,method:res.method,size:(res.kbps+a.aK)*q.dur/8388.608,samples};
+    if(res.method==='vmaf'&&a.score0!=null){LEARN.qOff=ema(LEARN.qn?LEARN.qOff:null,res.vmaf-a.score0,.3);LEARN.qn++;saveLearn()}
     log('ai',`KI: Probe-Messung „${esc(q.name)}“ – ${res.method==='vmaf'?'VMAF':'Qualität (SSIM)'} ${res.vmaf.toFixed(1).replace('.',',')} (${vmLabel(res.vmaf)[0]}).`);
   }catch(err){PROBE[key]={err:err.message};log('bad','Probe-Messung fehlgeschlagen: '+esc(err.message))}
   probeRun=null;if(selQ()===q)update();
@@ -2628,6 +2739,8 @@ async function realInit(){
   ['A','B'].forEach(x=>renderDirInfo(x));loadSpace();
   $('#oTopic').value=INFO.config.ntfy||('butchies-'+Math.random().toString(36).slice(2,10));
   if(!INFO.config.ntfy)api('/api/config',{ntfy:$('#oTopic').value}).catch(()=>{});
+  if(INFO.config.plan&&!KV.get('bvc-plan')){Object.assign(PLAN,INFO.config.plan);planUI()}api('/api/config',{plan:PLAN}).catch(()=>{});
+  if(INFO.config.bench)benchLearn(INFO.config.bench);else setTimeout(()=>{if(!RUN.on)runBench(true)},25000);
   markEnc();applyAuto();update();
   await restoreSession();
   $('#codecTbl').innerHTML='<table><thead><tr><th>Format</th><th>Wiedergabe</th></tr></thead><tbody>'+CODECS.map(([n])=>`<tr><td>${n}</td><td style="color:var(--ok)">✓ ${/MKV|AVI|HEVC|MPEG-2|AC-3|DTS|High 10/.test(n)?'live über ffmpeg':'direkt'}</td></tr>`).join('')+'</tbody></table>';
@@ -2659,7 +2772,83 @@ $('#oShow').onclick=()=>api('/api/show',{path:$('#oDir').value}).catch(e=>toast(
 $('#oDir').addEventListener('change',()=>{if(REAL&&!AUTO.out)api('/api/config',{outdir:$('#oDir').value}).then(x=>{if(INFO)INFO.outdir=x.outdir}).catch(()=>{})});
 $('#oTopic').addEventListener('change',()=>{if(REAL)api('/api/config',{ntfy:$('#oTopic').value}).catch(()=>{})});
 /* Eigene (manuelle) Einstellungen merken und beim nächsten Start wiederherstellen */
-const SETIDS=['#oSwap','#sAutoSz','#sEnc','#sProf','#sPre','#sTune','#sLvl','#sCont','#sMin','#sMax','#s2p','#sCrf','#sCbr','#sRes','#sFps','#sAud','#sAbr','#sAuto','#sYt','#sHdr',
+/* ---------- Player: Ton Original ↔ aufbereitet ---------- */
+$('#pSnd').onclick=()=>{
+  if(!REAL||!P.item||!P.item.fid)return toast('Erst ein Video im Player öffnen.');
+  const c=settings().snd||{voice:'light',loud:'tv',night:false},t=pCur(),pl=!vid.paused;
+  P.snd=P.snd?'':sndArg(c);$('#pSnd').textContent=P.snd?'🎙️ Aufbereitet':'🎙️ Original';$('#pSnd').classList.toggle('pri',!!P.snd);
+  if(P.snd||!P.item.direct){P.mode='stream';P.off=t;vid.src=streamUrl(t)}
+  else{P.mode='video';P.off=0;vid.src=`/api/file?id=${P.item.fid}`;vid.addEventListener('loadedmetadata',()=>{vid.currentTime=t},{once:true})}
+  if(pl)vid.play().catch(()=>{});
+  toast(P.snd?`🎙️ Aufbereiteter Ton: ${sndTxt(c)}`:'🎙️ Original-Ton');
+};
+$('#sndOnly').onclick=()=>{
+  if(RUN.on)return toast('Es läuft gerade schon etwas – erst fertig werden lassen oder stoppen.');
+  const n=Q.filter(q=>!['run','queued'].includes(q.state)&&!(q.bad&&!q.force)).length;if(!n)return toast('Zuerst die schon umgewandelten Filme in die Liste ziehen.');
+  const c=settings().snd||{voice:'light',loud:'tv',night:false};
+  ask('🎙️ Nur Ton überarbeiten?',`<p>${n} Datei(en) in der Liste. Das Bild bleibt 1:1 (wird nur kopiert), nur die Tonspuren werden neu gemacht: <b style="color:var(--text)">${sndTxt(c)}</b>.</p><p style="margin-top:6px">Es entsteht je eine neue Datei „… (Ton)“ im Ausgabeordner – das Original bleibt unverändert.</p>`,
+    [{t:'Abbrechen'},{t:'🎙️ Ton überarbeiten',cls:'pri',fn:()=>realStart({snd:true})}]);
+};
+/* ---------- Nacht-Planer ---------- */
+let PLAN={idle:false,mins:10,game:false,night:false};try{Object.assign(PLAN,JSON.parse(KV.get('bvc-plan')||'{}')||{})}catch(e){}
+function planUI(){$('#plIdle').checked=PLAN.idle;$('#plGame').checked=PLAN.game;$('#plNight').checked=PLAN.night;setSel('#plMins',String(PLAN.mins))}
+function planSave(){PLAN={idle:$('#plIdle').checked,mins:+$('#plMins').value||10,game:$('#plGame').checked,night:$('#plNight').checked};KV.set('bvc-plan',JSON.stringify(PLAN));
+  if(REAL)api('/api/config',{plan:PLAN}).catch(()=>{});try{updSums()}catch(e){}}
+planUI();['#plIdle','#plGame','#plNight','#plMins'].forEach(id=>$(id).addEventListener('change',planSave));
+const planTxt=()=>[PLAN.idle?`nur wenn frei (${PLAN.mins} Min.)`:'',PLAN.game?'🎮 Spielpause':'',PLAN.night?'🌙 nachts 100 %':''].filter(Boolean).join(' · ');
+/* ---------- Statistik & KI ---------- */
+let STD=null;
+function demoStats(){const now=Date.now(),st=[];let seed=7;const R=()=>(seed=(seed*9301+49297)%233280)/233280;
+  for(let i=0;i<140;i++){const src=(2+R()*14)*1073741824;st.push({t:Math.round((now-R()*330*864e5)/1000),src,out:src*(.25+R()*.4),q:85+R()*10,kind:'video',secs:1800+R()*5000})}
+  return {stats:st,bench:{at:Date.now()/1000,res:{cpu:{name:'Prozessor',kind:'cpu',h265:14.8,h264:46,enc_h265:'libx265',enc_h264:'libx264'},gpu1:{name:'AMD Radeon RX 7000',kind:'dgpu',h265:238,h264:262,enc_h265:'hevc_amf',enc_h264:'h264_amf'},gpu2:{name:'AMD Radeon 760M',kind:'igpu',h265:108,h264:121,enc_h265:'hevc_amf',enc_h264:'h264_amf'}}}}}
+async function openStats(){const d=$('#statDlg');if(!d.open){try{d.showModal()}catch(e){d.setAttribute('open','')}}
+  $('#stBody').innerHTML='<div class="hint">Lade …</div>';STD={stats:[],bench:null};
+  if(REAL){try{STD=await api('/api/stats')}catch(e){}}else STD=demoStats();drawStats()}
+function drawStats(){
+  const st=(STD.stats||[]),vid=st.filter(x=>x.kind!=='snd'&&x.src>0&&x.out>0),ton=st.filter(x=>x.kind==='snd').length;
+  const saved=vid.reduce((a,x)=>a+Math.max(0,x.src-x.out),0),srcS=vid.reduce((a,x)=>a+x.src,0),qs=vid.filter(x=>x.q>0);
+  const GB=b=>(b/1073741824).toFixed(b>=1099511627776?0:2).replace('.',','),TB=b=>b>=1099511627776?(b/1099511627776).toFixed(2).replace('.',',')+' TB':GB(b)+' GB';
+  const months=[];const n0=new Date();for(let i=11;i>=0;i--){const d=new Date(n0.getFullYear(),n0.getMonth()-i,1);months.push({y:d.getFullYear(),m:d.getMonth(),v:0})}
+  vid.forEach(x=>{const d=new Date(x.t*1000),b=months.find(o=>o.y===d.getFullYear()&&o.m===d.getMonth());if(b)b.v+=Math.max(0,x.src-x.out)});
+  const mx=Math.max(1,...months.map(o=>o.v)),MN=['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+  const b=STD.bench,rows=[];if(b&&b.res)for(const [sl,r] of Object.entries(b.res))for(const fam of ['h265','h264'])if(r[fam])rows.push({n:`${wIcon(sl)} ${r.name||sl} · ${fam==='h265'?'H.265':'H.264'}`,v:r[fam]});
+  const bmx=Math.max(1,...rows.map(r=>r.v));
+  const wn=sl=>{try{return wName(sl)}catch(e){return sl==='cpu'?'Prozessor':'Grafikkarte'}};
+  const sp=Object.entries(LEARN.spd||{}).filter(([k])=>LEARN.sn[k]).map(([k,v])=>{const [sl,enc]=k.split('|'),pc=Math.round((v-1)*100);
+    return `${wIcon(sl)} ${esc(wn(sl))} ${/265|hevc/.test(enc)?'H.265':'H.264'}: <b>${pc>0?pc+' % schneller':pc<0?(-pc)+' % langsamer':'genau'}</b> als geschätzt (${LEARN.sn[k]} Filme)`});
+  const best=rows.length?rows.reduce((a,r)=>r.v>a.v?r:a):null;
+  $('#stBody').innerHTML=`
+  <div class="stsec"><h3>💾 Spar-Statistik<span class="sp"></span><button class="btn sm" id="stReset" title="Statistik löschen">🗑</button></h3>
+    <div class="kpi"><div><small>Gespart insgesamt</small><b style="color:var(--ok)">${TB(saved)}</b></div><div><small>Filme umgewandelt</small><b>${vid.length}</b>${ton?`<small>+ ${ton}× nur Ton</small>`:''}</div>
+    <div><small>Ø Ersparnis</small><b>${srcS?Math.round(saved/srcS*100):0} %</b></div><div><small>Ø Qualität</small><b>${qs.length?(qs.reduce((a,x)=>a+x.q,0)/qs.length).toFixed(1).replace('.',','):'–'}</b></div></div>
+    <div class="bars">${months.map(o=>`<i style="height:${Math.max(2,o.v/mx*100)}%" data-v="${TB(o.v)}"></i>`).join('')}</div>
+    <div class="lbls">${months.map(o=>`<span>${MN[o.m]}</span>`).join('')}</div></div>
+  <div class="stsec"><h3>🧪 Hardware-Test<span class="sp"></span><small style="color:var(--muted);font-weight:600">${b&&b.at?'gemessen '+new Date(b.at*1000).toLocaleDateString('de-DE'):'noch nicht gemessen'}</small><button class="btn sm real-only" id="stBench">⚡ ${b?'Neu messen':'Jetzt messen'} (ca. 1 Min.)</button></h3>
+    ${rows.length?`<div class="hwb">${rows.map(r=>`<span>${esc(r.n)}</span><div class="b"><i style="width:${r.v/bmx*100}%"></i></div><span>${Math.round(r.v)} fps</span>`).join('')}</div>
+    <p class="hint" style="margin:10px 0 0">1080p-Testbild, gleiche Einstellungen wie beim Umwandeln. Am schnellsten: <b>${esc(best.n)}</b>. Die KI verteilt die Filme mit diesen echten Werten.</p>`:'<p class="hint" style="margin:0">Misst, wie schnell Prozessor und Grafikkarten bei dir wirklich sind. Danach stimmen Restzeit und Verteilung von Anfang an.</p>'}
+    <div class="hint" id="stBenchP" style="margin:8px 0 0" hidden></div></div>
+  <div class="stsec"><h3>🧠 Die KI lernt mit<span class="sp"></span><button class="btn sm" id="stLearnReset">Gelerntes zurücksetzen</button></h3>
+    <div class="kpi"><div><small>Filme gelernt</small><b>${LEARN.n||0}</b></div><div><small>Restzeit-Genauigkeit</small><b>${LEARN.eta!=null?'± '+Math.round(LEARN.eta*100)+' %':'–'}</b></div>
+    <div><small>Note-Korrektur</small><b>${LEARN.qn>=2?(LEARN.qOff>=0?'+':'')+LEARN.qOff.toFixed(1).replace('.',','):'–'}</b><small>${LEARN.qn||0} Messungen</small></div><div><small>Qualitätsstufen gemerkt</small><b>${Object.keys(LEARN.crf||{}).length}</b></div></div>
+    <p class="hint" style="margin:10px 0 0">${sp.length?'Gelerntes Tempo: '+sp.join(' · ')+'. Restzeit und Verteilung rechnen schon damit.':'Nach jedem Film vergleicht die KI Schätzung und echtes Ergebnis (Tempo, Restzeit, Qualität) und wird so immer genauer.'}</p></div>`;
+  $('#stReset').onclick=()=>ask('🗑 Statistik löschen?','<p>Die Spar-Statistik wird auf null gesetzt. Gelerntes und Hardware-Test bleiben.</p>',[{t:'Abbrechen'},{t:'Löschen',cls:'pri',fn:async()=>{if(REAL)await api('/api/stats-reset',{}).catch(()=>{});STD.stats=[];drawStats()}}]);
+  $('#stLearnReset').onclick=()=>ask('Gelerntes zurücksetzen?','<p>Die KI fängt wieder bei den Standardwerten an (Hardware-Test bleibt).</p>',[{t:'Abbrechen'},{t:'Zurücksetzen',cls:'pri',fn:()=>{LEARN={spd:{},sn:{},n:0,eta:null,qOff:0,qn:0,crf:{}};benchLearn(STD.bench);saveLearn();drawStats();update()}}]);
+  const bb=$('#stBench');if(bb)bb.onclick=()=>runBench(false);
+}
+let BENCHING=false;
+async function runBench(quiet){
+  if(!REAL||BENCHING)return;if(RUN.on){if(!quiet)toast('Während des Umwandelns nicht möglich – das würde das Ergebnis verfälschen.');return}
+  BENCHING=true;const pb=()=>$('#stBenchP');if(quiet)toast('⚡ Einmaliger Hardware-Test (ca. 1 Minute) – misst, wie schnell dein PC umwandelt.');
+  try{const {task}=await api('/api/bench',{});
+    const r=await waitTask(task,t=>{const e=pb();if(e){e.hidden=false;e.textContent=`${t.phase||''} · ${t.pct||0} %`}},true);
+    benchLearn(r);if(STD){STD.bench=r;if($('#statDlg').open)drawStats()}update();
+    const best=Object.values(r.res||{}).sort((a,b)=>(b.h265||0)-(a.h265||0))[0];
+    toast(`✅ Hardware-Test fertig${best?` – am schnellsten: ${best.name} (${Math.round(best.h265)} fps)`:''}.`);log('ai','⚡ Hardware-Test: '+Object.values(r.res||{}).map(x=>`${esc(x.name)} H.265 ${Math.round(x.h265||0)} fps / H.264 ${Math.round(x.h264||0)} fps`).join(' · '));
+  }catch(e){if(!quiet)toast('Hardware-Test fehlgeschlagen: '+e.message)}
+  BENCHING=false;
+}
+$('#statBtn').onclick=openStats;$('#stClose').onclick=()=>$('#statDlg').close();
+const SETIDS=['#sVm','#sVoice','#sLoud','#sNight','#plMins','#oSwap','#sAutoSz','#sEnc','#sProf','#sPre','#sTune','#sLvl','#sCont','#sMin','#sMax','#s2p','#sCrf','#sCbr','#sRes','#sFps','#sAud','#sAbr','#sAuto','#sYt','#sHdr',
   '#oName','#oStart','#oAfter','#oPush','#parMode','#cTh','#cVid','#cImg','#cDb','#cSub','#pUp','#abHover'];
 function saveSet(){const v={fam:S.fam,mode:S.mode};SETIDS.forEach(id=>{const e=$(id);if(e)v[id]=e.type==='checkbox'?e.checked:e.value});KV.set('bvc-set',JSON.stringify(v))}
 function loadSet(){let v;try{v=JSON.parse(KV.get('bvc-set')||'null')}catch(e){}if(!v)return;
