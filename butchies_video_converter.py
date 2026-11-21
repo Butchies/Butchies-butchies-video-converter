@@ -1911,6 +1911,16 @@ def selftest():
         check('HDR -> SDR (Tonemapping)', r.returncode == 0, r.stderr.decode('utf-8', 'replace')[-200:])
     else:
         check('HDR -> SDR (zscale fehlt)', False)
+    T0 = {}
+    scan(work, T=T0)
+    check('Neue Datei wird erst gezeigt, wenn sie fertig ist', len(T0.get('pending', [])) > 0, '%d wartend' % len(T0.get('pending', [])))
+    old = time.time() - 600
+    for root_, _d, fs in os.walk(work):
+        for fn in fs:
+            try:
+                os.utime(os.path.join(root_, fn), (old, old))
+            except OSError:
+                pass
     files = scan(work)
     check('Ordner scannen', any(f['name'].endswith('.mkv') for f in files), len(files))
     check('Auslastungsgrenze', load_pct() in LOAD_STEPS, '%d %%' % load_pct())
