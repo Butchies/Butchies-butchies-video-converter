@@ -35,6 +35,12 @@ FFmpeg mit allen Codecs ist dabei (inklusive VMAF-Messung und HDR). WebView2 wir
 **Neu in 1.1.3**
 - Das Programm **merkt sich jetzt alles** bis zum nächsten Start: Design, Start-Animation an/aus, Auto/Manuell-Schalter, eigene Einstellungen (Codec, Zielgröße, Zeitplan …) und eigene Vorlagen. Bisher ging das beim Neustart verloren
 
+**Neu in 1.3.2**
+- 📋 **Knopf „Warteschlange“ oben in der Kopfzeile** (mit Zähler bzw. Prozent beim Umwandeln): eigenes Fenster mit allen Dateien, Summe vorher → nachher, Ersparnis, geschätzter Dauer, Reihenfolge ↑↓ ändern, „Größte Ersparnis zuerst“, Details, Entfernen, Start/Pause/Stopp
+- ⓘ **Details als eigenes Fenster**: Quelle, Ziel, Probe-Messung mit Probebildern (Klick → Vorher/Nachher), Ausgabe, Status, KI-Hinweise; mit ◀ ▶ (auch Pfeiltasten) zum nächsten Film blättern
+- ▶ **Player nur bei Bedarf**: zugeklappt nur eine schmale Leiste – klappt von selbst auf beim Abspielen, Hineinziehen oder Vorher/Nachher, beim Umwandeln wieder zu (▴ klappt ihn von Hand zu). Mehr Platz für die Dateiliste
+- 🧠 **KI-Autopilot einklappbar** (Klick auf die Überschrift): zeigt dann nur Zielgröße, Codec, Auslastung und ob alles auf Auto steht
+
 **Neu in 1.3.1**
 - 📌 **Status in der Taskleiste**: Ist das Programm minimiert, zeigt das Taskleisten-Symbol einen Fortschrittsbalken und beim Drüberfahren, was gerade passiert (z. B. „⏳ 42 % · Datei 2/5 · Film … · Rest 1:23:10“, „🗂️ Ordner B einlesen · 63 %“)
 - 🔄 **Ordner-Abgleich findet neue Filme von selbst**: Die Ordner werden jede Minute geprüft. Neue Dateien erscheinen erst, wenn sie **fertig geschrieben** sind (Download/Kopie abgeschlossen, nicht mehr gesperrt) – bis dahin steht „⏳ wird gerade noch geschrieben“

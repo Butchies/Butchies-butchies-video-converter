@@ -27,7 +27,8 @@ Windows-Programm, das deine Videos **platzsparend in H.265 (oder H.264)** umwand
 - **📏 Probe-Messung (VMAF)** – wandelt 3 Probestücke echt um und misst die Qualität wie Netflix.
 - **⚡ Prozessor + 2 Grafikkarten gleichzeitig** – verteilt die Filme auf CPU, Radeon RX 7000 und Radeon 760M.
 - **🌡️ PC-Auslastung begrenzen** – Standard 90 %, einstellbar von 25 bis 100 %.
-- **📋 Warteschlange mit Details** – pro Film Quelle, Ziel, Probe-Messung, Ausgabename und Warnungen.
+- **📋 Warteschlange** – Knopf oben in der Kopfzeile: alle Dateien mit Reihenfolge, Ersparnis und Dauer; pro Film ein Details-Fenster (Quelle, Ziel, Probe-Messung, Ausgabe, Hinweise).
+- **▶ Player nur bei Bedarf** – klappt auf, wenn du abspielst oder Vorher/Nachher öffnest; sonst hat die Dateiliste den Platz.
 
 <p align="center"><img src="docs/img/warteschlange.jpg" width="60%"> <img src="docs/img/auslastung.jpg" width="36%"></p>
 

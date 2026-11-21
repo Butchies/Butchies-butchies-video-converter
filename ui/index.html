@@ -354,6 +354,34 @@ tr.mk td{background:color-mix(in srgb,var(--bad) 12%,transparent)}
 .ldscale{display:flex;justify-content:space-between;font-size:10.5px;color:var(--muted);margin-top:3px;padding:0 2px}
 .ldcores{display:flex;flex-wrap:wrap;gap:4px}.ldcores i{width:16px;height:16px;border-radius:4px;background:var(--panel2);border:1px solid var(--line)}
 .ldcores i.on{background:linear-gradient(135deg,var(--a),var(--b));border-color:transparent}
+.pmini{display:none;align-items:center;gap:12px;cursor:pointer}
+#stageCard.mini>*:not(.pmini){display:none!important}#stageCard.mini .pmini{display:flex}#stageCard.mini{padding-top:14px;padding-bottom:14px}
+.pmini .pi{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;background:linear-gradient(135deg,var(--a),var(--b));color:var(--on);font-size:15px;flex:none}
+.pmini .pt{flex:1;min-width:0}.pmini b{font:700 14px var(--fh)}.pmini small{display:block;color:var(--muted);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pmini.hot{outline:2px dashed var(--a);outline-offset:4px;border-radius:12px}
+#setCard>h2{cursor:pointer;user-select:none}#setCard .apchev{color:var(--muted);font-size:12px;margin-left:6px;font-family:var(--fb);font-weight:600}
+#setCard.mini>*:not(h2):not(.apmini){display:none!important}#setCard .apmini{display:none}#setCard.mini .apmini{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.apmini span{font-size:12px;padding:4px 9px;border-radius:99px;background:var(--panel);border:1px solid var(--line);white-space:nowrap}
+.qbadge{min-width:20px;height:20px;padding:0 6px;border-radius:99px;background:linear-gradient(135deg,var(--a),var(--b));color:var(--on);font:800 11px/20px var(--fb);text-align:center;margin-left:2px}
+.qbadge.run{animation:qpulse 1.6s ease-in-out infinite}@keyframes qpulse{50%{box-shadow:0 0 0 5px color-mix(in srgb,var(--a) 25%,transparent)}}
+.detdlg{width:min(820px,calc(100vw - 24px))}.qdlg{width:min(900px,calc(100vw - 24px))}
+.dthead{display:flex;align-items:center;gap:12px}.dthead .ic{width:44px;height:44px;border-radius:13px;display:grid;place-items:center;background:linear-gradient(135deg,var(--a),var(--b));color:var(--on);font-size:20px;flex:none}
+.dthead h2{margin:0;font:800 17px var(--fh);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.dthead code{display:block;font:11.5px var(--fm);color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dthead .nt{margin-left:auto;font:800 28px var(--fh);flex:none}.dthead>div{min-width:0;flex:1}
+.dtgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.dtgrid>div{padding:12px 14px;border-radius:14px;background:var(--panel)}.dtgrid .full{grid-column:1/-1}
+.dtgrid h5{margin:0 0 6px;font:700 11.5px var(--fb);color:var(--muted);text-transform:uppercase;letter-spacing:.05em}.dtgrid p{margin:2px 0;font-size:13px}
+.dtshots{display:flex;gap:8px;margin-top:8px}.dtshots button{flex:1;border:1px solid var(--line);border-radius:10px;padding:0;overflow:hidden;cursor:pointer;background:var(--deep);position:relative;aspect-ratio:16/9}
+.dtshots canvas{width:100%;height:100%;display:block;object-fit:cover}.dtshots span{position:absolute;left:6px;bottom:5px;font:700 11px var(--fb);color:#fff;text-shadow:0 1px 3px #000}
+.dtact{display:flex;gap:8px;justify-content:space-between;flex-wrap:wrap}.dtact>div{display:flex;gap:8px;flex-wrap:wrap}
+.qdsum{display:flex;gap:8px;flex-wrap:wrap}.qdsum span{font-size:12.5px;padding:6px 11px;border-radius:11px;background:var(--panel)}.qdsum b{font-family:var(--fh)}
+.qdlist{display:flex;flex-direction:column;gap:6px;max-height:min(56vh,520px);overflow:auto;padding-right:2px}
+.qdr{display:grid;grid-template-columns:22px minmax(0,1fr) auto auto;gap:4px 10px;align-items:center;padding:8px 10px;border-radius:12px;background:var(--panel);border:1px solid var(--line)}
+.qdr.run{border-color:var(--a)}.qdr .st{font-size:14px;text-align:center}.qdr .nm{font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.qdr .mt{grid-column:2;font-size:11.5px;color:var(--muted)}.qdr .sc{font:700 12.5px var(--fb);text-align:right;white-space:nowrap}
+.qdr .bt{display:flex;gap:4px;grid-row:1/3;grid-column:4}.qdr .bt button{border:0;background:var(--panel2);color:var(--muted);border-radius:7px;padding:3px 7px;cursor:pointer;font-size:12px}
+.qdr .bt button:hover:not(:disabled){color:var(--text);background:color-mix(in srgb,var(--a) 18%,transparent)}.qdr .bt button:disabled{opacity:.3;cursor:default}
+.qdr .pb2{grid-column:2/4;height:5px;border-radius:9px;background:var(--panel2);overflow:hidden}.qdr .pb2 i{display:block;height:100%;background:linear-gradient(90deg,var(--a),var(--b))}.qdr.done .pb2 i{background:var(--ok)}
+.qdact{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
 .qi .rm{border:0;background:var(--panel2);color:var(--muted);border-radius:6px;padding:1px 7px;cursor:pointer;margin-left:8px;font-size:12px;line-height:18px}
 .qi .rm:hover{background:color-mix(in srgb,var(--bad) 18%,transparent);color:var(--bad)}
 .qi .pb{border:0;background:var(--panel2);color:var(--acc);border-radius:6px;padding:1px 7px;cursor:pointer;margin-right:6px;font-size:12px}
@@ -519,6 +547,7 @@ dialog[open]{animation:dlg .3s ease}
   <button class="tab" data-v="cmp">🗂️ Ordner-Abgleich</button>
  </nav>
  <div class="top-actions">
+  <button type="button" class="btn ghost" id="queueBtn" title="Warteschlange öffnen"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg><span class="lbl">Warteschlange</span><span class="qbadge" id="qBadge" hidden>0</span></button>
   <button type="button" class="btn ghost" id="themeBtn"><span class="theme-dot" aria-hidden="true"></span><span class="lbl">Design</span></button>
   <button type="button" class="btn ghost quit" id="quitBtn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v9M6.3 6.3a8 8 0 1 0 11.4 0"/></svg><span class="lbl">Beenden</span></button>
  </div>
@@ -537,7 +566,8 @@ dialog[open]{animation:dlg .3s ease}
 <div class="studio">
   <div class="col left">
     <div class="card" id="setCard">
-      <h2>🧠 KI-Autopilot <span class="sub"><button class="btn sm" id="allAuto" title="Alle Bereiche wieder von der KI entscheiden lassen">↺ Alles Auto</button></span></h2>
+      <h2 id="apHead" title="Ein-/ausklappen">🧠 KI-Autopilot <span class="apchev" id="apChev">▾</span><span class="sub"><button class="btn sm" id="allAuto" title="Alle Bereiche wieder von der KI entscheiden lassen">↺ Alles Auto</button></span></h2>
+      <div class="apmini" id="apMini"></div>
       <div class="f" style="margin-bottom:12px"><label>Vorlagen</label><div class="chips" id="presetChips"></div></div>
       <div class="f" id="wSize" style="margin-bottom:10px"><label>Zielgröße pro Datei (MB)</label>
           <div class="sizes"><input type="number" id="sMin" value="1200" min="1"><span>bis</span><input type="number" id="sMax" value="1800" min="1"></div>
@@ -646,11 +676,13 @@ dialog[open]{animation:dlg .3s ease}
 
   <div class="col center">
     <div class="card" id="stageCard">
+      <div class="pmini" id="pMini"><span class="pi">▶</span><div class="pt"><b>Player</b><small id="pMiniTxt">klappt von selbst auf, wenn du ▶ drückst, ein Video hineinziehst oder Vorher/Nachher öffnest</small></div>
+        <button class="btn sm" id="pMiniAb">◧ Vorher / Nachher</button><button class="btn sm" id="pMiniOpen">▾ Aufklappen</button></div>
       <div class="row" style="margin-bottom:12px">
         <div class="seg" id="stMode"><button data-m="play" class="on">▶ Player</button><button data-m="ab">◧ Vorher / Nachher</button></div>
         <span class="sub" id="plName" style="flex:1;text-align:right;color:var(--muted);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">kein Video</span>
         <span class="sub" id="abInfo" hidden style="flex:1;text-align:right;color:var(--muted);font-size:12px"></span>
-        <button class="btn sm" id="pOpen">📄 Video öffnen</button><input type="file" id="iPlay" multiple accept="video/*,.mkv,.avi,.ts,.m2ts,.wmv,.flv,.vob,.mpg" hidden>
+        <button class="btn sm" id="pOpen">📄 Video öffnen</button><button class="btn sm" id="pClose" title="Player zuklappen – mehr Platz für die Dateiliste">▴</button><input type="file" id="iPlay" multiple accept="video/*,.mkv,.avi,.ts,.m2ts,.wmv,.flv,.vob,.mpg" hidden>
       </div>
       <div id="mPlay">
     <div class="pl" id="plWrap">
@@ -823,6 +855,14 @@ dialog[open]{animation:dlg .3s ease}
 </div>
 </section>
 
+<dialog id="detDlg" class="detdlg" aria-labelledby="dtTitle"><div class="dlg" id="detBox"></div></dialog>
+<dialog id="queueDlg" class="qdlg" aria-labelledby="qdTitle"><div class="dlg">
+  <div class="dlg-head"><h2 id="qdTitle">📋 Warteschlange</h2><button type="button" class="x" id="qdClose" aria-label="Schließen"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <div class="qdsum" id="qdSum"></div>
+  <div class="qdlist" id="qdList"></div>
+  <div class="qdact"><div class="row" style="gap:8px"><button class="btn sm" id="qdSort" title="Wartende Filme nach Ersparnis sortieren – die größten Platzgewinne zuerst">⇅ Größte Ersparnis zuerst</button><button class="btn sm" id="qdAdd">➕ Dateien hinzufügen</button></div>
+   <div class="row" style="gap:8px"><button class="btn sm" id="qdClear">Liste leeren</button><button class="btn sm" id="qdPause">⏸ Pause</button><button class="btn sm" id="qdStop">⏹ Stopp</button><button class="btn sm pri" id="qdStart">▶ Umwandlung starten</button></div></div>
+</div></dialog>
 <dialog id="themeDlg" aria-labelledby="thTitle">
  <div class="dlg wide">
   <div class="dlg-head"><h2 id="thTitle">Design wählen</h2><button type="button" class="x" id="thClose" aria-label="Schließen"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
@@ -917,7 +957,7 @@ const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
 /* ---------- Tabs ---------- */
 function showTab(v){const view=v==='cmp'?'cmp':'conv';if(REAL&&INFO&&!RESTORING)setTimeout(saveSession,0);$$('.tab').forEach(x=>x.classList.toggle('on',x.dataset.v===view));$$('.view').forEach(el=>el.classList.toggle('on',el.id==='v-'+view));
   if(v==='play')setMode('play');else if(v==='ab')setMode('ab');if(view!=='conv')pPause();if(view==='cmp'||v==='conv')window.scrollTo(0,0);else if(matchMedia('(min-width:1301px) and (min-height:760px)').matches){$('.studio .center').scrollTop=0}else $('#stageCard').scrollIntoView({block:'start',behavior:'smooth'})}
-function setMode(m){$$('#stMode button').forEach(b=>b.classList.toggle('on',b.dataset.m===m));$('#mPlay').hidden=m!=='play';$('#mAb').hidden=m!=='ab';$('#plName').hidden=m!=='play';$('#abInfo').hidden=m!=='ab';
+function setMode(m){if(m==='ab'){try{playerMini(false)}catch(e){}}$$('#stMode button').forEach(b=>b.classList.toggle('on',b.dataset.m===m));$('#mPlay').hidden=m!=='play';$('#mAb').hidden=m!=='ab';$('#plName').hidden=m!=='play';$('#abInfo').hidden=m!=='ab';
   if(m==='ab'){pPause();fillAbFile();if(!AB.before){const q=selQ();if(REAL&&q&&q.fid&&!(q.bad&&!q.force))realAB(q,.5);else if(q&&!(q.bad&&!q.force))grabFrame(q,.5).then(c=>setBefore(c,q,`Probestelle 50 % · ${q.name}`));else demoBefore()}else applyAb()}}
 $$('#stMode button').forEach(b=>b.onclick=()=>setMode(b.dataset.m));
 $$('.tab').forEach(b=>b.onclick=()=>showTab(b.dataset.v));
@@ -1137,7 +1177,8 @@ function applyPreset(p){
 function ask(title,html,btns){
   $('#mdT').innerHTML=title;$('#mdB').innerHTML=html;
   $('#mdBtns').innerHTML='';btns.forEach(b=>{const e=document.createElement('button');e.className='btn '+(b.cls||'');e.innerHTML=b.t;if(b.style)e.style.cssText=b.style;e.onclick=()=>{$('#modal').classList.remove('on');b.fn&&b.fn()};$('#mdBtns').appendChild(e)});
-  $('#modal').classList.add('on');
+  const dl=[...document.querySelectorAll('dialog[open]')].pop(),md=$('#modal');(dl||document.body).appendChild(md);
+  md.classList.add('on');
 }
 function askHdr(q,force){
   if(q.hdrAsked&&!force)return;q.hdrAsked=true;
@@ -1457,11 +1498,12 @@ function renderQ(){
       <div class="nm" title="${esc(q.path)}"><button class="pb" data-play="${q.id}" title="Im Player abspielen">▶</button>${esc(q.name)}</div>
       <div class="sc"><span style="color:${c}">${a.score} · ${lb}</span><button class="rm" data-rm="${q.id}" title="${q.state==='run'||q.state==='queued'?'Abbrechen und aus der Liste nehmen':'Aus der Liste nehmen (Datei bleibt erhalten)'}">✕</button></div>
       <div class="meta">${q.w?q.w+'×'+q.h:'? × ?'} · ${q.dur?fmtT(q.dur):'?'} · ${fmtMB(q.size/1048576)} → ${a.outW}×${a.outH}, ~${fmtMB(a.est)}</div>
-      <div class="meta" style="text-align:right">${st}<button class="fold qd" data-det="${q.id}" title="Details ein-/ausblenden">${QDET.has(q.id)?'▴':'▾'} Details</button></div>
-      <div class="bar"><i style="width:${q.prog*100}%"></i></div>${QDET.has(q.id)?qDetails(q,a):''}</div>`}).join('')
+      <div class="meta" style="text-align:right">${st}<button class="fold qd" data-det="${q.id}" title="Alle Details zu diesem Film">ⓘ Details</button></div>
+      <div class="bar"><i style="width:${q.prog*100}%"></i></div></div>`}).join('')
     +(many?`<button class="qmore" id="qMore">${QOPEN?'▴ Liste einklappen':`▾ Alle ${Q.length} Dateien anzeigen (${Q.length-show.length} weitere)`}</button>`:'');
   const qm=$('#qMore');if(qm)qm.onclick=()=>{QOPEN=!QOPEN;KV.set('bvc-qopen',QOPEN?'1':'0');renderQ()};
-  $$('[data-det]').forEach(b=>b.onclick=e=>{e.stopPropagation();const id=+b.dataset.det;QDET.has(id)?QDET.delete(id):QDET.add(id);renderQ()});
+  $$('#queue [data-det]').forEach(b=>b.onclick=e=>{e.stopPropagation();openDet(+b.dataset.det)});
+  try{qdRender();detRefresh();qBadge();apMini()}catch(e){}
   $$('.qdet').forEach(d=>d.onclick=e=>e.stopPropagation());
   $$('[data-qprobe]').forEach(b=>b.onclick=e=>{e.stopPropagation();const q=Q.find(x=>x.id==b.dataset.qprobe);if(!q)return;selId=q.id;renderQ();update();runProbe(q,q.a)});
   $$('[data-qab]').forEach(b=>b.onclick=e=>{e.stopPropagation();const q=Q.find(x=>x.id==b.dataset.qab);if(!q)return;selId=q.id;openInPlayer(q);showTab('play');setMode('ab')});
@@ -1591,7 +1633,7 @@ function rng(seed){return()=>{seed=(seed*1664525+1013904223)%4294967296;return s
 function startQueue(){
   if(REAL)return realStart();
   const todo=Q.filter(q=>q.state!=='done'&&!(q.bad&&!q.force)); if(!todo.length){log('ok','Alles schon fertig.');return}
-  RUN.on=true;RUN.pause=false;$('#bStart').disabled=true;$('#bPause').disabled=false;$('#bStop').disabled=false;anaFold(true);pgShow();
+  RUN.on=true;RUN.pause=false;$('#bStart').disabled=true;$('#bPause').disabled=false;$('#bStop').disabled=false;anaFold(true);pgShow();try{playerMini(true)}catch(e){}
   const so=settings().out;if(so.start!=='now')log('ai',`Zeitplan: Start um ${so.start==='22'?'22:00':so.start==='1'?'01:00':'03:00'} Uhr geplant – in der Vorschau startet es zum Testen sofort.`);
   log('ai',`KI: Starte ${todo.length} Datei(en) mit ${$('#sEnc').selectedOptions[0].text} → ${esc(so.dir)}`);
   runNext();
@@ -2025,7 +2067,7 @@ const P={mode:'none',item:null,t:0,dur:0,play:false,fps:25,url:null,last:0,seeki
 let PL=[];
 function plInfo(t){$('#plInfo').textContent=t}
 function openInPlayer(q){
-  if(!q)return;if(REAL&&q.fid)return realOpen(q); pPause(); if(P.url){URL.revokeObjectURL(P.url);P.url=null}
+  if(!q)return;try{playerMini(false)}catch(e){}if(REAL&&q.fid)return realOpen(q); pPause(); if(P.url){URL.revokeObjectURL(P.url);P.url=null}
   P.item=q;P.fps=q.fps||25;$('#plName').textContent=q.name;$('#plMsg').style.display='none';
   if(q.file){
     P.mode='video';dcv.hidden=true;vid.hidden=false;P.url=URL.createObjectURL(q.file);vid.src=P.url;vid.playbackRate=+$('#pRate').value;
@@ -2222,7 +2264,7 @@ async function realStart(){
   const todo=Q.filter(q=>!['done','run','queued'].includes(q.state)&&!(q.bad&&!q.force));if(!todo.length){log('ok','Alles schon fertig.');return}
   const s=settings();
   await askSwap(todo);
-  RUN.on=true;RUN.pause=false;$('#bStart').disabled=true;$('#bPause').disabled=true;$('#bStop').disabled=false;anaFold(true);pgShow();
+  RUN.on=true;RUN.pause=false;$('#bStart').disabled=true;$('#bPause').disabled=true;$('#bStop').disabled=false;anaFold(true);pgShow();try{playerMini(true)}catch(e){}
   if(s.out.start!=='now'){
     const h=+s.out.start,at=new Date();at.setHours(h,0,0,0);if(at<=new Date())at.setDate(at.getDate()+1);
     log('ai',`Zeitplan: Start um ${String(h).padStart(2,'0')}:00 Uhr – das Programm muss dafür geöffnet bleiben.`);
@@ -2372,6 +2414,99 @@ async function realScan(side,path,quiet){
   }catch(err){if(!quiet){prog('scan'+side,null,null,null);toast(err.abort?'Einlesen abgebrochen – die alte Liste bleibt.':'Fehler: '+err.message)}cntDir(side)}
   finally{SCANNING[side]=false}
 }
+/* ---------- Details-Fenster je Film ---------- */
+let DET=null;
+const vcName=q=>({h264:'H.264',hevc:'H.265',av1:'AV1',vp9:'VP9',mpeg2video:'MPEG-2',mpeg4:'MPEG-4/XviD',vc1:'VC-1'}[q.vcodec]||q.vcodec||'?');
+function detHTML(q){
+  const a=q.a||analyze(q,settings());const tr=q.tracks||{audio:[],subs:[],chapters:0},kb=q.dur?Math.round(q.size*8/1000/q.dur):0;
+  const [lb,c]=label(a.score),r=PROBE[pkey(q,a)],sv=a.est&&q.size?Math.round((1-a.est/(q.size/1048576))*100):0,i=Q.indexOf(q);
+  const enc=q.slot&&REAL?`${wIcon(q.slot)} ${wName(q.slot)}`:($('#sEnc').selectedOptions[0]||{}).textContent||'';
+  const stt=q.state==='run'?`⏳ läuft · ${Math.floor((q.prog||0)*100)} %`:q.state==='queued'?'🕒 wartet in der Warteschlange':q.state==='done'?'✓ fertig':q.state==='err'?'⚠ Fehler':'bereit';
+  let pr;
+  if(probeRun&&probeRun.key===pkey(q,a))pr='<p>⏳ misst gerade …</p>';
+  else if(r&&!r.err){const [vl,vc]=vmLabel(r.vmaf);pr=`<p><b style="color:${vc}">${r.method==='ssim'?'Qualität':'VMAF'} ${r.vmaf.toFixed(1).replace('.',',')}</b> · ${vl} · Probe-Größe ${fmtMB(r.size)}${r.size>a.hi*1.01||r.size<a.lo*.99?' · <span style="color:var(--warn)">außerhalb der Zielgröße</span>':' · im Zielbereich ✓'}</p>
+     <div class="dtshots">${r.samples.map((x,k)=>`<button type="button" data-dsh="${k}" title="Im Vorher/Nachher öffnen"><span>${Math.round(x.frac*100)} % · VMAF ${x.v.toFixed(0)}</span></button>`).join('')}</div>`}
+  else pr=`<p class="hint" style="margin:0 0 6px">Noch nicht gemessen – 3 Probestücke werden echt umgewandelt und mit dem Original verglichen.</p>${q.state==='run'?'':'<button class="btn sm pri" data-dprobe>🎯 Jetzt messen</button>'}`;
+  const warn=a.tips.filter(t=>t[0]==='warn'||t[0]==='bad').slice(0,3);
+  return `<div class="dthead"><span class="ic">ⓘ</span><div><h2 id="dtTitle" title="${esc(q.name)}">${esc(q.name)}</h2><code title="${esc(q.path||'')}">${esc(q.path||'')}</code></div><span class="nt" style="color:${c}" title="${lb}">${a.score}</span><button type="button" class="x" data-dclose aria-label="Schließen"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+   <div class="dtgrid">
+    <div><h5>📥 Quelle</h5><p>${vcName(q)} · ${q.w||'?'}×${q.h||'?'}${q.fps?' · '+(Math.round(q.fps*100)/100).toLocaleString('de-DE')+' fps':''}</p><p>${q.dur?fmtT(q.dur):'?'} · ${fmtMB(q.size/1048576)}${kb?' · '+kb.toLocaleString('de-DE')+' kbit/s':''}</p>
+     <p>${q.hdr?'🌈 HDR':'SDR'} · 🔊 ${tr.audio.length} Ton · 💬 ${tr.subs.length} Untertitel${tr.chapters?' · Kapitel':''}</p></div>
+    <div><h5>📤 Ziel</h5><p>${a.outW}×${a.outH} · ${S.fam==='h264'?'H.264':'H.265'} · ${a.vk.toLocaleString('de-DE')} kbit/s</p><p>~${fmtMB(a.est)} · Ersparnis ${Math.max(0,sv)} % · Note ${a.score} (${lb})</p>
+     <p>${esc(enc)} · ca. ${fmtT(a.encTime||0)}</p></div>
+    <div class="full"><h5>🎯 Probe-Messung</h5>${pr}</div>
+    <div><h5>📁 Ausgabe</h5><p style="font:12px var(--fm);overflow-wrap:anywhere">${esc((a.job&&a.job.outname)||'')}</p></div>
+    <div><h5>📌 Status</h5><p>${stt}</p>${q.err?`<p style="color:var(--bad);white-space:pre-wrap;font-size:12px">${esc(String(q.err)).slice(0,300)}</p>`:''}</div>
+    ${warn.length?`<div class="full"><h5>⚠️ Hinweise der KI</h5>${warn.map(t=>`<p style="color:var(--${t[0]==='bad'?'bad':'warn'})">${t[1]}</p>`).join('')}</div>`:''}
+   </div>
+   <div class="dtact"><div><button class="btn sm" data-dplay>▶ Abspielen</button><button class="btn sm" data-dab>◧ Vorher/Nachher</button>${REAL?'<button class="btn sm" data-dsrc>📂 Quelle zeigen</button>':''}${q.out&&REAL?'<button class="btn sm" data-dout>📂 Ergebnis zeigen</button>':''}</div>
+    <div><button class="btn sm" data-dnav="-1" ${i<=0?'disabled':''}>◀ Vorheriger</button><button class="btn sm" data-dnav="1" ${i>=Q.length-1?'disabled':''}>Nächster ▶</button><button class="btn sm pri" data-dclose>Schließen</button></div></div>`}
+function detRender(){const q=Q.find(x=>x.id===DET);const box=$('#detBox');if(!q){if($('#detDlg').open)$('#detDlg').close();return}
+  box.innerHTML=detHTML(q);
+  box.querySelectorAll('[data-dclose]').forEach(b=>b.onclick=()=>$('#detDlg').close());
+  box.querySelectorAll('[data-dnav]').forEach(b=>b.onclick=()=>{const i=Q.indexOf(q)+ +b.dataset.dnav;if(Q[i]){DET=Q[i].id;selId=DET;renderQ();update();detRender()}});
+  const pl=box.querySelector('[data-dplay]');if(pl)pl.onclick=()=>{$('#detDlg').close();openInPlayer(q);showTab('play')};
+  const ab=box.querySelector('[data-dab]');if(ab)ab.onclick=()=>{$('#detDlg').close();selId=q.id;renderQ();update();openInPlayer(q);showTab('play');setMode('ab')};
+  const sr=box.querySelector('[data-dsrc]');if(sr)sr.onclick=()=>api('/api/show',{path:q.path}).catch(()=>{});
+  const ou=box.querySelector('[data-dout]');if(ou)ou.onclick=()=>api('/api/show',{path:q.out}).catch(()=>{});
+  const pb=box.querySelector('[data-dprobe]');if(pb)pb.onclick=()=>{selId=q.id;renderQ();update();runProbe(q,q.a);setTimeout(detRender,300)};
+  const r=PROBE[pkey(q,q.a)];
+  if(r&&r.samples)box.querySelectorAll('[data-dsh]').forEach(b=>{const smp=r.samples[+b.dataset.dsh];if(!smp||!smp.c)return;const t=document.createElement('canvas');t.width=320;t.height=180;const x=t.getContext('2d'),cc=smp.c,sc=Math.max(320/cc.width,180/cc.height);x.drawImage(cc,(320-cc.width*sc)/2,(180-cc.height*sc)/2,cc.width*sc,cc.height*sc);b.prepend(t);
+    b.onclick=()=>{$('#detDlg').close();setBefore(smp.c,q,`Probestelle ${Math.round(smp.frac*100)} % · ${fmtT(smp.frac*(q.dur||0))}${smp.ca?' · echt kodiert':''}`,smp.ca);showTab('play');setMode('ab')}})}
+let DETSIG='';
+function detRefresh(){if(!$('#detDlg').open)return;const q=Q.find(x=>x.id===DET);if(!q){$('#detDlg').close();return}
+  const sig=[q.state,Math.floor((q.prog||0)*100),q.slot,q.err,q.out,!!PROBE[pkey(q,q.a)],probeRun&&probeRun.key].join('|');if(sig!==DETSIG){DETSIG=sig;detRender()}}
+function openDet(id){DET=id;DETSIG='';detRender();const d=$('#detDlg');if(!d.open){try{d.showModal()}catch(e){d.setAttribute('open','')}}}
+$('#detDlg').addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key==='ArrowLeft'){const b=$('#detBox [data-dnav="'+(e.key==='ArrowRight'?1:-1)+'"]');if(b&&!b.disabled)b.click()}});
+setInterval(()=>{try{detRefresh();if($('#queueDlg').open)qdRender()}catch(e){}},1500);
+
+/* ---------- Warteschlangen-Fenster (Knopf oben in der Kopfzeile) ---------- */
+function qBadge(){const b=$('#qBadge');if(!b)return;const run=Q.some(x=>x.state==='run');b.hidden=!Q.length;
+  b.textContent=run?Math.floor(parseFloat($('#pAllT').textContent)||0)+' %':Q.length;b.classList.toggle('run',run)}
+setInterval(()=>{try{qBadge()}catch(e){}},1000);
+let QDSIG='';
+function qdRender(){const d=$('#queueDlg');if(!d||!d.open)return;
+  const sig=Q.map(q=>[q.id,q.state,Math.floor((q.prog||0)*100),q.a&&q.a.score,q.slot].join(':')).join('|')+RUN.on+RUN.pause;if(sig===QDSIG)return;QDSIG=sig;
+  const tot=Q.reduce((s,q)=>s+q.size,0)/1048576,est=Q.reduce((s,q)=>s+(q.a?q.a.est:0),0),done=Q.filter(q=>q.state==='done').length;
+  const left=Q.filter(q=>['wait','queued','run'].includes(q.state)).reduce((s,q)=>s+((q.a&&q.a.encTime)||0)*(1-(q.prog||0)),0);
+  $('#qdSum').innerHTML=Q.length?`<span><b>${Q.length}</b> Dateien · ${done} fertig</span><span>${fmtMB(tot)} → <b>~${fmtMB(est)}</b></span><span>spart ca. <b style="color:var(--ok)">${fmtMB(Math.max(0,tot-est))}</b></span><span>Dauer geschätzt <b>${fmtT(left)}</b></span>`:'<span>Noch keine Dateien in der Warteschlange.</span>';
+  const ico={run:'⏳',queued:'🕒',done:'✅',err:'⚠️',stop:'⏹',wait:'🎬'};
+  $('#qdList').innerHTML=Q.map((q,i)=>{const a=q.a||{};const [lb,c]=label(a.score||0);const mv=q.state==='wait'&&!RUN.on;
+    return `<div class="qdr ${q.state}"><span class="st">${ico[q.state]||'▫️'}</span><div class="nm" title="${esc(q.path||q.name)}">${esc(q.name)}</div><span class="sc" style="color:${c}">${a.score||'–'} · ${lb}</span>
+     <div class="bt"><button data-qup="${i}" ${mv&&i>0?'':'disabled'} title="Nach oben">↑</button><button data-qdn="${i}" ${mv&&i<Q.length-1?'':'disabled'} title="Nach unten">↓</button><button data-qinfo="${q.id}" title="Details">ⓘ</button><button data-qx="${q.id}" title="Aus der Liste nehmen">✕</button></div>
+     <div class="mt">${q.w?q.w+'×'+q.h:'?'} · ${q.dur?fmtT(q.dur):'?'} · ${fmtMB(q.size/1048576)} → ~${fmtMB(a.est||0)}${q.state==='run'&&q.slot&&REAL?' · '+wIcon(q.slot)+' '+esc(wName(q.slot)):''}</div>
+     <span class="sc" style="color:var(--muted);font-weight:600">${q.state==='run'?Math.floor((q.prog||0)*100)+' %':q.state==='done'?'fertig':q.state==='queued'?'wartet':''}</span>
+     ${q.state==='run'||q.state==='done'?`<div class="pb2"><i style="width:${(q.prog||0)*100}%"></i></div>`:''}</div>`}).join('');
+  const mv=(i,dd)=>{const j=i+dd;if(j<0||j>=Q.length)return;[Q[i],Q[j]]=[Q[j],Q[i]];QDSIG='';renderQ();update()};
+  $$('#qdList [data-qup]').forEach(b=>b.onclick=()=>mv(+b.dataset.qup,-1));$$('#qdList [data-qdn]').forEach(b=>b.onclick=()=>mv(+b.dataset.qdn,1));
+  $$('#qdList [data-qinfo]').forEach(b=>b.onclick=()=>openDet(+b.dataset.qinfo));
+  $$('#qdList [data-qx]').forEach(b=>b.onclick=()=>{const q=Q.find(x=>x.id==b.dataset.qx);if(q){QDSIG='';rmQ(q)}});
+  $('#qdStart').disabled=$('#bStart').disabled;$('#qdPause').disabled=$('#bPause').disabled;$('#qdPause').textContent=$('#bPause').textContent;$('#qdStop').disabled=$('#bStop').disabled;$('#qdClear').disabled=RUN.on||!Q.length;$('#qdSort').disabled=RUN.on||Q.length<2}
+$('#queueBtn').onclick=()=>{QDSIG='';const d=$('#queueDlg');if(!d.open){try{d.showModal()}catch(e){d.setAttribute('open','')}}qdRender()};
+$('#qdClose').onclick=()=>$('#queueDlg').close();
+$('#qdStart').onclick=()=>{$('#queueDlg').close();$('#bStart').click()};
+$('#qdPause').onclick=()=>{$('#bPause').click();QDSIG='';qdRender()};
+$('#qdStop').onclick=()=>{$('#bStop').click();QDSIG='';qdRender()};
+$('#qdClear').onclick=()=>{$('#bClear').click();QDSIG='';qdRender()};
+$('#qdAdd').onclick=()=>{if(REAL)pickAdd('files');else $('#iFiles').click()};
+$('#qdSort').onclick=()=>{const w=Q.filter(q=>q.state==='wait'),o=Q.filter(q=>q.state!=='wait');w.sort((x,y)=>((y.size/1048576)-(y.a?y.a.est:0))-((x.size/1048576)-(x.a?x.a.est:0)));Q=[...o,...w];QDSIG='';renderQ();update();toast('Wartende Filme nach Ersparnis sortiert – die größten Platzgewinne zuerst.')};
+
+/* ---------- Player nur bei Bedarf ---------- */
+function playerMini(on){const c=$('#stageCard');if(!c)return;c.classList.toggle('mini',!!on);KV.set('bvc-pmini',on?'1':'0');
+  const t=$('#pMiniTxt');if(t)t.textContent=P&&P.item?`zuletzt: ${P.item.name}`:'klappt von selbst auf, wenn du ▶ drückst, ein Video hineinziehst oder Vorher/Nachher öffnest'}
+$('#pMini').onclick=e=>{if(e.target.closest('#pMiniAb'))return;playerMini(false)};
+$('#pMiniAb').onclick=e=>{e.stopPropagation();playerMini(false);setMode('ab')};
+$('#pClose').onclick=()=>{try{pPause()}catch(e){}playerMini(true)};
+makeDrop($('#pMini'),addPlayerFiles,'play');
+playerMini(KV.get('bvc-pmini')!=='0');
+
+/* ---------- KI-Autopilot einklappen ---------- */
+function apMini(){const m=$('#apMini');if(!m)return;const s=settings();const man=Object.keys(AUTO_DEF).filter(k=>k!=='probe'&&k!=='cmp'&&!AUTO[k]).length;
+  m.innerHTML=[`🎯 ${s.autoSz?'Größe: Auto (75–90)':s.min+'–'+s.max+' MB'}`,`🎞️ ${s.fam==='h265'?'H.265':'H.264'} · ${encKind(s.enc)==='sw'?'Prozessor':'Grafikkarte'}`,`🌡️ ${LOAD} %`,man?`✋ ${man} manuell`:'✨ alles Auto',s.yt?'🚀 YouTube-Boost':''].filter(Boolean).map(t=>`<span>${t}</span>`).join('')}
+function apFold(on){$('#setCard').classList.toggle('mini',!!on);$('#apChev').textContent=on?'▸ aufklappen':'▾';KV.set('bvc-apmini',on?'1':'0');apMini()}
+$('#apHead').onclick=e=>{if(e.target.closest('#allAuto'))return;apFold(!$('#setCard').classList.contains('mini'))};
+apFold(KV.get('bvc-apmini')==='1');
+
 /* Taskleiste (nur minimiert): kurzer Status + Fortschrittsbalken am Programm-Symbol */
 let STLAST='';
 setInterval(()=>{if(!REAL||!INFO)return;let st={title:'',pct:null,state:'none'};
