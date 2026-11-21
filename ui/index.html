@@ -180,6 +180,7 @@ body:not(.real) .real-only{display:none!important}
 .anaMini{display:none;font:600 13px var(--fb);color:var(--muted)}.anaMini b{font-family:var(--fh)}
 #anaCard.shut .anaMini{display:block}
 .card h2 .sub{font:500 12px var(--fb);color:var(--muted);margin-left:auto;text-align:right;letter-spacing:0}
+.card h2 .sub.fname{flex:1 1 0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dz-empty{display:grid;place-items:center;gap:4px;width:100%}
 .drop.loaded{border-style:solid;place-items:stretch;text-align:left;position:relative;padding:16px}
 .dz-info{display:grid;gap:10px;width:100%;min-width:0}
@@ -786,12 +787,12 @@ dialog[open]{animation:dlg .3s ease}
 
   <div class="col right">
     <div class="card" id="anaCard">
-      <h2 id="anaHead" title="Ein-/ausklappen">🧠 KI-Analyse <span class="sub" id="anaName">– keine Datei gewählt –</span><span class="chev">▾</span></h2>
+      <h2 id="anaHead" title="Ein-/ausklappen">🧠 KI-Analyse <span class="sub fname" id="anaName">– keine Datei gewählt –</span><span class="chev">▾</span></h2>
       <div class="anaMini" id="anaMini"></div>
       <div id="anaBox"><div class="empty">Wähle eine Datei aus der Liste – die KI berechnet Auflösung, Bitrate, Qualität und gibt Tipps.</div></div>
     </div>
     <div class="card">
-      <h2>👁️ KI-Monitor <span class="sub" id="monFile">bereit</span><button class="btn sm" id="pgOpen" hidden title="Fortschritt groß anzeigen">⤢</button></h2>
+      <h2>👁️ KI-Monitor <span class="sub fname" id="monFile">bereit</span><button class="btn sm" id="pgOpen" hidden title="Fortschritt groß anzeigen">⤢</button></h2>
       <div class="mon">
         <div class="kv" style="display:contents">
           <div><small>Fortschritt Datei</small><b id="mPct">0 %</b></div>
@@ -1592,7 +1593,7 @@ function update(){
   const q=Q.find(x=>x.id===selId);
   if(!q){updSums();$('#anaMini').textContent='';$('#anaName').textContent='– keine Datei gewählt –';$('#anaBox').innerHTML='<div class="empty">Wähle eine Datei aus der Liste – die KI berechnet Auflösung, Bitrate, Qualität und gibt Tipps.</div>';return}
   const a=q.a,[lb,c]=label(a.score),C=2*Math.PI*62;
-  $('#anaName').textContent=q.name;
+  $('#anaName').textContent=q.name;$('#anaName').title=q.name;
   $('#anaMini').innerHTML=`<b style="color:${c}">${a.score}</b> ${lb} · ${a.outW}×${a.outH} · ${fmtMB(q.size/1048576)} → ${fmtMB(a.est)} · <span style="color:var(--a)">aufklappen ▾</span>`;
   $('#anaBox').innerHTML=`<div class="ana">
    <div class="gauge"><svg width="150" height="150"><circle cx="75" cy="75" r="62" stroke="var(--panel2)" style="stroke:var(--panel2)" stroke-width="12" fill="none"/>
@@ -1712,7 +1713,7 @@ function runNext(){
   if(!q){finishAll();return}
   if(q.bad&&!q.force){q.state='skip';log('warn',`⚠ Übersprungen (defekt): ${esc(q.name)}`);renderQ();setTimeout(runNext,200);return}
   const s=settings(),a=analyze(q,s); q.state='run'; q.prog=0; selId=q.id; renderQ(); update();
-  $('#monFile').textContent=q.name;
+  $('#monFile').textContent=q.name;$('#monFile').title=q.name;
   const R=rng(q.id*7919+q.size%100000), real=clamp(a.encTime/25,5,16), pts=[];
   let bytesK=0, warned={}, sceneBoost=0, cplxSum=0, n=0;
   const target=a.vk, maxL=S.mode==='size'?(a.hi*8388.608/a.dur-a.aK):0;
@@ -2375,7 +2376,7 @@ async function vmSearch(pl,s){
     if(!RUN.on)return false;
     $('#monFile').textContent=`🎯 KI sucht die Qualitätsstufe · ${q.name} (${i+1}/${pl.plan.length})`;log('ai',`🎯 Teste Qualitätsstufen für „${esc(q.name)}“ (Ziel ${s.vm}) …`);
     try{const {task}=await api('/api/qsearch',{id:q.fid,vargs:p.a.job.vargs,target:s.vm,start:vmGuess(ss),slot:p.slot});
-      const r=await waitTask(task,t=>{if(!RUN.on)api('/api/task-cancel',{id:task}).catch(()=>{});$('#mPct').textContent=(t.pct||0)+' %';$('#mSpd').textContent=t.phase||'';setSeg((i+(t.pct||0)/100)/pl.plan.length*100)},true);
+      const r=await waitTask(task,t=>{if(!RUN.on)api('/api/task-cancel',{id:task}).catch(()=>{});$('#mPct').textContent=(t.pct||0)+' %';$('#mSpd').textContent=(t.phase||'').replace('Teste ','').replace(' · Probestück ',' · ').replace(' von ','/');setSeg((i+(t.pct||0)/100)/pl.plan.length*100)},true);
       q.vmCrf[k]={crf:r.crf,vmaf:r.vmaf,method:r.method};LEARN.crf[k]=ema(LEARN.crf[k],r.crf,.35);saveLearn();
       p.a=analyze(q,ss);
       log(r.reached?'ok':'warn',`🎯 ${esc(q.name)}: Stufe ${r.crf} → ${r.method==='ssim'?'Qualität':'VMAF'} ${String(r.vmaf).replace('.',',')}${r.reached?'':` (Ziel ${s.vm} nicht ganz erreicht – beste Stufe genommen)`} · ca. ${fmtMB(p.a.est)} · getestet: ${r.tried.map(x=>x.q+'→'+Math.round(x.v)).join(', ')}`);
@@ -2413,7 +2414,7 @@ async function realRun(pl,s,startMsg){
     const all=mine.length?mine.reduce((s,q)=>s+q.prog,0)/mine.length*100:0;setSeg(all);
     $('#monRun').innerHTML=runs.length>1?runs.map(({q,j})=>`<div>${wIcon(q.slot)} <b>${esc(wName(q.slot))}</b> · ${esc(q.name)} · ${Math.floor(j.pct)} % · ${Math.round(j.fps)} fps</div>`).join(''):'';
     PGX={running,runs,all};
-    if(running){const {q,j}=running,a=q.run||q.a;$('#monFile').textContent=q.name+(j.pass&&(q.run||q.a).job.passes.length>1?` · Durchgang ${j.pass}/2`:'');
+    if(running){const {q,j}=running,a=q.run||q.a;$('#monFile').title=q.name;$('#monFile').textContent=q.name+(j.pass&&(q.run||q.a).job.passes.length>1?` · Durchgang ${j.pass}/2`:'');
       $('#mPct').textContent=Math.floor(j.pct)+' %';$('#mSpd').textContent=`${Math.round(j.fps)} fps · ${String(j.speed.toFixed(2)).replace('.',',')}×`;
       if(j.hold)$('#mSpd').innerHTML=`<span class="hold">⏸ ${esc(j.hold)}</span>`;
       $('#mBr').textContent=j.kbps?Math.round(j.kbps).toLocaleString('de-DE')+' kbit/s':'–';$('#mEta').textContent=j.eta!=null?fmtT(j.eta):'–';

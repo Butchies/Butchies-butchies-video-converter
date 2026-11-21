@@ -35,6 +35,9 @@ FFmpeg mit allen Codecs ist dabei (inklusive VMAF-Messung und HDR). WebView2 wir
 **Neu in 1.1.3**
 - Das Programm **merkt sich jetzt alles** bis zum nächsten Start: Design, Start-Animation an/aus, Auto/Manuell-Schalter, eigene Einstellungen (Codec, Zielgröße, Zeitplan …) und eigene Vorlagen. Bisher ging das beim Neustart verloren
 
+**Neu in 1.4.1**
+- 🔤 Lange Dateinamen im KI-Monitor und in der KI-Analyse werden jetzt mit „…“ gekürzt statt umzubrechen (ganzer Name beim Drüberfahren mit der Maus)
+
 **Neu in 1.4.0**
 - 🎙️ **Ton-Aufbereiter**: Stimmen verständlicher (bei 5.1/7.1 wird der Center-Kanal mit den Dialogen lauter), jeder Film gleich laut (Fernseh-Standard EBU R128), Nachtmodus. Geht beim Umwandeln oder mit **„Nur Ton überarbeiten“** für schon fertige Filme (Bild bleibt 1:1). Im Player schaltet **🎙️** zwischen Original und aufbereitetem Ton um.
 - 🎯 **Ziel-Qualität (VMAF)**: Du sagst, wie gut der Film aussehen soll (85/90/93/96). Die KI testet vorher an Probestücken und nimmt die kleinste Datei, die das Ziel schafft.
