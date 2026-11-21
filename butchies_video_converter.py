@@ -10,7 +10,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 APP_NAME = 'Butchies Video Converter'
-VERSION = '1.3.0'
+VERSION = '1.3.1'
 FROZEN = getattr(sys, 'frozen', False)
 BASE = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent))
 UI = BASE / 'ui'
@@ -839,13 +839,37 @@ def start_task(fn, *args):
 
 
 # ---------- Ordner-Abgleich ----------
+PARTIAL_EXT = ('.part', '.crdownload', '.!qb', '.tmp', '.partial', '.download', '.opdownload', '.teil')
+
+
+def file_in_progress(path, name, st):
+    """True, solange eine Datei vermutlich noch geschrieben wird (Download, Kopie, Umwandlung):
+    Teil-Endung, vor weniger als 2 Minuten geändert oder unter Windows von einem anderen Programm gesperrt."""
+    age = time.time() - st.st_mtime
+    low = name.lower()
+    if low.endswith(PARTIAL_EXT) or '.teil.' in low:
+        return age < 7200                     # alte, liegengebliebene Teil-Dateien zählen wieder (als auffällig)
+    if age < 120:
+        return True
+    if os.name == 'nt' and age < 1800 and st.st_size > 0:
+        import ctypes
+        k = ctypes.WinDLL('kernel32', use_last_error=True)
+        k.CreateFileW.restype = ctypes.c_void_p
+        k.CloseHandle.argtypes = [ctypes.c_void_p]
+        h = k.CreateFileW(str(path), 0x80000000, 0, None, 3, 0x80, None)   # GENERIC_READ, ohne Teilen
+        if h is None or h == ctypes.c_void_p(-1).value:
+            return ctypes.get_last_error() == 32                            # ERROR_SHARING_VIOLATION
+        k.CloseHandle(h)
+    return False
+
+
 def scan(folder, limit=100000, T=None, recursive=True):
     """Ordner rekursiv einlesen. os.scandir liefert unter Windows die Größe gleich mit (schnell, auch übers Netzwerk/NAS).
     Fortschritt: jeder Unterordner bekommt einen gleichen Anteil vom Anteil seines Elternordners."""
     root = Path(folder)
     if not root.is_dir():
         raise ValueError('Ordner nicht gefunden')
-    out, done, dirs = [], [0.0], [0]
+    out, done, dirs, pending = [], [0.0], [0], []
 
     def walk(d, w):
         check_abort(T)
@@ -865,6 +889,9 @@ def scan(folder, limit=100000, T=None, recursive=True):
                 elif e.is_file(follow_symlinks=False):
                     p = Path(e.path)
                     st = e.stat()
+                    if file_in_progress(e.path, e.name, st):
+                        pending.append(e.name)
+                        continue
                     out.append({'name': e.name, 'full': e.path, 'size': st.st_size, 'mt': int(st.st_mtime),
                                 'path': root.name + '/' + str(p.relative_to(root)).replace('\\', '/')})
             except (OSError, ValueError):
@@ -884,6 +911,7 @@ def scan(folder, limit=100000, T=None, recursive=True):
     out.sort(key=lambda f: f['path'].lower())
     if T is not None:
         T['dirs'] = dirs[0]
+        T['pending'] = pending[:50]
     return out
 
 
@@ -905,7 +933,8 @@ def space(path):
 def task_scan(tid, folder, recursive=True):
     T = TASKS[tid]
     files = scan(folder, T=T, recursive=recursive)
-    T['result'] = {'root': str(Path(folder)), 'files': files, 'dirs': T.get('dirs', 0), 'space': space(folder)}
+    T['result'] = {'root': str(Path(folder)), 'files': files, 'dirs': T.get('dirs', 0), 'space': space(folder),
+                   'pending': T.get('pending', [])}
     T['pct'], T['state'] = 100, 'fertig'
 
 
@@ -1296,6 +1325,9 @@ class Handler(BaseHTTPRequestHandler):
                 if not Path(d.get('path', '')).is_dir():
                     raise ValueError('Ordner nicht gefunden')
                 return self.send_json(200, {'task': start_task(task_scan, d.get('path', ''), d.get('recursive', True) is not False)})
+            if path == '/api/status':
+                STATUS.update(title=str(d.get('title') or '')[:120], pct=d.get('pct'), state=str(d.get('state') or 'none'))
+                return self.send_json(200, {'ok': True})
             if path == '/api/task-cancel':
                 t = TASKS.get(str(d.get('id', '')))
                 if t:
@@ -1410,6 +1442,76 @@ def open_window(url):
                 pass
     webbrowser.open(url)
     return None
+
+
+STATUS = {'title': '', 'pct': None, 'state': 'none'}     # kommt von der Oberfläche (/api/status)
+
+
+class Taskbar:
+    """Windows-Taskleiste: Fortschrittsbalken im Programm-Symbol (ITaskbarList3, ohne Zusatzpakete)."""
+    STATES = {'none': 0, 'busy': 1, 'normal': 2, 'error': 4, 'paused': 8}
+
+    def __init__(self):
+        import ctypes
+        import uuid
+        from ctypes import wintypes
+        ole = ctypes.windll.ole32
+        ole.CoInitialize(None)
+
+        class GUID(ctypes.Structure):
+            _fields_ = [('b', ctypes.c_ubyte * 16)]
+
+        def guid(t):
+            g = GUID()
+            ctypes.memmove(ctypes.byref(g), uuid.UUID(t).bytes_le, 16)
+            return g
+        clsid, iid = guid('56FDF344-FD6D-11d0-958A-006097C9A090'), guid('ea1afb91-9e28-4b86-90e9-9e9f8a5eee6f')
+        p = ctypes.c_void_p()
+        if ole.CoCreateInstance(ctypes.byref(clsid), None, 1, ctypes.byref(iid), ctypes.byref(p)) != 0 or not p.value:
+            raise OSError('ITaskbarList3 nicht verfügbar')
+        vt = ctypes.cast(ctypes.cast(p, ctypes.POINTER(ctypes.c_void_p))[0], ctypes.POINTER(ctypes.c_void_p))
+        self.p = p
+        ctypes.WINFUNCTYPE(ctypes.c_long, ctypes.c_void_p)(vt[3])(p)                               # HrInit
+        self._val = ctypes.WINFUNCTYPE(ctypes.c_long, ctypes.c_void_p, wintypes.HWND, ctypes.c_ulonglong, ctypes.c_ulonglong)(vt[9])
+        self._state = ctypes.WINFUNCTYPE(ctypes.c_long, ctypes.c_void_p, wintypes.HWND, ctypes.c_int)(vt[10])
+
+    def show(self, hwnd, state, pct):
+        self._state(self.p, hwnd, self.STATES.get(state, 0))
+        if pct is not None and state in ('normal', 'paused', 'error'):
+            self._val(self.p, hwnd, int(max(0, min(100, pct)) * 10), 1000)
+
+
+def taskbar_loop(frame):
+    """Nur wenn das Programm minimiert ist: Fenstertitel (= Text am Taskleisten-Symbol) zeigt, was gerade passiert,
+    und das Symbol bekommt einen Fortschrittsbalken. Wieder geöffnet: normaler Titel, kein Balken."""
+    import ctypes
+    from ctypes import wintypes
+    u = ctypes.windll.user32
+    u.IsIconic.argtypes = [wintypes.HWND]
+    u.SetWindowTextW.argtypes = [wintypes.HWND, wintypes.LPCWSTR]
+    try:
+        tb = Taskbar()
+    except Exception:  # noqa: BLE001
+        tb = None
+    last = None
+    while True:
+        time.sleep(1)
+        try:
+            hwnd = frame.handle()
+            if not hwnd:
+                continue
+            mini = bool(u.IsIconic(hwnd))
+            st = dict(STATUS)
+            show = mini and bool(st['title'])
+            key = (show, st['title'], st['pct'], st['state']) if show else (False,)
+            if key == last:
+                continue
+            last = key
+            u.SetWindowTextW(hwnd, ('%s – %s' % (st['title'], APP_NAME)) if show else APP_NAME)
+            if tb:
+                tb.show(hwnd, st['state'] if show else 'none', st['pct'])
+        except Exception:  # noqa: BLE001
+            time.sleep(2)
 
 
 class WinFrame:
@@ -1710,6 +1812,12 @@ def native_window(url):
         except Exception as ex:  # noqa: BLE001
             print('Drop-Handler:', ex, flush=True)
     win.events.loaded += on_loaded
+
+    def start_taskbar():
+        time.sleep(2)
+        frame.handle()
+        taskbar_loop(frame)
+    threading.Thread(target=start_taskbar, daemon=True).start()
 
     def fit():
         time.sleep(0.4)

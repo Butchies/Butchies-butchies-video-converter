@@ -1728,6 +1728,8 @@ function renderDirInfo(side){
     h.push(od.all.length?`<div class="dodd">⚠️ <span><b>${od.all.length} auffällige Datei${od.all.length>1?'en':''}:</b> ${p.join(' · ')}</span><button class="btn sm" data-odd>Anzeigen</button></div>`:`<div class="dok">✓ Keine auffälligen Dateien.</div>`)}
   if(O.new&&vids.length){const big=vids.reduce((a,x)=>x.size>a.size?x:a,vids[0]);const wm=vids.filter(x=>x.mt);const nw=wm.length?wm.reduce((a,x)=>x.mt>a.mt?x:a,wm[0]):null;
     h.push(`<div class="dtwo">${nw?`<div><small>🆕 Neueste Datei · ${new Date(nw.mt*1000).toLocaleDateString('de-DE')}</small>${esc(nw.name)}</div>`:''}<div><small>🐘 Größte Datei · ${fmtSz(big.size)}</small>${esc(big.name)}</div></div>`)}
+  const pd=REAL&&M.pending||[];
+  if(pd.length)h.push(`<div class="dok" style="color:var(--info)" title="${esc(pd.join('\n'))}">⏳ ${pd.length} Datei${pd.length>1?'en werden':' wird'} gerade noch geschrieben – erscheint automatisch, sobald sie fertig ist.</div>`);
   box.innerHTML=h.join('');
   const menu=box.querySelector('.dimenu');
   box.querySelector('[data-dimenu]').onclick=e=>{e.stopPropagation();const open=menu.hidden;$$('.dimenu').forEach(m=>m.hidden=true);menu.hidden=!open};
@@ -1813,7 +1815,7 @@ function renderCmp(){
 function updMk(){try{renderBil()}catch(e){}const n=MK.size,sz=[...MK].reduce((s,x)=>s+x.size,0);$('#mkInfo').textContent=n?`${n} markiert · ${fmtMB(sz/1048576)}`:'';$('#bDelMk').disabled=!n;$('#bProcMk').disabled=!n;
   $('#trashInfo').innerHTML=TRASH.length?`🗑 Papierkorb: ${TRASH.length} Datei(en) · ${fmtMB(TRASH.reduce((s,x)=>s+x.size,0)/1048576)} <button class="btn sm" id="bRestore">Alle wiederherstellen</button>`:'';
   const br=$('#bRestore');if(br)br.onclick=()=>restore(TRASH.slice())}
-$('#bCmp').onclick=compare; $('#cTh').onchange=()=>CMP&&compare(); $('#cVid').onchange=()=>autoCmp();
+$('#bCmp').onclick=async()=>{if(REAL&&(SRC.A||SRC.B)){for(const x of ['A','B'])if(SRC[x])await realScan(x,SRC[x]);return}compare()}; $('#cTh').onchange=()=>CMP&&compare(); $('#cVid').onchange=()=>autoCmp();
 $('#bMarkNone').onclick=()=>{MK.clear();renderCmp()};
 $('#bDelMk').onclick=()=>askDelete([...MK]);
 $('#bProcMk').onclick=()=>{procEntries([...MK]);MK.clear();renderCmp()};
@@ -2351,17 +2353,43 @@ function applyNest(){
 $('#cSub').addEventListener('change',()=>{['A','B'].forEach(x=>{if(SRC[x])realScan(x,SRC[x])})});
 function prog(id,txtId,pctId,p,txt){const el=$('#'+id);if(p==null){el.hidden=true;return}el.hidden=false;const ps=el.querySelector('.pstop');if(ps)ps.hidden=p>=100;const n=Math.floor(p/5);el.querySelectorAll('.segbar i').forEach((e,i)=>e.classList.toggle('on',i<n));
   el.querySelector('.segbar').classList.toggle('done',p>=100);$('#'+pctId).textContent=Math.floor(p)+' %';if(txt!=null)$('#'+txtId).textContent=txt}
-async function realScan(side,path){
-  $('#cnt'+side).textContent='lese …';prog('scan'+side,'scanTxt'+side,'scanPct'+side,0,'Lese '+path+' …');
+const SCANNING={A:false,B:false};
+async function realScan(side,path,quiet){
+  if(SCANNING[side])return;SCANNING[side]=true;
+  if(!quiet){$('#cnt'+side).textContent='lese …';prog('scan'+side,'scanTxt'+side,'scanPct'+side,0,'Lese '+path+' …')}
   try{const {task}=await api('/api/scan',{path,recursive:$('#cSub').checked});
-    const r=await waitTask(task,t=>{prog('scan'+side,'scanTxt'+side,'scanPct'+side,t.pct||0,t.phase||'Lese Ordner …');$('#cnt'+side).textContent=`lese … ${t.pct||0} %`},true);
-    META[side]={dirs:r.dirs||0,space:r.space||null};addRecent(path);
-    prog('scan'+side,'scanTxt'+side,'scanPct'+side,100,`Fertig: ${r.files.length.toLocaleString('de-DE')} Dateien`);setTimeout(()=>prog('scan'+side,null,null,null),2500);
+    const r=await waitTask(task,quiet?null:t=>{prog('scan'+side,'scanTxt'+side,'scanPct'+side,t.pct||0,t.phase||'Lese Ordner …');$('#cnt'+side).textContent=`lese … ${t.pct||0} %`},!quiet);
+    if(quiet){const old=new Map(RAW[side].map(f=>[f.full,f.size])),neu=r.files.filter(f=>old.get(f.full)!==f.size),gone=RAW[side].length+neu.length-r.files.length;
+      META[side]={dirs:r.dirs||0,space:r.space||null,pending:r.pending||[]};
+      if(!neu.length&&!gone){renderDirInfo(side);return}
+      const nn=neu.filter(f=>!old.has(f.full));
+      if(nn.length){toast(`📂 Ordner ${side}: ${nn.length} neue Datei${nn.length>1?'en':''} gefunden – ${nn.slice(0,2).map(f=>f.name).join(', ')}${nn.length>2?' …':''}`);log('ai',`Ordner ${side}: ${nn.length} neue Datei(en) erkannt und abgeglichen.`)}}
+    META[side]={dirs:r.dirs||0,space:r.space||null,pending:r.pending||[]};if(!quiet)addRecent(path);
+    if(!quiet){prog('scan'+side,'scanTxt'+side,'scanPct'+side,100,`Fertig: ${r.files.length.toLocaleString('de-DE')} Dateien`);setTimeout(()=>prog('scan'+side,null,null,null),2500)}
     ROOT[side]=r.root;SRC[side]=path;if(!RESTORING)setTimeout(saveSession,0);
     RAW[side]=r.files.map(f=>({u:++EUID,side,name:f.name,path:f.path,full:f.full,size:f.size,mt:f.mt,n:norm(f.name)}));
     autoCmp();
-  }catch(err){prog('scan'+side,null,null,null);toast(err.abort?'Einlesen abgebrochen – die alte Liste bleibt.':'Fehler: '+err.message);cntDir(side)}
+  }catch(err){if(!quiet){prog('scan'+side,null,null,null);toast(err.abort?'Einlesen abgebrochen – die alte Liste bleibt.':'Fehler: '+err.message)}cntDir(side)}
+  finally{SCANNING[side]=false}
 }
+/* Taskleiste (nur minimiert): kurzer Status + Fortschrittsbalken am Programm-Symbol */
+let STLAST='';
+setInterval(()=>{if(!REAL||!INFO)return;let st={title:'',pct:null,state:'none'};
+  try{
+    if(RUN.on){const all=parseFloat($('#pAllT').textContent)||0,f=parseFloat($('#mPct').textContent)||0,q=Q.find(x=>x.state==='run');
+      const done=Q.filter(x=>x.state==='done').length,tot=Q.filter(x=>['done','run','queued'].includes(x.state)).length;
+      st={title:`${RUN.pause?'⏸':'⏳'} ${Math.floor(all)} % · Datei ${Math.min(done+1,tot)}/${tot}${q?' · '+q.name.slice(0,40):''} · Rest ${$('#mEta').textContent}`,pct:all,state:RUN.pause?'paused':'normal'}}
+    else{const vis=id=>{const e=$('#'+id);return e&&!e.hidden};
+      for(const [id,t,p,lb] of [['scanA','scanTxtA','scanPctA','Ordner A einlesen'],['scanB','scanTxtB','scanPctB','Ordner B einlesen'],['cmpProg','cmpProgTxt','cmpProgPct','Abgleich']])
+        if(vis(id)){const pc=parseFloat($('#'+p).textContent)||0;st={title:`🗂️ ${lb} · ${Math.floor(pc)} %`,pct:pc,state:'normal'};break}
+      if(!st.title&&probeRun)st={title:'🎯 Probe-Messung läuft …',pct:null,state:'busy'};
+      if(!st.title&&Q.some(x=>x.state==='err'))st={title:'⚠️ Fehler beim Umwandeln',pct:100,state:'error'}}
+  }catch(e){}
+  const k=JSON.stringify(st);if(k!==STLAST){STLAST=k;api('/api/status',st).catch(()=>{})}},1000);
+/* Ordner beobachten: neue (fertig geschriebene) Dateien kommen von selbst in den Abgleich */
+let WATCH_T=0;
+setInterval(()=>{if(!REAL||!INFO)return;const pend=['A','B'].some(x=>META[x]&&META[x].pending&&META[x].pending.length);WATCH_T+=15;
+  if(WATCH_T<(pend?30:60))return;WATCH_T=0;['A','B'].forEach(x=>{if(SRC[x]&&RAW[x].length&&!SCANNING[x])realScan(x,SRC[x],true)})},15000);
 async function realHash(){
   const rows=CMP.same.concat(CMP.similar).filter(r=>r.a.full&&r.b.full);if(!rows.length)return;
   $('#bHash').textContent='🔐 prüfe …';

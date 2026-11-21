@@ -35,6 +35,11 @@ FFmpeg mit allen Codecs ist dabei (inklusive VMAF-Messung und HDR). WebView2 wir
 **Neu in 1.1.3**
 - Das Programm **merkt sich jetzt alles** bis zum nächsten Start: Design, Start-Animation an/aus, Auto/Manuell-Schalter, eigene Einstellungen (Codec, Zielgröße, Zeitplan …) und eigene Vorlagen. Bisher ging das beim Neustart verloren
 
+**Neu in 1.3.1**
+- 📌 **Status in der Taskleiste**: Ist das Programm minimiert, zeigt das Taskleisten-Symbol einen Fortschrittsbalken und beim Drüberfahren, was gerade passiert (z. B. „⏳ 42 % · Datei 2/5 · Film … · Rest 1:23:10“, „🗂️ Ordner B einlesen · 63 %“)
+- 🔄 **Ordner-Abgleich findet neue Filme von selbst**: Die Ordner werden jede Minute geprüft. Neue Dateien erscheinen erst, wenn sie **fertig geschrieben** sind (Download/Kopie abgeschlossen, nicht mehr gesperrt) – bis dahin steht „⏳ wird gerade noch geschrieben“
+- „⟳ Neu abgleichen“ liest beide Ordner jetzt wirklich neu ein
+
 **Neu in 1.3.0**
 - 🌡️ **PC-Auslastung begrenzen** (neue Leiste im KI-Autopilot): Auto = 90 %, bei Manuell 25 · 50 · 75 % und ab 80 % in 5er-Schritten bis 100 %. Alle Kerne werden genutzt, das Umwandeln macht nur kurze Pausen. Wirkt sofort, auch bei laufenden Umwandlungen
 - 💤 **Kein Ruhezustand beim Umwandeln**: Monitore gehen nach 5 Minuten ohne Maus/Tastatur aus (einstellbar unter „Ausgabe & Zeitplan“). „Danach“ (z. B. Herunterfahren) kommt erst, wenn die ganze Liste fertig ist
