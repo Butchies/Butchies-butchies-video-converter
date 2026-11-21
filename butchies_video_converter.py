@@ -10,7 +10,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 APP_NAME = 'Butchies Video Converter'
-VERSION = '1.2.4'
+VERSION = '1.3.0'
 FROZEN = getattr(sys, 'frozen', False)
 BASE = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent))
 UI = BASE / 'ui'
@@ -486,6 +486,62 @@ def suspend(proc, on):
         os.kill(proc.pid, signal.SIGSTOP if on else signal.SIGCONT)
 
 
+LOAD_STEPS = (25, 50, 75, 80, 85, 90, 95, 100)
+
+
+def load_pct():
+    try:
+        v = int(load_config().get('load', 90))
+    except (TypeError, ValueError):
+        v = 90
+    return v if v in LOAD_STEPS else 90
+
+
+def apply_limit(p, pct=None):
+    """Niedrigere Priorität für FFmpeg, damit der PC beim Umwandeln bedienbar bleibt (alle Kerne bleiben nutzbar)."""
+    if os.name != 'nt' or p is None or p.poll() is not None:
+        return
+    try:
+        import ctypes
+        k = ctypes.windll.kernel32
+        h = k.OpenProcess(0x0200 | 0x0400, False, p.pid)
+        if h:
+            k.SetPriorityClass(h, 0x4000)       # BELOW_NORMAL
+            k.CloseHandle(h)
+    except Exception:  # noqa: BLE001
+        pass
+
+
+def throttle_loop():
+    """Auslastungsgrenze: alle Kerne werden genutzt, aber FFmpeg macht in jeder Sekunde eine kurze Pause
+    (z. B. 90 % = 0,9 s rechnen, 0,1 s Pause). Vom Nutzer pausierte Jobs bleiben unberührt."""
+    pct, last = 90, 0
+    while True:
+        try:
+            if time.time() - last > 3:
+                pct, last = load_pct(), time.time()
+            run = [j for j in JOBS.values() if j.get('state') == 'läuft' and j.get('proc') is not None]
+            if pct >= 100 or not run:
+                for j in run:
+                    if j.get('thr'):
+                        suspend(j['proc'], False)
+                        j['thr'] = False
+                time.sleep(0.5)
+                continue
+            time.sleep(pct / 100.0)
+            for j in run:
+                if not j.get('paused') and not j.get('thr') and not j.get('cancel'):
+                    suspend(j['proc'], True)
+                    j['thr'] = True
+            time.sleep(1 - pct / 100.0)
+            for j in JOBS.values():
+                if j.get('thr'):
+                    suspend(j.get('proc'), False)
+                    j['thr'] = False
+        except Exception:  # noqa: BLE001
+            time.sleep(1)
+
+
 def run_job(j):
     folder = Path(j['folder'])
     folder.mkdir(parents=True, exist_ok=True)
@@ -505,6 +561,7 @@ def run_job(j):
         cmd = [exe, '-hide_banner', '-nostdin', '-y', '-progress', 'pipe:1', '-nostats'] + fill_args(args, j['src'], str(tmp))
         p = popen(cmd, cwd=str(work))
         j['proc'] = p
+        apply_limit(p)
         errbuf = []
         threading.Thread(target=lambda: errbuf.extend(p.stderr.read().decode('utf-8', 'replace').splitlines()[-40:]), daemon=True).start()
         cur = {}
@@ -578,6 +635,48 @@ def cancel_job(jid):
 
 def busy():
     return any(j['state'] in ('läuft', 'wartet') for j in JOBS.values())
+
+
+AWAKE = {'state': None, 'off_at': 0, 'info': 'aus'}
+
+
+def idle_seconds():
+    """Sekunden seit der letzten Maus-/Tastatureingabe (nur Windows)."""
+    if os.name != 'nt':
+        return 0
+    import ctypes
+
+    class LII(ctypes.Structure):
+        _fields_ = [('cbSize', ctypes.c_uint), ('dwTime', ctypes.c_uint)]
+    li = LII()
+    li.cbSize = ctypes.sizeof(LII)
+    if not ctypes.windll.user32.GetLastInputInfo(ctypes.byref(li)):
+        return 0
+    return (ctypes.windll.kernel32.GetTickCount() - li.dwTime) / 1000.0
+
+
+def awake_loop():
+    """Solange umgewandelt wird: kein Ruhezustand. Monitore nach X Minuten ohne Eingabe aus
+    (Einstellung 'monoff' in Minuten, 0 = nie). Die Aktion 'Danach' kommt erst am Ende der Liste (UI)."""
+    while True:
+        try:
+            b = busy()
+            if os.name == 'nt':
+                import ctypes
+                want = 0x80000001 if b else 0x80000000      # ES_CONTINUOUS | ES_SYSTEM_REQUIRED
+                if want != AWAKE['state']:
+                    ctypes.windll.kernel32.SetThreadExecutionState(want)
+                    AWAKE['state'] = want
+                mins = load_config().get('monoff', 5)
+                idle = idle_seconds()
+                if b and mins and idle >= mins * 60 and AWAKE['off_at'] < time.time() - idle:
+                    # SC_MONITORPOWER = 2 -> Monitore aus (gehen bei Mausbewegung wieder an)
+                    ctypes.windll.user32.PostMessageW(0xFFFF, 0x0112, 0xF170, 2)
+                    AWAKE['off_at'] = time.time()
+            AWAKE['info'] = 'an' if b else 'aus'
+        except Exception:  # noqa: BLE001
+            pass
+        time.sleep(15)
 
 
 def stop_all():
@@ -1123,7 +1222,7 @@ class Handler(BaseHTTPRequestHandler):
             if path == '/api/info':
                 HW_DONE.wait(20)
                 conf = load_config()
-                return self.send_json(200, {'version': VERSION, 'ffmpeg': bool(FFMPEG and FFPROBE), 'hw': HW, 'filters': FILTERS, 'gpus': GPU, 'workers': WORKERS,
+                return self.send_json(200, {'version': VERSION, 'ffmpeg': bool(FFMPEG and FFPROBE), 'hw': HW, 'filters': FILTERS, 'gpus': GPU, 'workers': WORKERS, 'cores': os.cpu_count() or 4,
                                             'disks': disks(), 'outdir': outdir(), 'config': conf, 'native': NATIVE[0]})
             if path == '/api/jobs':
                 return self.send_json(200, {'jobs': [job_view(JOBS[j]) for j in QUEUE if j in JOBS]})
@@ -1248,7 +1347,7 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send_json(200, {'ok': True})
             if path == '/api/config':
                 conf = load_config()
-                for k in ('outdir', 'theme', 'intro', 'tmdb', 'ntfy', 'auto', 'presets', 'ls'):
+                for k in ('outdir', 'theme', 'intro', 'tmdb', 'ntfy', 'auto', 'presets', 'ls', 'monoff', 'load'):
                     if k in d:
                         conf[k] = d[k]
                 save_config(conf)
@@ -1706,6 +1805,7 @@ def selftest():
         check('HDR -> SDR (zscale fehlt)', False)
     files = scan(work)
     check('Ordner scannen', any(f['name'].endswith('.mkv') for f in files), len(files))
+    check('Auslastungsgrenze', load_pct() in LOAD_STEPS, '%d %%' % load_pct())
     sp = space(work)
     check('Speicher + Laufwerksart', (sp['free'] or 0) > 0, '%s %s' % (sp['kind'], sp['free']))
     try:
@@ -1734,6 +1834,8 @@ def main():
     threading.Thread(target=hw_check, daemon=True).start()
     for slot in ('cpu', 'gpu1', 'gpu2'):
         threading.Thread(target=worker, args=(slot,), daemon=True).start()
+    threading.Thread(target=awake_loop, daemon=True).start()
+    threading.Thread(target=throttle_loop, daemon=True).start()
     port = 0
     if '--port' in sys.argv:
         port = int(sys.argv[sys.argv.index('--port') + 1])

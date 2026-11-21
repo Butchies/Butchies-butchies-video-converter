@@ -35,6 +35,14 @@ FFmpeg mit allen Codecs ist dabei (inklusive VMAF-Messung und HDR). WebView2 wir
 **Neu in 1.1.3**
 - Das Programm **merkt sich jetzt alles** bis zum nächsten Start: Design, Start-Animation an/aus, Auto/Manuell-Schalter, eigene Einstellungen (Codec, Zielgröße, Zeitplan …) und eigene Vorlagen. Bisher ging das beim Neustart verloren
 
+**Neu in 1.3.0**
+- 🌡️ **PC-Auslastung begrenzen** (neue Leiste im KI-Autopilot): Auto = 90 %, bei Manuell 25 · 50 · 75 % und ab 80 % in 5er-Schritten bis 100 %. Alle Kerne werden genutzt, das Umwandeln macht nur kurze Pausen. Wirkt sofort, auch bei laufenden Umwandlungen
+- 💤 **Kein Ruhezustand beim Umwandeln**: Monitore gehen nach 5 Minuten ohne Maus/Tastatur aus (einstellbar unter „Ausgabe & Zeitplan“). „Danach“ (z. B. Herunterfahren) kommt erst, wenn die ganze Liste fertig ist
+- 🎯 **Zielgröße „Auto“**: Die KI wählt pro Film die beste Größe für eine Qualität zwischen 75 und 90
+- 📋 **Warteschlange**: ab 3 Dateien auf- und zuklappbar; jede Datei hat „Details“ (Quelle, Ziel, Probe-Messung mit „Jetzt messen“, Ausgabename, Warnungen, Abspielen, Vorher/Nachher, Quelle zeigen)
+- 🎨 Eingabefelder, Auswahllisten und Scrollbalken passen sich allen 7 Designs an (wurden beim Drüberfahren weiß)
+- Den ffmpeg-Befehl in der KI-Analyse entfernt, „Codec-Check“ ist einklappbar
+
 **Neu in 1.2.4**
 - Programm hat jetzt ein eigenes Zuhause: github.com/Butchies/Butchies-butchies-video-converter
 - Abfrage-Fenster (z. B. „Dateien löschen?“, Codec-Frage) haben einen festen Hintergrund und sind nicht mehr durchsichtig

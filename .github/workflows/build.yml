@@ -9,6 +9,7 @@ on:
     paths-ignore:
       - '**.md'
       - 'design-kit/**'
+      - 'docs/**'
   workflow_dispatch:
 
 permissions:

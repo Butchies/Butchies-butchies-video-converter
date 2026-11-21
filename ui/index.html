@@ -22,6 +22,7 @@
 
 /* Butchies Video Converter AI – Designs & Schriften wie Butchies Encode Studio / Butchies-Webseite (V2) */
 :root{--ok:#2fd38f;--bad:#ff6b7a;--warn:#ffcf5a;--info:#6fb3ff;--ok2:#a9d86e;--orange:#f29a4e;--violet:#c79bff;--fh:Outfit,sans-serif;--fb:'DM Sans',system-ui,sans-serif;--fm:'JetBrains Mono',ui-monospace,Consolas,monospace;color-scheme:dark}
+:root,[data-theme=neon],[data-theme=ocean],[data-theme=sunset],[data-theme=emerald],[data-theme=gold],[data-theme=mono]{color-scheme:dark}
 :root,[data-theme=neon]{--a:#a46bff;--b:#ff6fc4;--bg:#0b0614;--bg2:#160c26;--panel:rgba(255,255,255,.055);--panel2:rgba(255,255,255,.09);--line:rgba(255,255,255,.1);--text:#f6f1ff;--muted:#b3a6c9;--glow:rgba(164,107,255,.45);--on:#fff}
 [data-theme=ocean]{--a:#38bdf8;--b:#22d3ee;--bg:#03101a;--bg2:#06202e;--glow:rgba(56,189,248,.42);--muted:#9cb9c9;--on:#03101a}
 [data-theme=sunset]{--a:#ff7a45;--b:#ff4f9a;--bg:#140708;--bg2:#2a0f14;--glow:rgba(255,122,69,.42);--muted:#cfa9a6;--on:#1a0706}
@@ -29,7 +30,7 @@
 [data-theme=gold]{--a:#f5b544;--b:#ffdf8a;--bg:#0d0a05;--bg2:#1f1708;--glow:rgba(245,181,68,.4);--muted:#c9b991;--on:#1a1205}
 [data-theme=mono]{--a:#e5e5e5;--b:#9ca3af;--bg:#0a0a0a;--bg2:#171717;--glow:rgba(255,255,255,.22);--muted:#a3a3a3;--on:#0a0a0a}
 [data-theme=light]{--a:#7c3aed;--b:#db2777;--bg:#f6f2fb;--bg2:#ece3f8;--panel:rgba(30,10,60,.05);--panel2:rgba(30,10,60,.08);--line:rgba(30,10,60,.12);--text:#1d1430;--muted:#5f5374;--glow:rgba(124,58,237,.28);--on:#fff;color-scheme:light;
-  --ok:#0f8a55;--ok2:#4d7c0f;--warn:#a86400;--orange:#c2410c;--bad:#c62839;--info:#1d6fc2;--violet:#7c3aed}
+  --ok:#0f8a55;--ok2:#4d7c0f;--warn:#a86400;--deep:#fbf9fe;--inset:#fff;--orange:#c2410c;--bad:#c62839;--info:#1d6fc2;--violet:#7c3aed}
 [data-skin=club]{--fh:Unbounded,var(--fb)}
 [data-skin=wellen]{--fh:Quicksand,sans-serif;--fb:Quicksand,system-ui,sans-serif}
 [data-skin=magazin]{--fh:'Playfair Display',Georgia,serif}
@@ -232,11 +233,24 @@ body:not(.real) .real-only{display:none!important}
 .f>label b{color:var(--a);font-family:var(--fm);letter-spacing:0}
 .f .seg{display:flex}
 select,input[type=number],input[type=text],input[type=search]{width:100%;min-height:42px;padding:0 12px;border-radius:11px;border:1px solid var(--line);background:var(--inset);outline:none;transition:.2s}
+input[type=number]{-moz-appearance:textfield;appearance:textfield}
+input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+select,input[type=number],input[type=text],input[type=search]{-webkit-appearance:none;appearance:none;background-color:var(--inset);color:var(--text)}
+select{background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 17px) 52%,calc(100% - 12px) 52%;background-size:5px 5px;background-repeat:no-repeat;padding-right:30px}
+select:hover,input[type=number]:hover,input[type=text]:hover,input[type=search]:hover{background-color:var(--inset);border-color:color-mix(in srgb,var(--a) 45%,var(--line))}
+input:-webkit-autofill{-webkit-text-fill-color:var(--text);-webkit-box-shadow:0 0 0 40px var(--inset) inset}
+*{scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--a) 45%,transparent) transparent}
+::-webkit-scrollbar{width:9px;height:9px}::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--a) 40%,transparent);border-radius:9px;border:2px solid transparent;background-clip:padding-box}
+::-webkit-scrollbar-thumb:hover{background-color:color-mix(in srgb,var(--a) 65%,transparent)}
+::-webkit-scrollbar-corner{background:transparent}
+.log{overflow-x:hidden;word-break:break-word}
 select:focus,input:focus{border-color:var(--a);box-shadow:0 0 0 3px color-mix(in srgb,var(--a) 20%,transparent)}
 select option{background:var(--bg2)}
 input[type=range]{width:100%;accent-color:var(--a);height:24px;margin:0}
 .chk{display:flex;align-items:center;gap:9px;font-size:13px;font-weight:600;cursor:pointer;text-transform:none!important;letter-spacing:0!important;color:var(--text)!important}
 .chk input{accent-color:var(--a);width:18px;height:18px}
+.sizes.dim input{opacity:.45}
 .sizes{display:flex;gap:8px;align-items:center}
 .sizes span{color:var(--muted)}
 .ana{display:grid;grid-template-columns:150px 1fr;gap:16px;align-items:start}
@@ -321,6 +335,25 @@ td .p{color:var(--muted);font-size:11px;word-break:break-all}
 .fc input{accent-color:var(--acc);margin-top:3px;width:16px;height:16px;flex:none}
 tr.mk td{background:color-mix(in srgb,var(--bad) 12%,transparent)}
 .st{font-size:11px;color:var(--mut);margin-top:4px}
+.fold-h{cursor:pointer;user-select:none}.fold-h .chev{display:inline-block;transition:transform .2s;margin-left:4px}
+.fold-card.shut .fold-b{display:none}.fold-card.shut .fold-h{margin-bottom:0}.fold-card.shut .fold-h .chev{transform:rotate(-90deg)}
+.qi .qd{margin-left:8px}
+.qmore{border:1px dashed color-mix(in srgb,var(--a) 45%,var(--line));background:transparent;color:var(--a);border-radius:12px;padding:8px;font:700 12.5px var(--fb);cursor:pointer}
+.qmore:hover{background:color-mix(in srgb,var(--a) 10%,transparent)}
+.qdet{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:8px 14px;margin-top:6px;padding:10px 12px;border-radius:11px;background:var(--inset);border:1px solid var(--line);cursor:default}
+.qdet .full{grid-column:1/-1}.qdet h5{margin:0 0 3px;font:700 11.5px var(--fb);color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+.qdet p{margin:0;font-size:12.5px;line-height:1.5;overflow:hidden;text-overflow:ellipsis}.qdet .mono{font:11.5px var(--fm);white-space:nowrap}
+.qdet .qbtns{display:flex;gap:6px;flex-wrap:wrap}
+.ldsteps{display:flex;gap:4px;align-items:flex-end}
+.ldsteps button{flex:var(--w) 1 0;min-width:0;border:1px solid var(--line);background:var(--inset);border-radius:10px;padding:6px 2px 5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--muted);transition:.15s}
+.ldsteps button i{display:block;width:70%;max-width:46px;border-radius:5px 5px 2px 2px;background:color-mix(in srgb,var(--c) 30%,transparent)}
+.ldsteps button b{font:700 12px var(--fb);line-height:1.1;text-align:center}.ldsteps button small{display:block;font-size:9.5px;font-weight:600;opacity:.8}
+.ldsteps button:hover{border-color:color-mix(in srgb,var(--a) 50%,var(--line))}
+.ldsteps button.on{border-color:var(--a);background:color-mix(in srgb,var(--a) 14%,transparent);color:var(--text);box-shadow:inset 0 0 0 1px var(--a)}
+.ldsteps button.on i{background:linear-gradient(180deg,var(--c),color-mix(in srgb,var(--c) 55%,transparent))}
+.ldscale{display:flex;justify-content:space-between;font-size:10.5px;color:var(--muted);margin-top:3px;padding:0 2px}
+.ldcores{display:flex;flex-wrap:wrap;gap:4px}.ldcores i{width:16px;height:16px;border-radius:4px;background:var(--panel2);border:1px solid var(--line)}
+.ldcores i.on{background:linear-gradient(135deg,var(--a),var(--b));border-color:transparent}
 .qi .rm{border:0;background:var(--panel2);color:var(--muted);border-radius:6px;padding:1px 7px;cursor:pointer;margin-left:8px;font-size:12px;line-height:18px}
 .qi .rm:hover{background:color-mix(in srgb,var(--bad) 18%,transparent);color:var(--bad)}
 .qi .pb{border:0;background:var(--panel2);color:var(--acc);border-radius:6px;padding:1px 7px;cursor:pointer;margin-right:6px;font-size:12px}
@@ -508,6 +541,7 @@ dialog[open]{animation:dlg .3s ease}
       <div class="f" style="margin-bottom:12px"><label>Vorlagen</label><div class="chips" id="presetChips"></div></div>
       <div class="f" id="wSize" style="margin-bottom:10px"><label>Zielgröße pro Datei (MB)</label>
           <div class="sizes"><input type="number" id="sMin" value="1200" min="1"><span>bis</span><input type="number" id="sMax" value="1800" min="1"></div>
+          <label class="chk" style="margin-top:8px"><input type="checkbox" id="sAutoSz"> <span>🎯 Auto: KI wählt die beste Größe pro Film <small style="color:var(--muted);font-weight:500">– Qualität zwischen 75 und 90, so klein wie möglich</small></span></label>
       </div>
         <div style="margin-bottom:12px"><label class="chk"><input type="checkbox" id="sYt"> <span>🚀 YouTube-Boost: auf 1440p hochrechnen <small style="color:var(--muted);font-weight:500">– YouTube gibt dann mehr Bitrate + besseren Codec, auch in 1080p schärfer (Datei wird größer, nur zum Hochladen)</small></span></label></div>
       <div class="arows">
@@ -518,6 +552,16 @@ dialog[open]{animation:dlg .3s ease}
         <div class="f full"><label>Wer arbeitet mit?</label><div id="parList" class="trk"></div></div>
         <div class="f full"><label>Verteilung</label><select id="parMode"><option value="auto">KI: schnell fertig, Qualität bleibt mindestens „Gut“</option><option value="fast">So schnell wie möglich (Grafikkarten)</option><option value="quality">Beste Qualität (nur Prozessor, x265)</option></select></div>
         <div class="f full"><div class="hint" id="parInfo" style="margin:0"></div></div>
+        </div></div></div>
+      </div>
+      <div class="arow" data-sec="load">
+        <div class="ahead"><span class="aic">🌡️</span><div class="atx"><b>PC-Auslastung</b><small id="sum-load">–</small></div>
+          <div class="am"><button data-a="auto" class="on">Auto</button><button data-a="man">Manuell</button></div></div>
+        <div class="adrawer"><div class="adin"><div class="form">
+        <div class="f full"><label>Den PC höchstens so stark auslasten</label>
+          <div class="ldsteps" id="ldSteps"></div>
+          <div class="ldscale"><span>0 %</span><span>25</span><span>50</span><span>75</span><span>100 %</span></div></div>
+        <div class="f full"><div class="hint" id="ldInfo" style="margin:0"></div></div>
         </div></div></div>
       </div>
       <div class="arow" data-sec="codec">
@@ -589,14 +633,15 @@ dialog[open]{animation:dlg .3s ease}
         <div class="f full"><label>Steht ein Codec im Namen (z. B. x264)?</label><select id="oSwap"><option value="ask">Vorher fragen, ob er angepasst werden soll</option><option value="yes">Immer anpassen (x264 → x265, Original-Name bleibt)</option><option value="no">Nie anpassen</option></select></div>
         <div class="f"><label>Start</label><select id="oStart"><option value="now">Sofort</option><option value="22">Heute 22:00</option><option value="1">Nachts 01:00</option><option value="3">Nachts 03:00</option></select></div>
         <div class="f"><label>Danach</label><select id="oAfter"><option value="none">Nichts</option><option value="sleep">Ruhezustand</option><option value="off">PC herunterfahren</option></select></div>
+        <div class="f full real-only"><label>Beim Umwandeln</label><select id="oMon"><option value="5">Kein Ruhezustand · Monitore nach 5 Min. ohne Eingabe aus</option><option value="10">Kein Ruhezustand · Monitore nach 10 Min. aus</option><option value="15">Kein Ruhezustand · Monitore nach 15 Min. aus</option><option value="30">Kein Ruhezustand · Monitore nach 30 Min. aus</option><option value="0">Kein Ruhezustand · Monitore nie ausschalten</option></select><div class="hint" style="margin:4px 0 0">Der PC geht beim Umwandeln nie von selbst in den Ruhezustand. „Danach“ wird erst ausgeführt, wenn die ganze Liste fertig ist.</div></div>
         <div class="f full"><label class="chk"><input type="checkbox" id="oPush"> 📱 Nachricht aufs Handy, wenn alles fertig ist</label></div>
         <div class="f full real-only" id="wTopic"><label>ntfy-Thema</label><input type="text" id="oTopic"><div class="hint" style="margin:0">Auf dem Handy die kostenlose App „ntfy“ installieren und genau dieses Thema abonnieren.</div></div>
         </div></div></div>
       </div>
       </div>
     </div>
-    <div class="card"><h2>🧩 Codec-Check <span class="sub">Player</span></h2><div class="tbl" id="codecTbl" style="max-height:none"></div>
-      <div class="hint">Ein Browser kann nicht alle Codecs. Im Windows-Programm nutzt der Player libmpv + ffmpeg: H.264, H.265 (8/10/12-bit), AV1, VP9, MPEG-2, VC-1, DivX/XviD, MKV, AVI, TS, M2TS … und DTS/TrueHD/Atmos-Ton.</div></div>
+    <div class="card fold-card" id="codecCard"><h2 class="fold-h" id="codecHead" title="Ein-/ausklappen">🧩 Codec-Check <span class="sub">Player <span class="chev">▾</span></span></h2><div class="fold-b"><div class="tbl" id="codecTbl" style="max-height:none"></div>
+      <div class="hint">Ein Browser kann nicht alle Codecs. Im Windows-Programm nutzt der Player libmpv + ffmpeg: H.264, H.265 (8/10/12-bit), AV1, VP9, MPEG-2, VC-1, DivX/XviD, MKV, AVI, TS, M2TS … und DTS/TrueHD/Atmos-Ton.</div></div></div>
   </div>
 
   <div class="col center">
@@ -913,20 +958,20 @@ function refreshPre(){
 $$('#sFam button').forEach(b=>b.onclick=()=>{S.fam=b.dataset.v;$$('#sFam button').forEach(x=>x.classList.toggle('on',x===b));refreshEnc();update()});
 $$('#sMode button').forEach(b=>b.onclick=()=>{S.mode=b.dataset.v;$$('#sMode button').forEach(x=>x.classList.toggle('on',x===b));$('#wCrf').hidden=S.mode!=='crf';$('#wCbr').hidden=S.mode!=='cbr';update()});
 $('#sEnc').onchange=()=>{refreshPre();update()};
-['#parMode','#sProf','#sPre','#sTune','#sLvl','#sCont','#sMin','#sMax','#s2p','#sCrf','#sCbr','#sRes','#sFps','#sAud','#sAbr','#sAuto','#sYt','#sHdr','#oDir','#oName','#oStart','#oAfter','#oPush'].forEach(id=>{$(id).addEventListener('input',update);$(id).addEventListener('change',update)});
+['#parMode','#sProf','#sPre','#sTune','#sLvl','#sCont','#sMin','#sMax','#sAutoSz','#s2p','#sCrf','#sCbr','#sRes','#sFps','#sAud','#sAbr','#sAuto','#sYt','#sHdr','#oDir','#oName','#oStart','#oAfter','#oPush'].forEach(id=>{$(id).addEventListener('input',update);$(id).addEventListener('change',update)});
 refreshEnc();
 
 function settings(){
   const p=PROF[S.fam].find(x=>x[0]===$('#sProf').value);
   return {fam:S.fam,mode:S.mode,enc:$('#sEnc').value,kind:encKind($('#sEnc').value),prof:p[0],profName:p[1],bits:p[2],chroma:p[3],
     pre:$('#sPre').value,tune:$('#sTune').value,lvl:$('#sLvl').value,cont:$('#sCont').value,
-    min:+$('#sMin').value||1,max:+$('#sMax').value||1,twoPass:$('#s2p').checked&&!$('#s2p').disabled,
+    min:+$('#sMin').value||1,max:+$('#sMax').value||1,autoSz:$('#sAutoSz').checked,twoPass:$('#s2p').checked&&!$('#s2p').disabled,
     crf:+$('#sCrf').value,cbr:+$('#sCbr').value||1000,maxH:+$('#sRes').value,fps:+$('#sFps').value,
     aud:$('#sAud').value,abr:+$('#sAbr').value,auto:$('#sAuto').checked,yt:$('#sYt').checked,hdrMode:$('#sHdr').value,
     out:{dir:$('#oDir').value.trim(),name:$('#oName').value,start:$('#oStart').value,after:$('#oAfter').value,push:$('#oPush').checked}};
 }
 /* ================= KI-AUTOPILOT (Auto / Manuell) ================= */
-const AUTO_DEF={par:true,codec:true,quality:true,res:true,content:true,hdr:true,tracks:true,out:true,probe:true,cmp:true};
+const AUTO_DEF={load:true,par:true,codec:true,quality:true,res:true,content:true,hdr:true,tracks:true,out:true,probe:true,cmp:true};
 let AUTO=Object.assign({},AUTO_DEF);
 try{const sv=JSON.parse(KV.get('bvc-auto')||'null');if(sv)Object.assign(AUTO,sv)}catch(e){}
 const saveAuto=()=>KV.set('bvc-auto',JSON.stringify(AUTO));
@@ -938,8 +983,19 @@ function setFam(f){if(S.fam!==f){S.fam=f;$$('#sFam button').forEach(x=>x.classLi
 function setEnc(v){if($('#sEnc').value!==v&&[...$('#sEnc').options].some(o=>o.value===v)){$('#sEnc').value=v;refreshPre()}}
 function setSel(id,v){const e=$(id);if(e&&e.value!=v&&[...e.options].some(o=>o.value==v))e.value=v}
 function setModeS(m){if(S.mode!==m){S.mode=m;$$('#sMode button').forEach(x=>x.classList.toggle('on',x.dataset.v===m));$('#wCrf').hidden=m!=='crf';$('#wCbr').hidden=m!=='cbr'}}
+/* ---------- PC-Auslastung: 25/50/75 %, dann 80–100 % in 5er-Schritten, Standard 90 % ---------- */
+const LD_STEPS=[25,50,75,80,85,90,95,100];
+let LOAD=90;try{const v=+KV.get('bvc-load');if(LD_STEPS.includes(v))LOAD=v}catch(e){}
+function setLoad(v,silent){LOAD=v;KV.set('bvc-load',String(v));if(REAL&&INFO)api('/api/config',{load:v}).catch(()=>{});if(!silent){try{updSums()}catch(e){}}}
+function renderLoad(){const box=$('#ldSteps');if(!box)return;
+  const col=p=>p<=75?'var(--ok)':p<=90?'var(--a)':'var(--warn)';
+  box.innerHTML=LD_STEPS.map(p=>`<button type="button" data-ld="${p}" class="${p===LOAD?'on':''}" style="--w:${p===25||p===50||p===75?25:5};--c:${col(p)}"><i style="height:${18+p*.42}px"></i><b>${p}${p===90?'<small>Std.</small>':''}</b></button>`).join('');
+  box.querySelectorAll('[data-ld]').forEach(b=>b.onclick=()=>{AUTO.load=+b.dataset.ld===90&&AUTO.load;if(+b.dataset.ld!==90)AUTO.load=false;saveAuto();setLoad(+b.dataset.ld);update()});
+  $('#ldInfo').innerHTML=LOAD>=100?'Volle Leistung: Umwandeln nutzt alle Prozessor-Kerne ohne Pause (mit niedrigerer Priorität, damit du weiterarbeiten kannst).'
+    :`Umwandeln nutzt <b>alle Prozessor-Kerne</b>, macht aber jede Sekunde eine kurze Pause – im Schnitt höchstens <b>${LOAD} %</b> Auslastung. Gilt sofort, auch für laufende Umwandlungen.${LOAD<75?' <b style="color:var(--warn)">Umwandeln dauert dann deutlich länger.</b>':''}`}
 function applyAuto(){
   const yt=$('#sYt').checked;
+  if(AUTO.load&&LOAD!==90)setLoad(90,true);
   if(AUTO.par)setSel('#parMode','auto');
   if(AUTO.codec){setFam(yt?'h264':'h265');setEnc(yt?'libx264':'libx265');setSel('#sProf',yt?'high':'main10');setSel('#sPre','slow');setSel('#sLvl','auto');setSel('#sCont',yt?'mp4':'mkv')}
   if(AUTO.quality){setModeS('size');$('#s2p').checked=true}
@@ -1095,6 +1151,7 @@ function updSums(){
   const encS={libx264:'x264',libx265:'x265',h264_amf:'AMD',hevc_amf:'AMD',h264_nvenc:'NVIDIA',hevc_nvenc:'NVIDIA',h264_qsv:'Intel',hevc_qsv:'Intel'}[s.enc];
   const set=(k,t)=>{const e=$('#sum-'+k);if(e)e.textContent=(AUTO[k]?'KI: ':'Manuell: ')+t};
   if(REAL&&INFO&&INFO.workers){const sl=parSlots();set('par',sl.map(x=>wName(x)).join(' + ')+(sl.length>1?' – parallel':''));try{renderPar()}catch(e){}}
+  set('load',LOAD>=100?'volle Leistung':`höchstens ${LOAD} %`+(AUTO.load?' (Standard)':''));try{renderLoad()}catch(e){}
   set('codec',`${s.fam==='h265'?'H.265':'H.264'} · ${encS} ${s.pre} · ${s.profName.split(' (')[0]} · ${s.cont.toUpperCase()}`);
   set('quality',S.mode==='size'?`Zielgröße treffen${s.twoPass?' · 2-Pass':''}`:S.mode==='crf'?`Qualität CRF ${s.crf}`:`Feste Bitrate ${s.cbr} kbit/s`);
   set('res',(s.maxH?`max. ${s.maxH}p`:'Original')+(s.auto?', skaliert bei Bedarf':'')+(s.fps?` · ${s.fps} fps`:''));
@@ -1172,6 +1229,17 @@ function bppScore(vk,w,h,fps,enc,bits){
 }
 const evenW=(h,ar)=>Math.max(2,Math.round(h*ar/2)*2);
 
+/* Auto-Zielgröße: kleinste Größe für Qualität 75 … größte sinnvolle für 90 (pro Film) */
+function autoSize(f,s,dur,srcW,srcH,ar,fps,aK,known){
+  const MBk=8388.608,capW=s.maxH?Math.min(srcW,evenW(s.maxH,ar)):srcW;
+  let cands=[3840,2560,1920,1600,1280,1024,854,640].filter(w=>w<=capW);if(!cands.includes(capW))cands.unshift(capW);
+  if(!s.auto)cands=[capW];
+  const sc=mb=>{const v=mb*MBk/dur*.99-aK;if(v<100)return 0;let b=-1;for(const W of cands){const h=Math.max(2,Math.round(W/ar/2)*2);b=Math.max(b,bppScore(v,W,h,fps,s.enc,s.bits)-downPen(capW,W))}return b};
+  const find=t=>{let a=20,b=60000;if(sc(b)<t)return null;for(let i=0;i<40;i++){const m=(a+b)/2;if(sc(m)>=t)b=m;else a=m}return b};
+  let lo=find(75)||find(60)||200,hi=find(90)||lo*1.6;let capped=false;
+  if(known&&f.size){const src=f.size/1048576*.97;if(hi>src){hi=Math.max(lo,src);capped=true}if(lo>src){lo=src*.8;capped=true}}
+  const r=x=>x<100?Math.max(1,Math.round(x)):Math.round(x/10)*10;lo=r(lo);hi=Math.max(r(hi),lo);
+  return {lo,hi,qLo:Math.round(sc(lo)),qHi:Math.round(sc(hi)),capped}}
 function analyze(f,s){
   s=perFile(f,s);const tips=s.notes.slice();
   const known=f.w>0&&f.dur>0;
@@ -1181,6 +1249,9 @@ function analyze(f,s){
   const aK=s.trk?s.trk.aK:(s.aud==='copy'?(f.akbps||448):s.abr);
   const srcTotal=f.size*8/1000/dur, srcV=Math.max(100,srcTotal-(f.akbps||448));
   let lo=s.min,hi=s.max; if(lo>hi){[lo,hi]=[hi,lo];tips.push(['warn','„Von“ war größer als „bis“ – wurde vertauscht.'])}
+  let autoSz=null;
+  if(s.autoSz&&!s.yt&&s.mode==='size'){autoSz=autoSize(f,s,dur,srcW,srcH,ar,s.fps||srcFps,s.trk?s.trk.aK:(s.aud==='copy'?(f.akbps||448):s.abr),known);lo=autoSz.lo;hi=autoSz.hi;
+    tips.push(['ok',`🎯 Auto-Zielgröße: ${fmtMB(lo)} – ${fmtMB(hi)} (Qualität ca. ${autoSz.qLo}–${autoSz.qHi}).${autoSz.capped?' Mehr lohnt sich nicht: Die Quelle hat selbst nicht mehr Qualität.':''}`])}
   const capW=s.maxH?Math.min(srcW,Math.round(s.maxH*16/9/2)*2,evenW(s.maxH,ar)):srcW;
   let cands=[3840,2560,1920,1600,1280,1024,854,640].filter(w=>w<=capW); if(!cands.includes(capW))cands.unshift(capW);
   cands=[...new Set(cands)].sort((a,b)=>b-a);
@@ -1346,6 +1417,30 @@ function rmQ(q){
   ask('✕ Umwandlung abbrechen?',`<p>„<b style="color:var(--text)">${esc(q.name)}</b>“ ${q.state==='run'?'wird gerade umgewandelt':'wartet noch'}. Abbrechen und aus der Liste nehmen? Die Originaldatei bleibt erhalten, die halb fertige Datei wird gelöscht.</p>`,
     [{t:'Nein, weiter umwandeln'},{t:'✕ Abbrechen und entfernen',cls:'pri',fn:()=>{api('/api/cancel',{ids:[q.jid]}).catch(()=>{});log('bad',`Entfernt: ${esc(q.name)}`);drop()}}]);
 }
+/* ---------- Warteschlange: einklappen + Details je Film ---------- */
+let QOPEN=false;try{QOPEN=KV.get('bvc-qopen')==='1'}catch(e){}
+const QDET=new Set();
+function qDetails(q,a){
+  const tr=q.tracks||{audio:[],subs:[],chapters:0},kb=q.dur?Math.round(q.size*8/1000/q.dur):0;
+  const vc={h264:'H.264',hevc:'H.265',av1:'AV1',vp9:'VP9',mpeg2video:'MPEG-2',mpeg4:'MPEG-4/XviD',vc1:'VC-1'}[q.vcodec]||q.vcodec||'?';
+  const r=PROBE[pkey(q,a)],sv=a.est&&q.size?Math.round((1-a.est/(q.size/1048576))*100):0;
+  const enc=q.slot&&REAL?`${wIcon(q.slot)} ${wName(q.slot)}`:($('#sEnc').selectedOptions[0]||{}).textContent||'';
+  let pr;
+  if(probeRun&&probeRun.key===pkey(q,a))pr='<span class="hint" style="margin:0">misst gerade …</span>';
+  else if(r&&!r.err){const [lb,c]=vmLabel(r.vmaf);pr=`<b style="color:${c}">${r.method==='ssim'?'Qualität':'VMAF'} ${r.vmaf.toFixed(1).replace('.',',')}</b> · ${lb} · Probe-Größe ${fmtMB(r.size)}`}
+  else pr=q.state==='run'||q.state==='done'?'<span class="hint" style="margin:0">nicht gemessen</span>':`<button class="btn sm" data-qprobe="${q.id}">🎯 Jetzt messen</button>`;
+  const warn=a.tips.filter(t=>t[0]==='warn'||t[0]==='bad').slice(0,2);
+  return `<div class="qdet">
+   <div><h5>📥 Quelle</h5><p>${vc} · ${q.w||'?'}×${q.h||'?'} · ${q.fps?Math.round(q.fps*100)/100+' fps':''}</p><p>${q.dur?fmtT(q.dur):'?'} · ${fmtMB(q.size/1048576)}${kb?' · '+kb.toLocaleString('de-DE')+' kbit/s':''}</p>
+    <p>${q.hdr?'🌈 HDR':'SDR'} · 🔊 ${tr.audio.length} Ton · 💬 ${tr.subs.length} Untertitel${tr.chapters?' · '+tr.chapters+' Kapitel':''}</p></div>
+   <div><h5>📤 Ziel</h5><p>${a.outW}×${a.outH} · ${S.fam==='h264'?'H.264':'H.265'} · ${a.vk.toLocaleString('de-DE')} kbit/s</p><p>~${fmtMB(a.est)} · Ersparnis ${sv>0?sv:0} % · Note ${a.score}</p>
+    <p title="${esc(enc)}">${esc(enc)} · ca. ${fmtT(a.encTime||0)}</p></div>
+   <div class="full"><h5>🎯 Probe-Messung</h5><p>${pr}</p></div>
+   <div class="full"><h5>📁 Ausgabe</h5><p class="mono" title="${esc(a.job&&a.job.outname||'')}">${esc((a.job&&a.job.outname)||'')}</p></div>
+   ${warn.length?`<div class="full">${warn.map(t=>`<p style="color:var(--${t[0]==='bad'?'bad':'warn'})">⚠ ${t[1]}</p>`).join('')}</div>`:''}
+   <div class="full qbtns"><button class="btn sm" data-play="${q.id}">▶ Abspielen</button><button class="btn sm" data-qab="${q.id}">◧ Vorher/Nachher</button>${REAL?`<button class="btn sm" data-qsrc="${q.id}">📂 Quelle zeigen</button>`:''}</div>
+  </div>`}
+{const cc=$('#codecCard');if(cc){cc.classList.toggle('shut',KV.get('bvc-codecfold')!=='0');$('#codecHead').onclick=()=>{const sh=!cc.classList.contains('shut');cc.classList.toggle('shut',sh);KV.set('bvc-codecfold',sh?'1':'0')}}}
 function renderQ(){
   if(REAL&&INFO&&!RESTORING)saveSession();
   const s=settings();
@@ -1353,14 +1448,24 @@ function renderQ(){
   $('#bStart').disabled=!Q.length||RUN.on;
   try{renderPL();fillAbFile()}catch(e){}
   if(!Q.length){$('#queue').innerHTML=`<div class="empty">${REAL?'Noch keine Dateien – Videos oder Ordner hineinziehen oder „Dateien wählen“.':'Noch keine Dateien. Zum Ausprobieren auf „Demo-Dateien“ tippen.'}</div>`;return}
-  $('#queue').innerHTML=Q.map(q=>{const a=analyze(q,s);q.a=a;const [lb,c]=label(a.score);
+  Q.forEach(q=>{q.a=analyze(q,s)});
+  let show=Q;const many=Q.length>2;
+  if(many&&!QOPEN){const pri=[...Q.filter(q=>q.state==='run'),...Q.filter(q=>q.id===selId),...Q.filter(q=>q.state==='queued'),...Q];const keep=new Set();for(const q of pri){if(keep.size>=2)break;keep.add(q)}show=Q.filter(q=>keep.has(q))}
+  $('#queue').innerHTML=show.map(q=>{const a=q.a;const [lb,c]=label(a.score);
     const st=q.bad&&!q.force?'<span class="bad">⚠ defekt</span>':q.state==='done'?'✓ fertig'+(q.out?`<button class="fold" data-show="${q.id}" title="Im Ordner zeigen">📂</button>`:''):q.state==='run'?'läuft…'+(q.slot&&REAL?` · ${wIcon(q.slot)} ${esc(wName(q.slot))}`:''):q.state==='queued'?'wartet'+(q.slot&&REAL?` · ${wIcon(q.slot)} ${esc(wName(q.slot))}`:''):q.state==='err'?'<span class="bad">✕ Fehler</span>':q.state==='stop'?'abgebrochen':q.state==='skip'?'übersprungen':'';
     return `<div class="qi ${q.id===selId?'sel':''} ${q.state} ${q.bad&&!q.force?'isbad':''}" data-id="${q.id}">
       <div class="nm" title="${esc(q.path)}"><button class="pb" data-play="${q.id}" title="Im Player abspielen">▶</button>${esc(q.name)}</div>
       <div class="sc"><span style="color:${c}">${a.score} · ${lb}</span><button class="rm" data-rm="${q.id}" title="${q.state==='run'||q.state==='queued'?'Abbrechen und aus der Liste nehmen':'Aus der Liste nehmen (Datei bleibt erhalten)'}">✕</button></div>
       <div class="meta">${q.w?q.w+'×'+q.h:'? × ?'} · ${q.dur?fmtT(q.dur):'?'} · ${fmtMB(q.size/1048576)} → ${a.outW}×${a.outH}, ~${fmtMB(a.est)}</div>
-      <div class="meta" style="text-align:right">${st}</div>
-      <div class="bar"><i style="width:${q.prog*100}%"></i></div></div>`}).join('');
+      <div class="meta" style="text-align:right">${st}<button class="fold qd" data-det="${q.id}" title="Details ein-/ausblenden">${QDET.has(q.id)?'▴':'▾'} Details</button></div>
+      <div class="bar"><i style="width:${q.prog*100}%"></i></div>${QDET.has(q.id)?qDetails(q,a):''}</div>`}).join('')
+    +(many?`<button class="qmore" id="qMore">${QOPEN?'▴ Liste einklappen':`▾ Alle ${Q.length} Dateien anzeigen (${Q.length-show.length} weitere)`}</button>`:'');
+  const qm=$('#qMore');if(qm)qm.onclick=()=>{QOPEN=!QOPEN;KV.set('bvc-qopen',QOPEN?'1':'0');renderQ()};
+  $$('[data-det]').forEach(b=>b.onclick=e=>{e.stopPropagation();const id=+b.dataset.det;QDET.has(id)?QDET.delete(id):QDET.add(id);renderQ()});
+  $$('.qdet').forEach(d=>d.onclick=e=>e.stopPropagation());
+  $$('[data-qprobe]').forEach(b=>b.onclick=e=>{e.stopPropagation();const q=Q.find(x=>x.id==b.dataset.qprobe);if(!q)return;selId=q.id;renderQ();update();runProbe(q,q.a)});
+  $$('[data-qab]').forEach(b=>b.onclick=e=>{e.stopPropagation();const q=Q.find(x=>x.id==b.dataset.qab);if(!q)return;selId=q.id;openInPlayer(q);showTab('play');setMode('ab')});
+  $$('[data-qsrc]').forEach(b=>b.onclick=e=>{e.stopPropagation();const q=Q.find(x=>x.id==b.dataset.qsrc);if(q)api('/api/show',{path:q.path}).catch(()=>{})});
   $$('#queue .qi').forEach(el=>el.onclick=()=>{selId=+el.dataset.id;if(!RUN.on)anaFold(false);renderQ();update()});
   $$('[data-show]').forEach(b=>b.onclick=e=>{e.stopPropagation();const q=Q.find(x=>x.id==b.dataset.show);if(q&&q.out)api('/api/show',{path:q.out}).catch(()=>{})});
   $$('[data-play]').forEach(b=>b.onclick=e=>{e.stopPropagation();openInPlayer(Q.find(x=>x.id==b.dataset.play));showTab('play')});
@@ -1368,6 +1473,7 @@ function renderQ(){
 }
 function update(){
   applyAuto();
+  {const az=$('#sAutoSz').checked&&!$('#sYt').checked;$('.sizes').classList.toggle('dim',az);$('#sMin').disabled=az;$('#sMax').disabled=az;$('#sMin').title=$('#sMax').title=az?'Auto: die KI wählt die Größe pro Film (siehe KI-Analyse)':''}
   $('#crfV').textContent=$('#sCrf').value;
   const cv=+$('#sCrf').value, e=S.fam==='h265'?cv-5:cv;
   $('#crfHint').textContent=e<=18?'(nahezu verlustfrei)':e<=23?'(sehr gut)':e<=27?'(gut, kleiner)':'(sichtbare Verluste)';
@@ -1396,12 +1502,12 @@ function update(){
    ${q.err?`<div class="tips"><li class="bad" style="white-space:pre-wrap">Fehler beim Umwandeln: ${esc(q.err)}</li></div>`:''}
    ${q.bad&&!q.force?'<div class="row" style="margin-top:8px"><button class="btn sm" id="forceBtn">Trotzdem umwandeln</button></div>':''}
    ${probeHTML(q,a)}
-   <div class="cmd"><button class="btn sm" id="cpy">Kopieren</button>${esc(a.cmd)}</div>`;
+`;
   bindProbe(q,a);updSums();
   const fb=$('#forceBtn');if(fb)fb.onclick=()=>{q.force=true;update()};
   if(!AUTO.hdr&&det(q).hdr&&!q.hdrAsked)askHdr(q);
   const ap=$('#applyCrf'); if(ap)ap.onclick=()=>{$('#sCrf').value=a.sugCrf;update()};
-  $('#cpy').onclick=async e=>{try{await navigator.clipboard.writeText(a.cmd);e.target.textContent='Kopiert ✓'}catch{const r=document.createRange();r.selectNodeContents(e.target.parentNode);getSelection().removeAllRanges();getSelection().addRange(r);e.target.textContent='markiert – Strg+C'}};
+  if($('#cpy'))$('#cpy').onclick=async e=>{try{await navigator.clipboard.writeText(a.cmd);e.target.textContent='Kopiert ✓'}catch{const r=document.createRange();r.selectNodeContents(e.target.parentNode);getSelection().removeAllRanges();getSelection().addRange(r);e.target.textContent='markiert – Strg+C'}};
 }
 
 /* ---------- Drag & Drop (inkl. Ordner) ---------- */
@@ -2342,6 +2448,8 @@ async function realInit(){
   if(!INFO.ffmpeg)toast('FFmpeg fehlt – bitte das Programm neu installieren.');
   if(INFO.config.tmdb)$('#cTmdb').value=INFO.config.tmdb;
   $('#oDir').value=INFO.outdir;
+  {const v=+INFO.config.load;if(LD_STEPS.includes(v)&&!AUTO.load)LOAD=v;api('/api/config',{load:LOAD}).catch(()=>{})}
+  $('#oMon').value=String(INFO.config.monoff!=null?INFO.config.monoff:5);$('#oMon').onchange=()=>api('/api/config',{monoff:+$('#oMon').value}).catch(()=>{});
   ['A','B'].forEach(x=>renderDirInfo(x));loadSpace();
   $('#oTopic').value=INFO.config.ntfy||('butchies-'+Math.random().toString(36).slice(2,10));
   if(!INFO.config.ntfy)api('/api/config',{ntfy:$('#oTopic').value}).catch(()=>{});
@@ -2376,7 +2484,7 @@ $('#oShow').onclick=()=>api('/api/show',{path:$('#oDir').value}).catch(e=>toast(
 $('#oDir').addEventListener('change',()=>{if(REAL&&!AUTO.out)api('/api/config',{outdir:$('#oDir').value}).then(x=>{if(INFO)INFO.outdir=x.outdir}).catch(()=>{})});
 $('#oTopic').addEventListener('change',()=>{if(REAL)api('/api/config',{ntfy:$('#oTopic').value}).catch(()=>{})});
 /* Eigene (manuelle) Einstellungen merken und beim nächsten Start wiederherstellen */
-const SETIDS=['#oSwap','#sEnc','#sProf','#sPre','#sTune','#sLvl','#sCont','#sMin','#sMax','#s2p','#sCrf','#sCbr','#sRes','#sFps','#sAud','#sAbr','#sAuto','#sYt','#sHdr',
+const SETIDS=['#oSwap','#sAutoSz','#sEnc','#sProf','#sPre','#sTune','#sLvl','#sCont','#sMin','#sMax','#s2p','#sCrf','#sCbr','#sRes','#sFps','#sAud','#sAbr','#sAuto','#sYt','#sHdr',
   '#oName','#oStart','#oAfter','#oPush','#parMode','#cTh','#cVid','#cImg','#cDb','#cSub','#pUp','#abHover'];
 function saveSet(){const v={fam:S.fam,mode:S.mode};SETIDS.forEach(id=>{const e=$(id);if(e)v[id]=e.type==='checkbox'?e.checked:e.value});KV.set('bvc-set',JSON.stringify(v))}
 function loadSet(){let v;try{v=JSON.parse(KV.get('bvc-set')||'null')}catch(e){}if(!v)return;
