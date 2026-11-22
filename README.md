@@ -1,58 +1,62 @@
 # 🎬 Butchies Video Converter AI
 
-Windows-Programm, das deine Videos **platzsparend in H.265 (oder H.264)** umwandelt – mit KI, die Größe und Qualität für dich ausrechnet, einem eigenen Player mit **Vorher/Nachher-Vergleich** und einem **Ordner-Abgleich**, der doppelte Filme findet.
+Windows-Programm, das deine Filme **platzsparend in H.265 (oder H.264)** umwandelt. Eine KI rechnet Größe und Qualität für dich aus. Dazu gibt es einen Player für alle Formate, einen **Vorher/Nachher-Vergleich** und einen **Ordner-Abgleich**, der doppelte Filme findet und aufräumt. Auf Wunsch läuft alles auf **zwei Monitoren**.
 
 ## ⬇️ Download
 
-**[➜ Neueste Version herunterladen](../../releases/latest)** – dort die Datei **`Butchies_Video_Converter-Setup.exe`** laden und starten. Alles Nötige ist dabei (FFmpeg, Player, WebView2). Der Installer schlägt von selbst das Laufwerk mit dem meisten freien Speicher vor.
+**[➜ Neueste Version herunterladen](../../releases/latest)**: die Datei **`Butchies_Video_Converter-Setup.exe`** laden und starten.
+Es sind keine Administratorrechte nötig, und alles Nötige ist dabei (FFmpeg, Player, WebView2). Der Installer schlägt von selbst das Laufwerk mit dem meisten freien Speicher vor.
 
-![Hauptfenster](docs/img/studio.jpg)
+![Studio](docs/img/studio.jpg)
 
-## 🚀 Kurzanleitung
+## 🚀 Anleitung in 5 Schritten
 
 | Schritt | So geht's |
 |---|---|
-| **1. Videos hineinziehen** | Dateien oder ganze Ordner in „Videos oder ganze Ordner hier hineinziehen“ ziehen – oder „Dateien wählen“ / „Ordner wählen“. |
-| **2. KI-Note ansehen** | Rechts zeigt die **KI-Analyse** Note (z. B. 94 · Exzellent), Größe vorher → nachher und Tipps. Alles steht auf **Auto** – du musst nichts einstellen. |
-| **3. Umwandlung starten** | Unten **▶ Umwandlung starten**. Steht „x264“ im Namen, fragt das Programm, ob es den Namen auf „x265“ ändern soll. |
-| **4. Zuschauen oder weggehen** | Das Fortschritts-Fenster zeigt Prozent, Tempo und Restzeit. „Im Hintergrund weiter“ blendet es aus. Der PC geht nicht in den Ruhezustand, die Monitore schalten sich nach 5 Minuten aus. |
-| **5. Fertig** | „📂 Im Ordner zeigen“ öffnet die fertigen Videos. |
+| **1. Filme hineinziehen** | Dateien oder ganze Ordner in das Feld „Videos oder ganze Ordner hier hineinziehen“ ziehen, oder auf „Dateien wählen“ / „Ordner wählen“ klicken. |
+| **2. KI-Note ansehen** | Rechts zeigt die **KI-Analyse** eine Note, die Größe vorher → nachher und Tipps. Alles steht auf **Auto**, du musst nichts einstellen. |
+| **3. Starten** | Unten auf **▶ Umwandlung starten** klicken. Der Dateiname bleibt wie im Original. Der Codec wird angepasst (x264 → x265), und der Gruppen-Name am Ende wird zu **„-Butchies-Groove“**. |
+| **4. Weggehen** | Das Fortschritts-Fenster zeigt Prozent, Tempo und Restzeit. Der PC geht nicht in den Ruhezustand. Prozessor und Grafikkarten arbeiten gleichzeitig. |
+| **5. Fertig** | „📂 Im Ordner zeigen“ öffnet die fertigen Filme. Auf Wunsch kommt eine Nachricht aufs Handy, oder der PC fährt danach herunter. |
 
 <p align="center"><img src="docs/img/codec-frage.jpg" width="48%"> <img src="docs/img/fortschritt.jpg" width="48%"></p>
 
-## ✨ Was das Programm kann
+## 🗂️ Ordner-Abgleich
 
-- **🎯 Zielgröße von–bis oder „Auto“** – die KI berechnet Auflösung und Bitrate so, dass der Film in deine Größe passt, oder wählt selbst die beste Größe für eine Qualität zwischen 75 und 90.
-- **🧠 KI-Autopilot** – jede Einstellung (Codec, Qualität, Auflösung, HDR, Ton/Untertitel, Ausgabe) steht auf *Auto*; mit *Manuell* klappt sie auf.
-- **📏 Probe-Messung (VMAF)** – wandelt 3 Probestücke echt um und misst die Qualität wie Netflix.
-- **⚡ Prozessor + 2 Grafikkarten gleichzeitig** – verteilt die Filme auf CPU, Radeon RX 7000 und Radeon 760M.
-- **🌡️ PC-Auslastung begrenzen** – Standard 90 %, einstellbar von 25 bis 100 %.
-- **📋 Warteschlange** – Knopf oben in der Kopfzeile: alle Dateien mit Reihenfolge, Ersparnis und Dauer; pro Film ein Details-Fenster (Quelle, Ziel, Probe-Messung, Ausgabe, Hinweise).
-- **▶ Player nur bei Bedarf** – klappt auf, wenn du abspielst oder Vorher/Nachher öffnest; sonst hat die Dateiliste den Platz.
+Links Ordner A (z. B. Downloads), rechts Ordner B (z. B. NAS). Die KI erkennt gleiche Filme auch bei anderem Namen und zeigt, was doppelt ist und wie viel Platz du sparen kannst. Sie legt alte H.264-Filme mit einem Klick in die Warteschlange.
 
-<p align="center"><img src="docs/img/warteschlange.jpg" width="60%"> <img src="docs/img/auslastung.jpg" width="36%"></p>
-
-### ▶️ Player & Vorher/Nachher
-Spielt alle Formate (H.264, H.265, AV1, MKV, AVI …). Im **Vorher/Nachher** wird eine Stelle echt umgewandelt – Maus über das Bild bewegen: links vorher, rechts nachher.
-
-<p align="center"><img src="docs/img/vorher-nachher.jpg" width="55%"></p>
-
-### 🗂️ Ordner-Abgleich
-Zwei Ordner vergleichen (z. B. Downloads ↔ NAS): **Schon vorhanden**, **Ähnlich**, **Nur in A/B** – auch bei anderem Dateinamen. Mit Ordner-Infos (Codecs, Auflösungen, Sparpotenzial, auffällige Dateien), KI-Suche, Hash-Prüfung, einheitlichem Umbenennen und Papierkorb-Schutz fürs NAS.
+- **🏷️ Gruppen-Namen ersetzen:** Nur deine eigenen, schon umgewandelten Filme werden umbenannt. Die Begleitdateien (.nfo, .srt) werden mit umbenannt. Der Ordner wird einmal eingelesen und in einer Datenbank gemerkt, danach geht es schnell. Rückgängig machen ist möglich.
+- **🛡 Geschützte Ordner:** Hier wird nichts endgültig gelöscht, nur in einen Papierkorb-Ordner verschoben.
 
 ![Ordner-Abgleich](docs/img/abgleich.jpg)
 
-<p align="center"><img src="docs/img/ordner-info.jpg" width="60%"></p>
+## 🖥🖥 Zwei Monitore
 
-### 🎨 Und sonst
-7 Designs (auch Hell), Start-/Abschiedsanimation mit Jahreszeiten, Vollbild und Wechsel auf den 2. Bildschirm. Beim Beenden merkt sich das Programm alles: Einstellungen, Dateiliste und Abgleich-Ordner.
+Mit dem Knopf **„2 Monitore“** oben rechts bleibt das Studio auf dem Hauptmonitor. Ordner-Abgleich und Player kommen auf den zweiten Bildschirm. Mit **„⇄ Monitore tauschen“** wechseln die beiden Fenster den Platz. Das Programm merkt sich beim Beenden, ob du mit zwei Monitoren gearbeitet hast.
 
-## 🛠️ Für Entwickler
+Beim Start springt das Logo mit Lichtstreifen und Flash vom Hauptmonitor rüber. Beim Beenden springt es genau andersherum zurück.
 
-| Datei | Inhalt |
-|---|---|
-| `butchies_video_converter.py` | Programm-Kern (Python, lokaler Server, FFmpeg-Steuerung, Selbsttest `--selftest`) |
-| `ui/index.html` | Oberfläche (eine Datei) |
-| `installer.iss` | Inno-Setup-Installer |
-| `.github/workflows/build.yml` | baut bei jedem Push auf `main` den Installer und veröffentlicht ihn als Release |
-| `design-kit/` | Design-Unterlagen (Start-/Beenden-Animation) |
+![Monitor 2](docs/img/monitor2.jpg)
+
+## 🎨 Designs & Animation
+
+Es gibt 8 Designs (Neon Lila, Ozean, Sunset, Smaragd, Gold Lounge, Mitternacht, Hell, Hell Blau). Unter **Design** stellst du die Animation beim Monitor-Wechsel ein: Richtung, Tempo, Flash, Lichtstreifen und Farbe. Eine Vorschau zeigt dir das Ergebnis sofort.
+
+<p align="center"><img src="docs/img/animation.jpg" width="70%"></p>
+
+## ✨ Weitere Funktionen
+
+- **▶️ Player & Vorher/Nachher:** spielt alle Formate ab (H.264, H.265, AV1, MKV, AVI …). Beim Vorher/Nachher wird eine Stelle echt umgewandelt. Fährst du mit der Maus über das Bild, siehst du links vorher und rechts nachher.
+- **📏 Probe-Messung (VMAF):** 3 Probestücke werden echt umgewandelt und gemessen, so wie Netflix die Qualität misst.
+- **⚡ Prozessor + 2 Grafikkarten:** Die Filme werden auf alle drei verteilt.
+- **🎙️ Ton aufbereiten:** Sprache wird klarer, die Lautstärke gleichmäßig, und es gibt einen Nachtmodus. Das ist ein eigenes Werkzeug neben der Umwandlung.
+- **📊 Statistik:** zeigt, wie viel Platz du schon gespart hast. Die KI lernt, wie schnell dein PC ist.
+- **🌙 Nacht-Planer:** startet zu einer bestimmten Uhrzeit oder wenn der PC nicht benutzt wird. Läuft ein Spiel oder ein Film im Vollbild, macht er Pause.
+
+<p align="center"><img src="docs/img/vorher-nachher.jpg" width="55%"> <img src="docs/img/warteschlange.jpg" width="40%"></p>
+
+## ❓ Hilfe
+
+- **❔-Knopf** oben: startet die Kurzanleitung im Programm.
+- **⚙ Einstellungen**: seltene Einstellungen (Strom, Dateinamen, Benachrichtigung).
+- Neue Versionen und was sich geändert hat, stehen unter **[Releases](../../releases)**.
