@@ -82,6 +82,7 @@ jobs:
           gh release view $tag 2>$null
           if ($LASTEXITCODE -eq 0) { gh release upload $tag dist\Butchies_Video_Converter-Setup.exe --clobber }
           else { gh release create $tag dist\Butchies_Video_Converter-Setup.exe --title "Butchies Video Converter $env:VER" --notes-file RELEASE.md --latest --target $env:GITHUB_SHA }
+          if ((Test-Path FINAL.txt) -and ((Get-Content FINAL.txt -Raw).Trim() -eq $env:VER)) { gh release edit $tag --title "Butchies Video Converter AI $env:VER – Final" --notes-file RELEASE.md --prerelease=false --latest }
 
       - uses: actions/upload-artifact@v4
         if: always()
