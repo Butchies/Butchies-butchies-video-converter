@@ -10,7 +10,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 APP_NAME = 'Butchies Video Converter'
-VERSION = '2.1.0'
+VERSION = '2.1.1'
 FROZEN = getattr(sys, 'frozen', False)
 BASE = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent))
 UI = BASE / 'ui'
@@ -3037,9 +3037,8 @@ def native_window(url):
     if load_config().get('dual') and load_config().get('dualsoft', True) and mixed_gpus():
         flags += ' --disable-gpu --disable-gpu-compositing'
         SOFT[0] = True
-    old = os.environ.get('WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS', '')
-    if 'CalculateNativeWinOcclusion' not in old:
-        os.environ['WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS'] = (old + ' ' + flags).strip()
+    # immer frisch setzen – beim Neustart erbt das neue Programm sonst die alten Schalter (ohne --disable-gpu)
+    os.environ['WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS'] = flags
 
     class Api:
         def __init__(self, role='main'):
