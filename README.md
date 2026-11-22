@@ -4,7 +4,7 @@ Windows-Programm, das deine Filme **platzsparend in H.265 (oder H.264)** umwande
 
 ## ⬇️ Download
 
-**[➜ Neueste Version herunterladen](../../releases/latest)**: die Datei **`Butchies_Video_Converter-Setup.exe`** laden und starten.
+**[➜ Neueste Version herunterladen](../../releases/latest)**: die Datei **`Butchies_Video_Converter-Setup-<Version>.exe`** (z. B. `…-Setup-1.8.0.exe`) laden und starten.
 Es sind keine Administratorrechte nötig, und alles Nötige ist dabei (FFmpeg, Player, WebView2). Der Installer schlägt von selbst das Laufwerk mit dem meisten freien Speicher vor.
 
 ![Studio](docs/img/studio.jpg)

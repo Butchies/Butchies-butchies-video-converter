@@ -350,9 +350,22 @@ body.m2 #cmpTbl{max-height:calc(100vh - 300px);min-height:360px}
 .plMsg{position:absolute;inset:0;display:grid;place-items:center;text-align:center;color:var(--mut);padding:20px;pointer-events:none}
 .pl.hot{box-shadow:inset 0 0 0 3px var(--acc)}
 .ctrl{margin-top:10px;display:flex;flex-direction:column;gap:8px}
+/* Vollbild: alle Steuerelemente als Leiste im Bild, verschwinden nach 3 s ohne Maus */
+#plWrap:fullscreen{max-height:none!important;max-width:none!important;width:100vw;height:100vh;aspect-ratio:auto;border-radius:0;border:0;margin:0}
+#plWrap .fstop{display:none}#plWrap:fullscreen .upbadge{top:72px;right:20px}
+#plWrap:fullscreen .fstop{display:flex;position:absolute;left:0;right:0;top:0;z-index:5;gap:8px;align-items:center;padding:14px 18px 30px;background:linear-gradient(rgba(0,0,0,.75),transparent);color:#fff;font:700 16px var(--fb);transition:opacity .3s}
+#plWrap:fullscreen .ctrl{position:absolute;left:0;right:0;bottom:0;z-index:5;margin:0;padding:34px 18px 14px;background:linear-gradient(transparent,rgba(0,0,0,.8));transition:opacity .3s;color:#fff}
+#plWrap:fullscreen .ctrl .tm{color:#fff}
+#plWrap:fullscreen.idle :is(.ctrl,.fstop,.pscfg){opacity:0;pointer-events:none}#plWrap:fullscreen.idle{cursor:none}
+.pstats{position:absolute;left:14px;top:14px;z-index:4;min-width:230px;padding:10px 14px;border-radius:12px;background:rgba(0,0,0,.66);backdrop-filter:blur(6px);color:#e5e7eb;font:12px/1.65 var(--fm);pointer-events:none;border:1px solid rgba(255,255,255,.12)}
+.pstats b{color:#fff;font-weight:700}.pstats i{font-style:normal;color:#93c5fd}
+#plWrap:fullscreen .pstats{top:70px;left:20px;font-size:14px}
+.pscfg{position:absolute;right:14px;top:58px;z-index:6;padding:12px 14px;border-radius:12px;background:rgba(10,12,22,.92);color:#fff;font:13px var(--fb);display:grid;grid-template-columns:1fr 1fr;gap:4px 14px;border:1px solid rgba(255,255,255,.15)}
+.pscfg label{display:flex;gap:6px;align-items:center;cursor:pointer}.pscfg b{grid-column:1/-1;margin-bottom:4px}
 .tm{font:500 13px "JetBrains Mono",monospace;color:var(--mut)}
 .ab{position:relative;user-select:none;-webkit-user-select:none;border-radius:12px;overflow:hidden;border:1px solid var(--line);background:#000;cursor:ew-resize;touch-action:pan-y;min-height:120px}
 .abIn{position:relative}
+#ab.panning{cursor:grabbing}
 .abIn canvas{display:block;width:100%;height:auto;border:0;border-radius:0;background:transparent}
 #abA{position:absolute;inset:0;width:100%;height:100%}
 .abLine{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;background:#fff;box-shadow:0 0 8px #000;left:50%;pointer-events:none}
@@ -779,7 +792,7 @@ body.m2 .cmpgrid .card{padding:14px 16px}
     <div class="pl" id="plWrap">
       <video id="vid" playsinline preload="metadata" hidden></video>
       <canvas id="demoCv" width="1280" height="720" hidden></canvas>
-      <span class="upbadge" id="upBadge">✨ KI-Schärfe: <i>Leicht</i></span>
+      <div class="pstats" id="pStats" hidden></div><div class="fstop" id="fsTop"><b id="fsTitle"></b><span style="flex:1"></span><button class="btn sm" id="fsStatBtn" title="Statistik ein/aus (Taste I)">📊 Statistik</button><button class="btn sm" id="fsStatCfg" title="Welche Werte angezeigt werden">⚙</button><button class="btn sm" id="fsExit" title="Vollbild beenden (Esc)">✕</button></div><div class="pscfg" id="pStatCfg" hidden></div><span class="upbadge" id="upBadge">✨ KI-Schärfe: <i>Leicht</i></span>
       <div class="plMsg" id="plMsg">Video hier hineinziehen<br>oder unten in der Dateiliste auf ▶ tippen</div>
     </div>
     <div class="ctrl">
@@ -795,7 +808,7 @@ body.m2 .cmpgrid .card{padding:14px 16px}
         <select id="pRate" style="width:auto" title="Geschwindigkeit"><option value="0.25">0,25×</option><option value="0.5">0,5×</option><option value="0.75">0,75×</option><option value="1" selected>1×</option><option value="1.25">1,25×</option><option value="1.5">1,5×</option><option value="2">2×</option></select>
         <button class="btn real-only" id="pSnd" title="Ton-Aufbereiter: zwischen Original und aufbereitetem Ton umschalten (Einstellungen aus „Ton-Aufbereiter“)">🎙️ Original</button><button class="btn" id="pMute">🔊</button><input type="range" id="pVol" min="0" max="1" step="0.05" value="1" style="width:70px;flex:none">
         <span class="upsc" title="KI-Schärfe beim Abspielen: Die Datei bleibt klein – geschärft wird nur beim Anschauen. Geschärft wird beim Anschauen über die Grafikkarte des Fensters – die Datei selbst bleibt unverändert.">✨<select id="pUp"><option value="0">Aus</option><option value="1" selected>Leicht</option><option value="2">Stark</option><option value="3">Max.</option></select><button class="btn sm" id="pOrig" title="Gedrückt halten zeigt das Original">👁</button></span>
-        <button class="btn" id="pShot" title="Standbild in den Vorher/Nachher-Vergleich">📸</button>
+        <button class="btn" id="pStatBtn" title="Statistik im Bild ein/aus (Taste I) – rechts daneben einstellen, was angezeigt wird">📊</button><button class="btn" id="pShot" title="Standbild in den Vorher/Nachher-Vergleich">📸</button>
         <button class="btn" id="pFull" title="Vollbild (F)">⛶</button>
       </div>
     </div>
@@ -2314,7 +2327,7 @@ $('#pVol').oninput=e=>{vid.volume=+e.target.value;vid.muted=false;$('#pMute').te
 $('#pMute').onclick=()=>{vid.muted=!vid.muted;$('#pMute').textContent=vid.muted?'🔇':'🔊'};
 $('#plWrap').onclick=e=>{if(e.target===vid||e.target===dcv)pToggle()};
 $('#pFull').onclick=()=>{const el=$('#plWrap');try{if(document.fullscreenElement){document.exitFullscreen()}else{const r=(el.requestFullscreen||el.webkitRequestFullscreen);if(r){const p=r.call(el);if(p&&p.catch)p.catch(()=>vid.webkitEnterFullscreen&&vid.webkitEnterFullscreen())}else if(vid.webkitEnterFullscreen)vid.webkitEnterFullscreen()}}catch{toast('Vollbild ist hier nicht erlaubt – im Programm geht es.')}};
-document.addEventListener('keydown',e=>{if(!$('#v-conv').classList.contains('on')||$('#mPlay').hidden||/INPUT|SELECT|TEXTAREA/.test(e.target.tagName))return;
+document.addEventListener('keydown',e=>{if(document.fullscreenElement||M2||!$('#v-conv').classList.contains('on')||$('#mPlay').hidden||/INPUT|SELECT|TEXTAREA/.test(e.target.tagName))return;
   if(e.key===' '){e.preventDefault();pToggle()}else if(e.key==='ArrowLeft')pSeek(pCur()-5);else if(e.key==='ArrowRight')pSeek(pCur()+5);
   else if(e.key===',')pStep(-1);else if(e.key==='.')pStep(1);else if(e.key==='f'||e.key==='F')$('#pFull').click()});
 function addPlayerFiles(list){const f=list.map(x=>x.file||x).filter(x=>VID.test(x.name));if(!f.length){toast('Keine Videodatei gefunden.');return}
@@ -2376,12 +2389,17 @@ function applyAb(){const z=AB.zoom,ab=$('#ab'),W=ab.clientWidth||1,ox=AB.ox!=nul
   $('#abA').style.clipPath=`inset(0 0 0 ${clamp(local,0,1)*100}%)`;$('#abLine').style.left=AB.pos*100+'%';
   $('#abIn').style.transform=`scale(${z})`;$('#abIn').style.transformOrigin=`${ox}px ${AB.oy!=null?AB.oy:(ab.clientHeight/2)}px`}
 const abEl=$('#ab');
-function abMove(e){const r=abEl.getBoundingClientRect();if(AB.zoom>1){AB.ox=e.clientX-r.left;AB.oy=e.clientY-r.top}
+/* Lupe: das Bild bleibt stehen. Verschieben nur mit gedrückter RECHTER Maustaste. */
+function abMove(e){const r=abEl.getBoundingClientRect();
+  if(AB.pan){const z=AB.zoom;if(z>1){AB.ox=clamp(AB.pan.ox-(e.clientX-AB.pan.x)/(z-1),0,r.width);AB.oy=clamp(AB.pan.oy-(e.clientY-AB.pan.y)/(z-1),0,r.height)}applyAb();return}
   if(AB.drag||($('#abHover').checked&&e.pointerType==='mouse'))AB.pos=clamp((e.clientX-r.left)/r.width,0,1);applyAb()}
 abEl.addEventListener('pointermove',abMove);
-abEl.addEventListener('pointerdown',e=>{AB.drag=true;try{abEl.setPointerCapture(e.pointerId)}catch{}abMove(e)});
-['pointerup','pointercancel'].forEach(t=>abEl.addEventListener(t,()=>AB.drag=false));
-$('#abZoom').onchange=e=>{AB.zoom=+e.target.value;applyAb()};
+abEl.addEventListener('pointerdown',e=>{try{abEl.setPointerCapture(e.pointerId)}catch{}const r=abEl.getBoundingClientRect();
+  if(e.button===2){e.preventDefault();AB.pan={x:e.clientX,y:e.clientY,ox:AB.ox!=null?AB.ox:r.width/2,oy:AB.oy!=null?AB.oy:r.height/2};abEl.classList.add('panning');return}
+  AB.drag=true;abMove(e)});
+['pointerup','pointercancel'].forEach(t=>abEl.addEventListener(t,()=>{AB.drag=false;AB.pan=null;abEl.classList.remove('panning')}));
+abEl.addEventListener('contextmenu',e=>e.preventDefault());
+$('#abZoom').onchange=e=>{AB.zoom=+e.target.value;AB.ox=AB.oy=null;applyAb();if(AB.zoom>1)toast('🔍 Lupe an – Bild verschieben: rechte Maustaste gedrückt halten und ziehen.')};
 window.addEventListener('resize',applyAb);
 
 const UPN=['Aus','Leicht','Stark','Maximal'],UPF=['none','url(#up1) contrast(1.03) saturate(1.04)','url(#up2) contrast(1.05) saturate(1.07)','url(#up3) contrast(1.07) saturate(1.1)'];
@@ -3277,6 +3295,56 @@ if(M2){document.body.classList.add('m2');document.title='Butchies Video Converte
   setTimeout(()=>{const w=wapi();if(w)w.send('main','m2Ready()')},2500)}
 else if(!new URLSearchParams(location.search).get('pop'))addEventListener('pywebviewready',()=>setTimeout(dualBoot,200));
 
+
+/* ---------- Player: Vollbild mit allen Steuerelementen + einstellbarer Statistik ---------- */
+const PSK=[['res','Auflösung'],['codec','Codec / HDR'],['fps','Bildrate'],['bitrate','Bitrate'],['size','Dateigröße'],['mode','Wiedergabe-Art'],['frames','Bilder (gezeigt / verloren)'],['buffer','Puffer'],['pos','Position / Rest'],['speed','Geschwindigkeit'],['vol','Lautstärke'],['sharp','KI-Schärfe'],['clock','Uhrzeit']];
+let PST={on:false,k:['res','codec','fps','bitrate','frames','buffer','pos']};try{Object.assign(PST,JSON.parse(KV.get('bvc-pstats')||'{}'))}catch(e){}
+const pstSave=()=>KV.set('bvc-pstats',JSON.stringify(PST));
+function pstCfg(){$('#pStatCfg').innerHTML='<b>📊 Was soll angezeigt werden?</b>'+PSK.map(([k,n])=>`<label><input type="checkbox" data-psk="${k}" ${PST.k.includes(k)?'checked':''}> ${n}</label>`).join('');
+  $$('[data-psk]').forEach(c=>c.onchange=()=>{PST.k=PSK.map(x=>x[0]).filter(k=>{const e=$(`[data-psk="${k}"]`);return e&&e.checked});pstSave();pstDraw()})}
+function pstToggle(v){PST.on=v!=null?v:!PST.on;pstSave();$('#pStats').hidden=!PST.on;$('#pStatBtn').classList.toggle('pri',PST.on);$('#fsStatBtn').classList.toggle('pri',PST.on);pstDraw()}
+function pstDraw(){if(!PST.on)return;const q=P.item||{},row=(n,v)=>`${n}: <b>${v}</b><br>`;let h='';const k=PST.k;
+  const vw=vid.videoWidth,vh=vid.videoHeight,qq=vid.getVideoPlaybackQuality?vid.getVideoPlaybackQuality():null;
+  if(k.includes('res'))h+=row('Auflösung',(vw?vw+'×'+vh:(q.w?q.w+'×'+q.h:'–'))+(q.w&&vw&&q.w!==vw?` <i>(Datei ${q.w}×${q.h})</i>`:''));
+  if(k.includes('codec'))h+=row('Codec',((q.vcodec||'–')+'').toUpperCase()+(q.hdr?' · HDR':''));
+  if(k.includes('fps'))h+=row('Bildrate',(q.fps?(+q.fps).toFixed(3).replace(/\.?0+$/,''):'–')+' fps');
+  if(k.includes('bitrate'))h+=row('Bitrate',q.size&&q.dur?Math.round(q.size*8/q.dur/1000).toLocaleString('de-DE')+' kbit/s':'–');
+  if(k.includes('size'))h+=row('Dateigröße',q.size?fmtMB(q.size/1048576):'–');
+  if(k.includes('mode'))h+=row('Wiedergabe',P.mode==='stream'?'live über ffmpeg (alle Codecs)':P.mode==='video'?'direkt':P.mode==='demo'?'Testbild':'–');
+  if(k.includes('frames'))h+=row('Bilder',qq?`${qq.totalVideoFrames.toLocaleString('de-DE')} / <i>${qq.droppedVideoFrames} verloren</i>`:'–');
+  if(k.includes('buffer')){let b=0;try{for(let i=0;i<vid.buffered.length;i++)if(vid.buffered.start(i)<=vid.currentTime&&vid.buffered.end(i)>=vid.currentTime)b=vid.buffered.end(i)-vid.currentTime}catch(e){}h+=row('Puffer',b.toFixed(1)+' s')}
+  if(k.includes('pos'))h+=row('Position',`${fmtT(pCur())} / ${fmtT(pDur())} · Rest ${fmtT(Math.max(0,pDur()-pCur()))}`);
+  if(k.includes('speed'))h+=row('Tempo',$('#pRate').value+'×');
+  if(k.includes('vol'))h+=row('Lautstärke',vid.muted?'stumm':Math.round(vid.volume*100)+' %');
+  if(k.includes('sharp'))h+=row('KI-Schärfe',UPN[+$('#pUp').value]);
+  if(k.includes('clock'))h+=row('Uhrzeit',new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}));
+  $('#pStats').innerHTML=h||'Nichts ausgewählt – ⚙ zum Einstellen'}
+setInterval(pstDraw,500);pstCfg();pstToggle(PST.on);
+$('#pStatBtn').onclick=()=>pstToggle();$('#fsStatBtn').onclick=e=>{e.stopPropagation();pstToggle()};
+$('#fsStatCfg').onclick=e=>{e.stopPropagation();$('#pStatCfg').hidden=!$('#pStatCfg').hidden};
+$('#pStatBtn').oncontextmenu=e=>{e.preventDefault();$('#pStatCfg').hidden=!$('#pStatCfg').hidden};
+$('#fsExit').onclick=e=>{e.stopPropagation();try{document.exitFullscreen()}catch(_){}};
+{const wrap=$('#plWrap'),ctrl=$('#mPlay .ctrl'),home=ctrl.parentNode,next=ctrl.nextSibling;let it=0;
+ const wake=()=>{wrap.classList.remove('idle');clearTimeout(it);it=setTimeout(()=>{if(document.fullscreenElement===wrap&&pIsPlay()&&$('#pStatCfg').hidden)wrap.classList.add('idle')},3000)};
+ document.addEventListener('fullscreenchange',()=>{const fs=document.fullscreenElement===wrap;
+   if(fs){wrap.appendChild(ctrl);$('#fsTitle').textContent=(P.item&&P.item.name)||'';wake()}else{home.insertBefore(ctrl,next);wrap.classList.remove('idle');$('#pStatCfg').hidden=true}});
+ wrap.addEventListener('mousemove',wake);ctrl.addEventListener('click',e=>e.stopPropagation());
+ wrap.addEventListener('dblclick',e=>{if(e.target===vid||e.target===dcv)$('#pFull').click()})}
+/* Tasten auch auf Monitor 2 und im Vollbild */
+document.addEventListener('keydown',e=>{const fs=document.fullscreenElement===$('#plWrap');if(/INPUT|SELECT|TEXTAREA/.test(e.target.tagName))return;
+  const vis=fs||(!$('#mPlay').hidden&&$('#plWrap').offsetParent&&!$('#stageCard').classList.contains('mini'));if(!vis)return;
+  if(!fs&&$('#v-conv').classList.contains('on')&&!M2&&/^( |ArrowLeft|ArrowRight|,|\.|f|F)$/.test(e.key))return; /* das erledigt der alte Tasten-Handler */
+  if(e.key===' '){e.preventDefault();pToggle()}else if(e.key==='ArrowLeft')pSeek(pCur()-5);else if(e.key==='ArrowRight')pSeek(pCur()+5);
+  else if(e.key===','||e.key==='.')pStep(e.key===','?-1:1);else if(e.key==='f'||e.key==='F')$('#pFull').click();
+  else if(e.key==='ArrowUp'){e.preventDefault();vid.volume=Math.min(1,vid.volume+.05);vid.muted=false;$('#pVol').value=vid.volume}
+  else if(e.key==='ArrowDown'){e.preventDefault();vid.volume=Math.max(0,vid.volume-.05);$('#pVol').value=vid.volume}
+  else if(e.key==='m'||e.key==='M')$('#pMute').click();else if(e.key==='i'||e.key==='I')pstToggle();
+  else if(e.key==='Home')pSeek(0);else if(e.key==='End')pSeek(pDur()-1);else if(/^[0-9]$/.test(e.key))pSeek(pDur()*(+e.key)/10);
+  if(fs){const w=$('#plWrap');w.dispatchEvent(new Event('mousemove'))}});
+/* Vorher/Nachher klappt nach ca. 10 s ohne Maus von selbst zu – beim Ansehen von Vorher/Nachher wieder auf */
+{let t=0;const card=$('#stageCard');const arm=()=>{clearTimeout(t);t=setTimeout(()=>{if(!$('#mAb').hidden&&!card.matches(':hover')&&!card.classList.contains('mini')&&!document.fullscreenElement&&!$('#modal:not([hidden])'))playerMini(true)},10000)};
+ card.addEventListener('pointermove',arm);card.addEventListener('pointerdown',arm);card.addEventListener('pointerleave',arm);
+ const sm=setMode;setMode=function(m){const r=sm(m);if(m==='ab'||$('#mAb')&&!$('#mAb').hidden)arm();return r}}
 /* ================= Extra-Fenster auf andere Monitore ================= */
 const POP=new URLSearchParams(location.search).get('pop');
 let POPPREF={};try{POPPREF=JSON.parse(KV.get('bvc-pops')||'{}')||{}}catch(e){}

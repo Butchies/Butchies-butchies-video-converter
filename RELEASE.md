@@ -35,6 +35,14 @@ FFmpeg mit allen Codecs ist dabei (inklusive VMAF-Messung und HDR). WebView2 wir
 **Neu in 1.1.3**
 - Das Programm **merkt sich jetzt alles** bis zum nächsten Start: Design, Start-Animation an/aus, Auto/Manuell-Schalter, eigene Einstellungen (Codec, Zielgröße, Zeitplan …) und eigene Vorlagen. Bisher ging das beim Neustart verloren
 
+**Neu in 1.8.0**
+- ▶ Player im Vollbild mit **allen Steuerelementen** im Bild (Zeitleiste, ±10 s, Einzelbild, Tempo, Lautstärke, Ton-Aufbereiter, KI-Schärfe, Standbild) – blenden sich nach 3 s ohne Maus aus. Oben: Titel, Statistik, ✕ zum Beenden. Doppelklick = Vollbild
+- 📊 Statistik im Bild (Taste I oder 📊): Auflösung, Codec/HDR, Bildrate, Bitrate, Größe, Wiedergabe-Art, gezeigte/verlorene Bilder, Puffer, Position/Rest, Tempo, Lautstärke, KI-Schärfe, Uhrzeit – unter ⚙ (bzw. Rechtsklick auf 📊) frei auswählbar, wird gemerkt
+- ⌨️ Tasten: Leertaste, ←/→ 5 s, ↑/↓ Lautstärke, M stumm, I Statistik, , / . Einzelbild, 0–9 springen, Pos1/Ende, F Vollbild – jetzt auch auf Monitor 2
+- ◧ Vorher/Nachher klappt nach ca. 10 s ohne Maus von selbst zu und geht beim Ansehen wieder auf (▾/▴ geht weiterhin von Hand)
+- 🔍 Lupe: Das Bild bleibt stehen und bewegt sich nicht mehr mit der Maus. Verschieben nur mit gedrückter **rechter Maustaste**
+- 📦 Setup-Datei heißt jetzt mit Version, z. B. `Butchies_Video_Converter-Setup-1.8.0.exe`
+
 **Neu in 1.7.9**
 - 🖥 Extra-Fenster (Umwandeln-Fortschritt, Warteschlange, Details, Statistik, Einstellungen, Ton, Gruppen-Namen, Design) haben oben kleine Monitor-Knöpfe 1 / 2: ein Klick schiebt das Fenster auf den anderen Monitor, zurück auf den Hauptmonitor genauso
 - Das Programm merkt sich, auf welchem Monitor jedes Fenster sein soll, und öffnet es beim nächsten Mal wieder dort
