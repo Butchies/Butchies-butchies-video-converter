@@ -178,7 +178,7 @@ body:not(.real) .real-only{display:none!important}
 .brand{display:flex;align-items:center;gap:12px;flex:0 0 auto;user-select:none}
 .brand b{display:block;font:800 18px/1.1 var(--fh)}
 .brand small{display:none}
-.brand #verBadge{display:inline-block;margin-top:4px;padding:2px 9px;font-size:11px;max-width:420px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.brand #verBadge{display:inline-block;margin-top:4px;padding:2px 9px;font-size:11px;max-width:640px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mark{display:grid;place-items:center;width:40px;height:40px;border-radius:12px;color:var(--on);background:linear-gradient(135deg,var(--a),var(--b));box-shadow:0 6px 20px var(--glow)}
 .mark svg{width:20px;height:20px}
 .ai-mark{display:inline-block;background:linear-gradient(110deg,var(--a) 0%,var(--b) 45%,#fff6dc 50%,var(--b) 55%,var(--a) 100%);background-size:250% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:aishine 1.8s ease-in-out infinite;padding:0 .04em;font-weight:800}
@@ -1102,6 +1102,12 @@ if(elapsed<4.2&&!reduced())raf=requestAnimationFrame(render)}
 resize();if(reduced())render(0);else raf=requestAnimationFrame(render);return {stop(){dead=true;cancelAnimationFrame(raf);layer.remove()}}}
 global.Seasons={pick,info,mount};
 })(window);
+
+/* 2.4.1: Modus in der Versions-Leiste */
+var VBASE=VBASE||'';function verMode(){const b=document.body.classList,v=$('#verBadge');if(!v||!VBASE)return;
+  const m=b.contains('span')?'🖥🖥 1 Fenster über 2 Monitore':(b.contains('dual')||b.contains('m2'))?'🖥🖥 2 Fenster':'🖥 1 Monitor';
+  const t=VBASE+' · '+m;if(v.textContent!==t)v.textContent=t}
+setInterval(verMode,1000);
 </script>
 <script>
 (()=>{
@@ -2973,7 +2979,7 @@ async function realInit(){
   document.body.classList.add('real');
   try{INFO=await api('/api/info')}catch(err){RESTORING=false;toast('Programm-Kern nicht erreichbar: '+err.message);return}
   GRP_DB=new Set((INFO.groups||[]).map(x=>x.toLowerCase()));
-  $('#verBadge').textContent='Version '+INFO.version+(INFO.gpus&&INFO.gpus.length?' · '+INFO.gpus.map(g=>g.name.replace(/\(TM\)|\(R\)|Graphics/gi,'').replace(/\s+/g,' ').trim()).join(' + '):'');
+  VBASE='Version '+INFO.version+(INFO.gpus&&INFO.gpus.length?' · '+INFO.gpus.map(g=>g.name.replace(/\(TM\)|\(R\)|Graphics/gi,'').replace(/\s+/g,' ').trim()).join(' + '):'');
   if(!INFO.ffmpeg)toast('FFmpeg fehlt – bitte das Programm neu installieren.');
   if(INFO.config.tmdb)$('#cTmdb').value=INFO.config.tmdb;
   $('#oDir').value=INFO.outdir;

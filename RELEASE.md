@@ -1,3 +1,6 @@
+**Neu in 2.4.1**
+- Oben in der blauen Versions-Leiste steht jetzt, welcher Modus läuft: „1 Monitor“, „1 Fenster über 2 Monitore“ oder „2 Fenster“.
+
 **Neu in 2.4.0**
 - 2 Monitore an verschiedenen Grafikkarten (z. B. externe Grafik per USB-C): das Programm öffnet automatisch 2 eigene Fenster (eins je Monitor) statt einem großen – keine Hänger mehr. An derselben Grafik bleibt es wie bisher EIN Fenster über beide Monitore.
 - Im 2-Fenster-Modus gibt es kein Verschieben von Extra-Fenstern und keinen Hintergrund-Modus (nur im 1-Fenster-Modus).
