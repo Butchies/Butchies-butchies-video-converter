@@ -35,6 +35,9 @@ FFmpeg mit allen Codecs ist dabei (inklusive VMAF-Messung und HDR). WebView2 wir
 **Neu in 1.1.3**
 - Das Programm **merkt sich jetzt alles** bis zum nächsten Start: Design, Start-Animation an/aus, Auto/Manuell-Schalter, eigene Einstellungen (Codec, Zielgröße, Zeitplan …) und eigene Vorlagen. Bisher ging das beim Neustart verloren
 
+**Neu in 2.1.0**
+- ⚡ Ordner-Abgleich: Die sortierte Liste wird nur noch einmal pro Abgleich gebaut – Klicks auf „Alle / Nur in A / …“ reagieren bei großen Ordnern (15.000 Dateien) sofort statt mit ca. 1 s Hänger
+
 **Neu in 2.0.9**
 - 🩺 **Systemprüfung**: Statistik → „Protokoll erstellen“ (oder **Strg + Alt + S**) sammelt Windows, Prozessor, Arbeitsspeicher, Grafikkarten mit Treiber und Hz, Monitore und an welcher Karte sie hängen, WebView2, Encoder, Hardware-Test, gemessene Hänger und die letzten Meldungen in eine Textdatei auf dem **Desktop** – zum Schicken für die Fehlersuche
 

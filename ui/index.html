@@ -2073,10 +2073,11 @@ function fileCell(x){
     <button class="ico real-only" data-play2="${x.u}" title="Im Player abspielen">▶</button><button class="ico" data-proc="${x.u}" title="Verarbeiten (in den Konverter)">⚙</button><button class="ico" data-del="${x.u}" title="Löschen">🗑</button></div>`;
 }
 const entry=u=>DIR.A.find(x=>x.u==u)||DIR.B.find(x=>x.u==u);
-var CLIM=200;
+var CLIM=200;const COLL=new Intl.Collator('de');
 function renderCmp(){
   if(!CMP)return;
-  const all=[...CMP.same,...CMP.similar,...CMP.onlyA,...CMP.onlyB].sort((p,q)=>(p.a||p.b).n.key.localeCompare((q.a||q.b).n.key,'de'));
+  /* sortierte Gesamtliste nur einmal pro Abgleich bauen (bei 15.000 Dateien sonst ~1 s bei jedem Klick) */
+  const all=CMP._all||(CMP._all=[...CMP.same,...CMP.similar,...CMP.onlyA,...CMP.onlyB].sort((p,q)=>COLL.compare((p.a||p.b).n.key,(q.a||q.b).n.key)));
   const T=[['all','Alle',all.length],['same','✓ Schon vorhanden',CMP.same.length],['similar','≈ Ähnlich',CMP.similar.length],['onlyA','Nur in A (neu)',CMP.onlyA.length],['onlyB','Nur in B',CMP.onlyB.length]];
   $('#resTabs').innerHTML=T.map(t=>`<span class="pill ${cTab===t[0]?'on':''}" data-t="${t[0]}">${t[1]}<em>${t[2]}</em></span>`).join('');
   $$('#resTabs .pill').forEach(p=>p.onclick=()=>{cTab=p.dataset.t;CLIM=200;renderCmp()});
