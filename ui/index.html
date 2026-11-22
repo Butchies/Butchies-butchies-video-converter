@@ -3347,9 +3347,11 @@ document.addEventListener('keydown',e=>{const fs=document.fullscreenElement===$(
   else if(e.key==='Home')pSeek(0);else if(e.key==='End')pSeek(pDur()-1);else if(/^[0-9]$/.test(e.key))pSeek(pDur()*(+e.key)/10);
   if(fs){const w=$('#plWrap');w.dispatchEvent(new Event('mousemove'))}});
 /* Vorher/Nachher klappt nach ca. 10 s ohne Maus von selbst zu – beim Ansehen von Vorher/Nachher wieder auf */
-{let t=0;const card=$('#stageCard');const arm=()=>{clearTimeout(t);t=setTimeout(()=>{if(!$('#mAb').hidden&&!card.matches(':hover')&&!card.classList.contains('mini')&&!document.fullscreenElement&&!$('#modal:not([hidden])'))playerMini(true)},10000)};
- card.addEventListener('pointermove',arm);card.addEventListener('pointerdown',arm);card.addEventListener('pointerleave',arm);
- const sm=setMode;setMode=function(m){const r=sm(m);if(m==='ab'||$('#mAb')&&!$('#mAb').hidden)arm();return r}}
+{const card=$('#stageCard');let last=Date.now(),was=false;const poke=()=>last=Date.now();
+ ['pointermove','pointerdown','wheel','keydown'].forEach(t=>card.addEventListener(t,poke));
+ /* läuft immer – auch direkt nach dem Programmstart: Vorher/Nachher offen + 10 s keine Maus darüber -> zuklappen */
+ setInterval(()=>{const open=!$('#mAb').hidden&&!card.classList.contains('mini');if(open&&!was)poke();was=open;
+   if(open&&!card.matches(':hover')&&!document.fullscreenElement&&!AB.drag&&!AB.pan&&Date.now()-last>10000){playerMini(true);was=false}},1000)}
 /* ================= Extra-Fenster auf andere Monitore ================= */
 const POP=new URLSearchParams(location.search).get('pop');
 let POPPREF={};try{POPPREF=JSON.parse(KV.get('bvc-pops')||'{}')||{}}catch(e){}
