@@ -35,7 +35,12 @@ FFmpeg mit allen Codecs ist dabei (inklusive VMAF-Messung und HDR). WebView2 wir
 **Neu in 1.1.3**
 - Das Programm **merkt sich jetzt alles** bis zum nächsten Start: Design, Start-Animation an/aus, Auto/Manuell-Schalter, eigene Einstellungen (Codec, Zielgröße, Zeitplan …) und eigene Vorlagen. Bisher ging das beim Neustart verloren
 
-**Neu in 1.5.0 – Final (stabile Version)**
+**Neu in 1.5.1 – Final (stabile Version)**
+- 🎨 **Neuer Installer im Butchies-Look** (Lila/Pink) mit neuem Programm-Symbol – gilt auch für Programm und Desktop-Verknüpfung
+- 🟣 Das Programm startet beim ersten Mal im Design **Neon Lila**
+- ❔ **Kurzanleitung beim ersten Start** (6 Schritte, jederzeit wieder über ❔ oben)
+
+**Neu in 1.5.0**
 - 🏷️ **Gruppen-Name → „Butchies-Groove“**: Der Name am Ende hinter dem Codec (z. B. „-WAYNE“, „-SiXTYNiNE“) wird beim Umwandeln automatisch ersetzt (oder behalten/entfernt – unter „Ausgabe & Zeitplan“). Über 100 bekannte Gruppen sind eingebaut, neue lernt das Programm selbst dazu. Darunter siehst du sofort, wie die Dateien heißen werden.
 - 📝 **Das Programm merkt sich deine Filme**: Jeder umgewandelte Film wird mit Fingerabdruck gemerkt und bekommt einen unsichtbaren Vermerk in der Datei.
 - ✏️ **Umbenennen im Ordner-Abgleich**: „Gruppen-Namen ersetzen (nur deine Filme)“ findet auf dem NAS deine schon umgewandelten Filme mit fremdem Gruppen-Namen und benennt nur diese um – Untertitel/NFO gleich mit, rückgängig möglich. Fremde Filme bleiben, außer du hakst sie an.

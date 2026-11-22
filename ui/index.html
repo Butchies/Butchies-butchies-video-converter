@@ -71,6 +71,14 @@ button{cursor:pointer}
 .hwb{display:grid;grid-template-columns:minmax(150px,auto) 1fr 80px;gap:7px 12px;align-items:center;font-size:13px}
 .hwb .b{height:11px;border-radius:9px;background:var(--inset);overflow:hidden}.hwb .b i{display:block;height:100%;background:linear-gradient(90deg,var(--a),var(--b))}
 .hold{color:var(--warn);font-weight:700}
+.tour-dim{position:fixed;inset:0;z-index:300;background:rgba(10,5,20,.55);backdrop-filter:blur(2px)}
+.tour-hole{position:fixed;z-index:301;border-radius:18px;box-shadow:0 0 0 4px var(--a),0 0 0 9999px rgba(10,5,20,.6);pointer-events:none;transition:all .25s}
+.tour-card{position:fixed;z-index:302;width:420px;max-width:calc(100vw - 20px);padding:20px 22px;border-radius:20px;background:linear-gradient(160deg,var(--bg2),var(--bg));border:1px solid var(--line);box-shadow:0 30px 80px rgba(0,0,0,.45);color:var(--text)}
+.tour-card h3{margin:2px 0 8px;font:800 20px var(--fh)}.tour-card p{margin:0 0 10px;color:var(--muted);font-size:14px;line-height:1.55}
+.tour-card .k{font:800 11px var(--fb);letter-spacing:.12em;text-transform:uppercase;color:var(--a)}
+.tour-card ul{margin:0 0 12px;padding-left:18px;font-size:13.5px;line-height:1.7}
+.tour-dots{display:flex;gap:6px;margin:6px 0 14px}.tour-dots i{width:22px;height:5px;border-radius:9px;background:var(--line)}.tour-dots i.on{background:linear-gradient(90deg,var(--a),var(--b))}
+.tour-btns{display:flex;gap:8px;align-items:center}.tour-btns .sp{flex:1}
 .grpprev{display:grid;gap:5px;margin-top:8px}.grpprev:empty{display:none}
 .nmv{font:600 12px/1.45 var(--fm);word-break:break-all;padding:6px 9px;border-radius:9px;background:var(--inset);border:1px solid var(--line)}
 .nmv s{color:var(--bad)}.nmv u{text-decoration:none;color:var(--ok);font-weight:800}.nmv small{font-family:var(--fb);color:var(--muted)}
@@ -533,7 +541,7 @@ dialog[open]{animation:dlg .3s ease}
 @media(prefers-reduced-motion:reduce){.ssn-layer canvas{opacity:.8}}
 </style>
 </head>
-<body data-theme="gold" data-skin="lounge">
+<body data-theme="neon" data-skin="club">
 
 <!-- Start-Animation (wie Butchies Encode Studio / Butchies-Webseite) -->
 <div class="splash" id="splash" aria-hidden="true">
@@ -568,6 +576,7 @@ dialog[open]{animation:dlg .3s ease}
  <div class="top-actions">
   <button type="button" class="btn ghost" id="queueBtn" title="Warteschlange öffnen"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg><span class="lbl">Warteschlange</span><span class="qbadge" id="qBadge" hidden>0</span></button>
   <button type="button" class="btn ghost" id="statBtn" title="Spar-Statistik, Hardware-Test und was die KI gelernt hat"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span class="lbl">Statistik</span></button>
+  <button type="button" class="btn ghost" id="helpBtn" title="Kurzanleitung">❔</button>
   <button type="button" class="btn ghost" id="themeBtn"><span class="theme-dot" aria-hidden="true"></span><span class="lbl">Design</span></button>
   <button type="button" class="btn ghost quit" id="quitBtn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v9M6.3 6.3a8 8 0 1 0 11.4 0"/></svg><span class="lbl">Beenden</span></button>
  </div>
@@ -2121,9 +2130,9 @@ const THEMES=[
   ['gold','Gold Lounge','Edel & dunkel','#0d0a05','#f5b544','#ffdf8a','lounge',"'Cormorant Garamond'"],
   ['mono','Mitternacht','Schwarz-Weiß','#0a0a0a','#e5e5e5','#9ca3af','index',"'Archivo Black'"],
   ['light','Hell','Für den Tag','#f6f2fb','#7c3aed','#db2777','tag','Manrope']];
-let curTheme='gold';
+let curTheme='neon';
 function store(k,v){if(v!==undefined)KV.set(k,v);return KV.get(k)}
-function applyTheme(id){const t=THEMES.find(x=>x[0]===id)||THEMES[4];curTheme=t[0];document.body.dataset.theme=t[0];document.body.dataset.skin=t[6];store('bvc-theme',t[0]);
+function applyTheme(id){const t=THEMES.find(x=>x[0]===id)||THEMES[0];curTheme=t[0];document.body.dataset.theme=t[0];document.body.dataset.skin=t[6];store('bvc-theme',t[0]);
   try{draw(lastPts||[],lastTarget||1,lastMax||0)}catch(e){}}
 function openThemes(){const g=$('#themeGrid');g.innerHTML=THEMES.map(([id,n,sub,bg,a,b,,f])=>`<button type="button" class="theme-opt${id==='light'?' is-light':''}" data-th="${id}" aria-pressed="${id===curTheme}" style="--tbg:${bg};--ta:${a};--tb:${b};--tf:${f}"><div class="sw"></div><b>${n}</b><small>${sub}</small><span class="tick"><svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg></span></button>`).join('');
   $$('[data-th]').forEach(b=>b.onclick=()=>{applyTheme(b.dataset.th);$$('[data-th]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)))});
@@ -2132,7 +2141,7 @@ const closeTh=()=>{const d=$('#themeDlg');try{d.close()}catch(e){d.removeAttribu
 $('#themeBtn').onclick=openThemes;$('#thClose').onclick=closeTh;$('#thOk').onclick=closeTh;
 $('#introCheck').onchange=e=>store('bvc-intro',e.target.checked?'1':'0');
 $('#ssnCheck').onchange=e=>store('bvc-seasons',e.target.checked?'1':'0');
-applyTheme(store('bvc-theme')||'gold');
+applyTheme(store('bvc-theme')||'neon');
 function splashLeave(){const sp=$('#splash');if(!sp||sp.classList.contains('leave'))return;sp.classList.add('leave');setTimeout(()=>{try{SSN&&SSN.stop()}catch(e){}sp.remove()},950)}
 $('#splash').addEventListener('click',splashLeave);
 let SSN=null;const ssnOn=()=>store('bvc-seasons')!=='0';
@@ -2814,6 +2823,7 @@ async function realInit(){
   if(INFO.config.bench)benchLearn(INFO.config.bench);else setTimeout(()=>{if(!RUN.on)runBench(true)},25000);
   markEnc();applyAuto();update();
   await restoreSession();
+  tourAuto();
   $('#codecTbl').innerHTML='<table><thead><tr><th>Format</th><th>Wiedergabe</th></tr></thead><tbody>'+CODECS.map(([n])=>`<tr><td>${n}</td><td style="color:var(--ok)">✓ ${/MKV|AVI|HEVC|MPEG-2|AC-3|DTS|High 10/.test(n)?'live über ffmpeg':'direkt'}</td></tr>`).join('')+'</tbody></table>';
 }
 function markEnc(){if(!INFO)return;[...$('#sEnc').options].forEach(o=>{const ok=INFO.hw[o.value]!==false;o.disabled=!ok;if(!ok&&!/nicht verfügbar/.test(o.text))o.text+=' – nicht verfügbar'});
@@ -2946,6 +2956,34 @@ function grpDraw(){
     grpScan(GRS.side);try{realScan(GRS.side,ROOT[GRS.side]||SRC[GRS.side],true)}catch(e){}};
   $('#grUndo').onclick=async()=>{const r=await api('/api/grp-undo',{});toast(r.undone?`↶ ${r.undone} Datei(en) zurückbenannt.`:'Nichts zum Rückgängigmachen.');if(r.undone)grpScan(GRS.side)};
 }
+/* ---------- Kurzanleitung beim ersten Start ---------- */
+const TOUR=[
+  {t:'👋 Willkommen im Butchies Video Converter AI',b:'<p>In 6 kurzen Schritten zeige ich dir die wichtigsten Stellen. Dauert eine Minute.</p><ul><li>🎬 Filme hineinziehen</li><li>🧠 KI-Autopilot – alles auf <b>Auto</b> lassen oder selbst einstellen</li><li>▶ Umwandeln &amp; Fortschritt</li><li>🗂️ Ordner-Abgleich, 📊 Statistik, 🎨 Design</li></ul>',go:'Los geht’s →'},
+  {s:'#setCard',t:'🧠 KI-Autopilot – deine Optionen',b:'<p>Jede Zeile ist eine Option. <b>Auto</b> = die KI entscheidet (empfohlen). <b>Manuell</b> = du stellst selbst ein, die Zeile klappt auf.</p><ul><li>⚡ Prozessor &amp; Grafikkarten – wer umwandelt</li><li>🌡️ PC-Auslastung &amp; Nacht-Planer</li><li>🎯 Qualität: Zielgröße oder Ziel-Qualität</li><li>🎙️ Ton-Aufbereiter · 📁 Ausgabe &amp; Dateiname</li></ul>'},
+  {s:'#drop',t:'🎬 Filme hineinziehen',b:'<p>Ziehe Videos oder ganze Ordner hier hinein – oder nutze „Dateien wählen“. Die KI prüft jeden Film sofort und zeigt rechts in der <b>KI-Analyse</b>, wie groß und wie gut er wird.</p>'},
+  {s:'#bStart',t:'▶ Umwandeln starten',b:'<p>Hier geht’s los. Im <b>KI-Monitor</b> siehst du Fortschritt, Restzeit und Geschwindigkeit, über <b>Warteschlange</b> oben alle Filme.</p><p>Tipp: Unter „PC-Auslastung“ kannst du festlegen, dass nur umgewandelt wird, wenn du den PC nicht benutzt.</p>'},
+  {s:'.tab[data-v=cmp]',t:'🗂️ Ordner-Abgleich',b:'<p>Vergleicht zwei Ordner (z. B. Downloads ↔ NAS), findet doppelte Filme und benennt deine umgewandelten Filme in „Butchies-Groove“ um.</p>'},
+  {s:'#statBtn',t:'📊 Statistik · 🎨 Design · ❔ Hilfe',b:'<p><b>Statistik</b>: wie viel Platz du gespart hast und was die KI gelernt hat. Daneben wählst du das <b>Design</b>.</p><p>Diese Anleitung findest du jederzeit wieder unter <b>❔</b> oben rechts.</p>',go:'Fertig ✓'}];
+let TI=-1;
+function tourClose(){$$('.tour-dim,.tour-hole,.tour-card').forEach(x=>x.remove());TI=-1;if($('#tourNo')===null)KV.set('bvc-tour','1')}
+function tourShow(i){
+  $$('.tour-dim,.tour-hole,.tour-card').forEach(x=>x.remove());if(i>=TOUR.length){KV.set('bvc-tour','1');TI=-1;return}TI=i;
+  const st=TOUR[i],el=st.s&&$(st.s),c=document.createElement('div');c.className='tour-card';
+  c.innerHTML=`<span class="k">Kurzanleitung · Schritt ${i+1} von ${TOUR.length}</span><h3>${st.t}</h3>${st.b}<div class="tour-dots">${TOUR.map((x,k)=>`<i class="${k<=i?'on':''}"></i>`).join('')}</div>
+    <div class="tour-btns">${i?'<button class="btn sm" data-tb="back">‹ Zurück</button>':''}<span class="sp"></span><button class="btn sm" data-tb="skip">Überspringen</button><button class="btn sm pri" data-tb="next">${st.go||'Weiter →'}</button></div>`;
+  if(el){el.scrollIntoView({block:'nearest'});const r=el.getBoundingClientRect(),h=document.createElement('div');h.className='tour-hole';
+    Object.assign(h.style,{left:r.left-6+'px',top:r.top-6+'px',width:r.width+12+'px',height:r.height+12+'px'});document.body.appendChild(h);document.body.appendChild(c);
+    const cw=c.offsetWidth,ch=c.offsetHeight,W=innerWidth,H=innerHeight;let x=r.right+20,y=r.top;
+    if(x+cw>W-10)x=r.left-cw-20;if(x<10){x=Math.max(10,Math.min(W-cw-10,r.left));y=r.bottom+16;if(y+ch>H-10)y=r.top-ch-16}
+    c.style.left=x+'px';c.style.top=Math.max(10,Math.min(H-ch-10,y))+'px'}
+  else{const d=document.createElement('div');d.className='tour-dim';document.body.appendChild(d);c.style.cssText='left:50%;top:50%;transform:translate(-50%,-50%);width:480px';document.body.appendChild(c)}
+  c.querySelector('[data-tb=next]').onclick=()=>tourShow(i+1);c.querySelector('[data-tb=skip]').onclick=()=>{KV.set('bvc-tour','1');$$('.tour-dim,.tour-hole,.tour-card').forEach(x=>x.remove());TI=-1};
+  const bk=c.querySelector('[data-tb=back]');if(bk)bk.onclick=()=>tourShow(i-1);
+}
+addEventListener('resize',()=>{if(TI>=0)tourShow(TI)});
+addEventListener('keydown',e=>{if(TI>=0&&e.key==='Escape'){KV.set('bvc-tour','1');$$('.tour-dim,.tour-hole,.tour-card').forEach(x=>x.remove());TI=-1}});
+$('#helpBtn').onclick=()=>{showTab('conv');setTimeout(()=>tourShow(0),150)};
+function tourAuto(){if(KV.get('bvc-tour'))return;const go=()=>{if($('#splash'))return setTimeout(go,500);setTimeout(()=>tourShow(0),600)};go()}
 $('#statBtn').onclick=openStats;$('#stClose').onclick=()=>$('#statDlg').close();
 const SETIDS=['#oGrp','#sVm','#sVoice','#sLoud','#sNight','#plMins','#oSwap','#sAutoSz','#sEnc','#sProf','#sPre','#sTune','#sLvl','#sCont','#sMin','#sMax','#s2p','#sCrf','#sCbr','#sRes','#sFps','#sAud','#sAbr','#sAuto','#sYt','#sHdr',
   '#oName','#oStart','#oAfter','#oPush','#parMode','#cTh','#cVid','#cImg','#cDb','#cSub','#pUp','#abHover'];
