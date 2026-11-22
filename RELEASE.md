@@ -35,6 +35,11 @@ FFmpeg mit allen Codecs ist dabei (inklusive VMAF-Messung und HDR). WebView2 wir
 **Neu in 1.1.3**
 - Das Programm **merkt sich jetzt alles** bis zum nächsten Start: Design, Start-Animation an/aus, Auto/Manuell-Schalter, eigene Einstellungen (Codec, Zielgröße, Zeitplan …) und eigene Vorlagen. Bisher ging das beim Neustart verloren
 
+**Neu in 1.8.1**
+- Start-Animation auf dem zweiten Monitor: wartet, bis das Fenster seine volle Größe hat, und der Lichtstreifen folgt dem Logo auch in der Höhe – sitzt jetzt mittig
+- Kopfzeile kompakter in einer Reihe: Version + Grafikkarten klein unter dem Programmnamen, „Monitore tauschen“ entfernt (das kleine Monitor-Symbol reicht)
+- Scrollleisten ausgeblendet (Scrollen geht weiter)
+
 **Neu in 1.8.0**
 - ▶ Player im Vollbild mit **allen Steuerelementen** im Bild (Zeitleiste, ±10 s, Einzelbild, Tempo, Lautstärke, Ton-Aufbereiter, KI-Schärfe, Standbild) – blenden sich nach 3 s ohne Maus aus. Oben: Titel, Statistik, ✕ zum Beenden. Doppelklick = Vollbild
 - 📊 Statistik im Bild (Taste I oder 📊): Auflösung, Codec/HDR, Bildrate, Bitrate, Größe, Wiedergabe-Art, gezeigte/verlorene Bilder, Puffer, Position/Rest, Tempo, Lautstärke, KI-Schärfe, Uhrzeit – unter ⚙ (bzw. Rechtsklick auf 📊) frei auswählbar, wird gemerkt

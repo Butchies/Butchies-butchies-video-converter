@@ -177,7 +177,8 @@ body:not(.real) .real-only{display:none!important}
 .top{position:sticky;top:0;z-index:40;display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:12px 20px;border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--bg) 65%,transparent);backdrop-filter:blur(14px);min-height:64px}
 .brand{display:flex;align-items:center;gap:12px;flex:0 0 auto;user-select:none}
 .brand b{display:block;font:800 18px/1.1 var(--fh)}
-.brand small{color:var(--muted);font-size:12px}
+.brand small{display:none}
+.brand #verBadge{display:inline-block;margin-top:4px;padding:2px 9px;font-size:11px;max-width:420px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mark{display:grid;place-items:center;width:40px;height:40px;border-radius:12px;color:var(--on);background:linear-gradient(135deg,var(--a),var(--b));box-shadow:0 6px 20px var(--glow)}
 .mark svg{width:20px;height:20px}
 .ai-mark{display:inline-block;background:linear-gradient(110deg,var(--a) 0%,var(--b) 45%,#fff6dc 50%,var(--b) 55%,var(--a) 100%);background-size:250% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:aishine 1.8s ease-in-out infinite;padding:0 .04em;font-weight:800}
@@ -526,6 +527,8 @@ dialog[open]{animation:dlg .3s ease}
 .dstreak{position:fixed;top:50%;height:6px;margin-top:-3px;z-index:399;pointer-events:none;border-radius:6px;box-shadow:0 0 24px var(--b)}
 .dstreak.rt{background:linear-gradient(270deg,transparent,#fff,var(--b),var(--a))}
 .goodbye.instant{transition:none}
+/* Scrollleisten unsichtbar (Scrollen mit Mausrad/Touchpad geht weiter) */
+*{scrollbar-width:none}*::-webkit-scrollbar{width:0!important;height:0!important;display:none}
 .mswrap{display:inline-flex;gap:4px;margin-left:auto;margin-right:10px;flex:none}.pg-head .mswrap{margin-right:0}
 .msw{display:inline-flex;align-items:center;gap:3px;height:26px;padding:0 7px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--muted);font:700 11px var(--fb);cursor:pointer}
 .msw i{font-style:normal}.msw.on{background:linear-gradient(110deg,var(--a),var(--b));color:#fff;border-color:transparent}.msw:hover{color:var(--text)}
@@ -619,9 +622,8 @@ body.m2 .cmpgrid .card{padding:14px 16px}
 <header class="top">
  <div class="brand dragzone">
   <span class="mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="14" height="14" rx="2.5"/><path d="M16 10l6-3v10l-6-3"/></svg></span>
-  <div><b>Butchies Video Converter <span class="ai-mark">AI</span></b><small>H.264 / H.265 · KI-Analyse · Player · Ordner-Abgleich</small></div>
+  <div><b>Butchies Video Converter <span class="ai-mark">AI</span></b><small>H.264 / H.265 · KI-Analyse · Player · Ordner-Abgleich</small><span class="badge" id="verBadge">Vorschau</span></div>
  </div>
- <span class="badge" id="verBadge">Vorschau</span>
  <div class="dragzone drag-fill"></div>
  <nav class="tabs" aria-label="Bereiche">
   <button class="tab on" data-v="conv">🎬 Studio</button>
@@ -3187,11 +3189,11 @@ function dStreak(d,mode,root,hold,ref){if(RED()||ANIM.streak==='off')return;cons
   if(mode==='out')fr=d==='l'?[{left:px(cx-gap),width:'0px'},{left:'0px',width:px(cx-gap)}]:[{left:px(cx+gap),width:'0px'},{left:px(cx+gap),width:px(W-cx-gap)}];
   else{const stop=rad+10;fr=d==='l'?[{left:'0px',width:'0px'},{left:'0px',width:px(cx-stop)}]:[{left:px(W),width:'0px'},{left:px(cx+stop),width:px(W-cx-stop)}]}
   if(mode==='out'&&ref){/* Schweif HINTER dem Logo: nie schneller als das Logo, beginnt dort, wo das Logo stand */const t0=performance.now(),x0=cx;
-    const step=now=>{const r=ref.getBoundingClientRect();if(d==='l'){const l=Math.max(0,r.right-R.left+6),end=x0+rad;e.style.left=px(l);e.style.width=px(end-l)}
+    const step=now=>{const r=ref.getBoundingClientRect();e.style.top=(r.top-R.top+r.height/2-h/2)+'px';if(d==='l'){const l=Math.max(0,r.right-R.left+6),end=x0+rad;e.style.left=px(l);e.style.width=px(end-l)}
       else{const st=x0-rad,rr=Math.min(W,r.left-R.left-6);e.style.left=px(st);e.style.width=px(rr-st)}
       if(now-t0<T*1.15+80)requestAnimationFrame(step)};e.style.width='0px';requestAnimationFrame(step)}
   else if(mode==='in'&&ref){/* Streifen hängt hinten am Logo und geht nie hinein */const t0=performance.now();
-    const Q=W/4;const step=now=>{const r=ref.getBoundingClientRect();if(d==='l'){const end=r.left-R.left-6,w=Math.min(Q,end);e.style.left=px(end-w);e.style.width=px(w)}else{const l=r.right-R.left+6;e.style.left=px(l);e.style.width=px(Math.min(Q,W-l))}
+    const Q=W/4;const step=now=>{const r=ref.getBoundingClientRect();e.style.top=(r.top-R.top+r.height/2-h/2)+'px';if(d==='l'){const end=r.left-R.left-6,w=Math.min(Q,end);e.style.left=px(end-w);e.style.width=px(w)}else{const l=r.right-R.left+6;e.style.left=px(l);e.style.width=px(Math.min(Q,W-l))}
       if(now-t0<T+60)requestAnimationFrame(step)};requestAnimationFrame(step)}
   else e.animate(fr,{duration:mode==='out'?T*.45:T,easing:mode==='in'?'cubic-bezier(.2,.8,.3,1)':'cubic-bezier(.6,0,.4,1)',fill:'forwards'});
   /* auf dem Ankunfts-Bildschirm nur kurz, dann weg */
@@ -3223,7 +3225,7 @@ $('#anPlay').onclick=()=>animPrev(false);$('#anPlayB').onclick=()=>animPrev(true
 animUi();
 function dualUi(){const on=document.body.classList.contains('dual')||M2;
   $('#dualBtn').hidden=!(M2||DINFO.n>1);$('#dualLbl').textContent=on?'1 Monitor':'2 Monitore';$('#dualBtn').firstChild.textContent=on?'🖥':'🖥🖥';
-  $('#swapBtn').hidden=!on;if($('#dualDir')&&DINFO.dir)$('#dualDir').value=DINFO.dir}
+  $('#swapBtn').hidden=true;if($('#dualDir')&&DINFO.dir)$('#dualDir').value=DINFO.dir}
 function dualMain(on){document.body.classList.toggle('dual',on);
   if(on){if($('#v-cmp').classList.contains('on'))_showTab('conv');_setMode('ab')}else{_setMode(KV.get('bvc-pmode')==='ab'?'ab':'play')}dualUi()}
 function m2Ready(){if(M2READY)M2READY.r()}
@@ -3274,7 +3276,10 @@ async function playEntry(x){if(!REAL||!x.full)return;try{const r=await api('/api
 /* ---------- Fenster 2 (Monitor 2) ---------- */
 function m2Play(js){try{playerMini(false)}catch(e){}const o=JSON.parse(js);let q=PL.find(y=>y.fid===o.fid);if(!q){q=Object.assign({id:++uid},o);PL.push(q)}_oip(q)}
 async function m2Arrive(d,cfg){setAnim(cfg);const sp=$('#splash');DINFO.on=true;dualUi();
-  if(!sp){dFlash();return}sp.classList.remove('m2wait');const lg=sp.querySelector('.sp-logo');await flyIn(lg,d);spUnhold(sp);await dwait(RED()?500:2600);splashLeave()}
+  if(!sp){dFlash();return}
+  /* erst warten, bis das Fenster auf dem Monitor seine volle Größe hat – sonst sitzt alles zu hoch */
+  {let last='',same=0;const t0=performance.now();while(performance.now()-t0<600){const k=innerWidth+'x'+innerHeight;same=k===last?same+1:0;last=k;if(same>=3&&innerHeight>=screen.availHeight*.85)break;await new Promise(r=>requestAnimationFrame(r))}}
+  sp.classList.remove('m2wait');const lg=sp.querySelector('.sp-logo');await flyIn(lg,d);spUnhold(sp);await dwait(RED()?500:2600);splashLeave()}
 async function m2Bye(d,quick,cfg){setAnim(cfg);try{pPause()}catch(e){}const g=$('#goodbye');g.hidden=false;g.classList.remove('closing','done','late');$('#gBack').hidden=true;
   $('#gHint').textContent=quick?'Alles wieder auf einem Bildschirm.':'Bis zum nächsten Film.';requestAnimationFrame(()=>g.classList.add('show'));
   await dwait(quick?(RED()?100:900):(RED()?300:2100));g.querySelector('.g-center').querySelectorAll('p,h1,.g-actions').forEach(e=>{e.style.transition='opacity .35s';e.style.opacity='0'});await dwait(300);
