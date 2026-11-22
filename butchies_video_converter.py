@@ -10,7 +10,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 APP_NAME = 'Butchies Video Converter'
-VERSION = '2.0.7'
+VERSION = '2.0.8'
 FROZEN = getattr(sys, 'frozen', False)
 BASE = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent))
 UI = BASE / 'ui'
@@ -2496,6 +2496,57 @@ POPS = {}          # ausgelagerte Extra-Fenster (Dialog-ID -> Fenster)
 WIN2 = [None]      # zweites Fenster (Monitor 2: Ordner-Abgleich + Player)
 
 
+def monitor_adapters():
+    """Welche Grafikkarte jeden Monitor ansteuert: [(links, oben, breite, höhe, 'AMD Radeon …'), …].
+    Hängen die Monitore an verschiedenen Grafikkarten (Laptop: Prozessor-Grafik + eigene Karte), muss Windows
+    jedes Bild eines Fensters über beide Monitore von einer Karte zur anderen kopieren – das ruckelt/hängt."""
+    out = []
+    if os.name != 'nt':
+        return out
+    import ctypes
+    from ctypes import wintypes
+    u = ctypes.windll.user32
+
+    class MIX(ctypes.Structure):
+        _fields_ = [('cbSize', wintypes.DWORD), ('rcMonitor', wintypes.RECT), ('rcWork', wintypes.RECT), ('dwFlags', wintypes.DWORD),
+                    ('szDevice', wintypes.WCHAR * 32)]
+
+    class DD(ctypes.Structure):
+        _fields_ = [('cb', wintypes.DWORD), ('DeviceName', wintypes.WCHAR * 32), ('DeviceString', wintypes.WCHAR * 128),
+                    ('StateFlags', wintypes.DWORD), ('DeviceID', wintypes.WCHAR * 128), ('DeviceKey', wintypes.WCHAR * 128)]
+    names = {}
+    i = 0
+    while True:
+        d = DD()
+        d.cb = ctypes.sizeof(DD)
+        if not u.EnumDisplayDevicesW(None, i, ctypes.byref(d), 0):
+            break
+        names[d.DeviceName] = d.DeviceString
+        i += 1
+    u.GetMonitorInfoW.argtypes = [wintypes.HANDLE, ctypes.POINTER(MIX)]
+    proc = ctypes.WINFUNCTYPE(ctypes.c_int, wintypes.HANDLE, wintypes.HDC, ctypes.POINTER(wintypes.RECT), wintypes.LPARAM)
+
+    def cb(hmon, hdc, rect, data):
+        mi = MIX()
+        mi.cbSize = ctypes.sizeof(MIX)
+        u.GetMonitorInfoW(hmon, ctypes.byref(mi))
+        r = mi.rcMonitor
+        out.append((r.left, r.top, r.right - r.left, r.bottom - r.top, names.get(mi.szDevice, '?')))
+        return 1
+    u.EnumDisplayMonitors(None, None, proc(cb), 0)
+    return sorted(out)
+
+
+def mixed_gpus():
+    try:
+        return len({a[4] for a in monitor_adapters()}) > 1
+    except Exception:  # noqa: BLE001
+        return False
+
+
+SOFT = [False]     # Zeichnen ohne Grafikkarte (für 2 Monitore an verschiedenen Grafikkarten)
+
+
 class Dual:
     """Zwei-Monitor-Ansicht: Hauptfenster = Studio, zweites Fenster = Ordner-Abgleich + normaler Player."""
 
@@ -2522,7 +2573,8 @@ class Dual:
         side = 'l'
         if cur and ex:
             side = 'l' if ex[0] + ex[2] / 2 < cur[0] + cur[2] / 2 else 'r'
-        return {'n': len(self.mons()), 'on': bool(c.get('dual')), 'side': side, 'dir': c.get('dualdir') or 'auto', 'open': bool(WIN2[0])}
+        return {'n': len(self.mons()), 'on': bool(c.get('dual')), 'side': side, 'dir': c.get('dualdir') or 'auto', 'open': bool(WIN2[0]),
+                'mixed': mixed_gpus(), 'soft': SOFT[0]}
 
     def prepare(self):
         """Fenster 2 unsichtbar vorbereiten (lädt im Hintergrund), damit es beim Flash sofort da ist."""
@@ -2900,6 +2952,10 @@ def native_window(url):
     # Zeichnen nicht drosseln: Chromium hält ein Fenster über zwei Monitore sonst teilweise für „verdeckt“
     # (Studio auf dem zweiten Monitor) und malt die andere Seite erst nach einem Fensterwechsel neu.
     flags = '--disable-features=CalculateNativeWinOcclusion --disable-backgrounding-occluded-windows --disable-renderer-backgrounding --disable-background-timer-throttling'
+    # 2 Monitore an verschiedenen Grafikkarten: ohne Grafikkarten-Beschleunigung zeichnen -> keine Kopier-Hänger zwischen den Karten
+    if load_config().get('dual') and load_config().get('dualsoft', True) and mixed_gpus():
+        flags += ' --disable-gpu --disable-gpu-compositing'
+        SOFT[0] = True
     old = os.environ.get('WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS', '')
     if 'CalculateNativeWinOcclusion' not in old:
         os.environ['WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS'] = (old + ' ' + flags).strip()
@@ -2985,10 +3041,21 @@ def native_window(url):
                     kids.append([buf.value, r.left, r.top, r.right - r.left, r.bottom - r.top])
                     return True
                 u.EnumChildWindows(h, proc(cb), 0)
-                return {'win': frame._rect(), 'span': list(getattr(frame, 'span', None) or []), 'mons': dual.mons(),
+                return {'win': frame._rect(), 'span': list(getattr(frame, 'span', None) or []), 'mons': monitor_adapters(), 'soft': SOFT[0],
                         'scale': frame._scale(), 'kids': kids[:8], 'bg': dual.bg}
             except Exception as ex:  # noqa: BLE001
                 return {'err': str(ex)}
+
+        def restart(self):
+            """Programm neu starten (z. B. damit die Zwei-Monitor-Anzeige ohne Grafikkarten-Kopie läuft)."""
+            try:
+                args = [sys.executable] + ([] if getattr(sys, 'frozen', False) else [os.path.abspath(sys.argv[0])]) + [a for a in sys.argv[1:]]
+                subprocess.Popen(args, close_fds=True, creationflags=0x00000008 if os.name == 'nt' else 0)
+            except Exception as ex:  # noqa: BLE001
+                print('Neustart:', ex, flush=True)
+                return False
+            threading.Timer(0.3, frame.close).start()
+            return True
 
         def monitors(self):
             try:

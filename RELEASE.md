@@ -35,6 +35,10 @@ FFmpeg mit allen Codecs ist dabei (inklusive VMAF-Messung und HDR). WebView2 wir
 **Neu in 1.1.3**
 - Das Programm **merkt sich jetzt alles** bis zum nächsten Start: Design, Start-Animation an/aus, Auto/Manuell-Schalter, eigene Einstellungen (Codec, Zielgröße, Zeitplan …) und eigene Vorlagen. Bisher ging das beim Neustart verloren
 
+**Neu in 2.0.8**
+- 🖥🖥 2 Monitore an **zwei verschiedenen Grafikkarten** (z. B. Laptop-Bildschirm an der Radeon 760M, Monitor an der RX 7600M XT): Windows musste jedes Bild des Fensters von einer Karte zur anderen kopieren – dadurch hing die eine Seite immer wieder ein paar Sekunden. Das Programm erkennt das jetzt selbst und zeichnet seine Oberfläche in diesem Fall ohne Grafikkarten-Beschleunigung (beim Einschalten von „2 Monitore“ startet es dafür einmal neu). Das Umwandeln nutzt weiterhin voll die Grafikkarten
+- 🔧 Strg + Alt + D zeigt jetzt auch, welche Grafikkarte welchen Monitor ansteuert
+
 **Neu in 2.0.7 (Fehlersuche)**
 - 🔧 Strg + Alt + D misst jetzt auch die Hänger: „Bild-Lücken“ (Zeichnen hing) und „Lange Programm-Aufgaben“ – damit lässt sich sehen, ob das Programm selbst oder das Zeichnen auf dem Monitor hängt
 
