@@ -164,7 +164,7 @@ body:not(.real) .real-only{display:none!important}
 .center .queue{max-height:none}
 .upsc .hint{display:none}
 @media (min-width:1301px) and (min-height:760px){
- .studio{height:calc(100vh - 110px)}
+ .studio{height:calc(var(--vh,100vh) - 110px)}
  .studio .col{max-height:100%;overflow:auto;scrollbar-width:none;padding-bottom:2px}
  .studio .col::-webkit-scrollbar{display:none}
  .center #filesCard{flex:1;min-height:300px;display:flex;flex-direction:column}
@@ -335,7 +335,7 @@ th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);verti
 th{color:var(--muted);font-weight:800;font-size:11px;letter-spacing:.06em;text-transform:uppercase;position:sticky;top:0;background:var(--bg2);z-index:1}
 td .p{color:var(--muted);font-size:11px;word-break:break-all}
 #cmpTbl table,#qres table{table-layout:fixed}#cmpTbl tbody tr{content-visibility:auto;contain-intrinsic-size:auto 64px}#cmpTbl td,#qres td{overflow-wrap:anywhere;word-break:break-word}#cmpTbl .fc>div{min-width:0}
-body.m2 #cmpTbl{max-height:calc(100vh - 300px);min-height:360px}
+body.m2 #cmpTbl{max-height:calc(var(--vh,100vh) - 300px);min-height:360px}
 .tbl{max-height:480px;overflow:auto;border:1px solid var(--line);border-radius:14px}
 .score{font:700 12px var(--fb);padding:2px 9px;border-radius:99px;display:inline-block}
 .answer{margin-top:12px;padding:12px 14px;border-radius:14px;background:color-mix(in srgb,var(--a) 12%,transparent);border:1px solid color-mix(in srgb,var(--a) 35%,transparent);display:none}
@@ -1034,6 +1034,7 @@ body.twowin #bgBtn,body.m2 #bgBtn{display:none!important}
     <label>Lichtstreifen<select id="anStreak"><option value="off">Aus</option><option value="thin">Dünn</option><option value="thick">Dick</option></select></label>
     <label>Farbe<select id="anColor"><option value="theme">Design-Farben</option><option value="white">Weiß</option><option value="rainbow">Regenbogen</option></select></label>
    </div>
+   <label style="display:flex;gap:10px;align-items:center;margin-top:10px;font-size:13px;font-weight:700;color:var(--muted)">🔠 Größe der Oberfläche:<select id="uiSize" style="width:auto"><option value="1">Groß (wie bisher)</option><option value="0.9">Mittel</option><option value="0.8">Klein</option></select></label>
    <label style="display:flex;gap:10px;align-items:center;margin-top:10px;font-size:13px;font-weight:700;color:var(--muted)">🎮 Zeichnen bei 2 Monitoren an verschiedenen Grafikkarten:<select id="dualGpu" style="width:auto"><option value="igpu">Prozessor-Grafik (760M) – flüssig · Standard</option><option value="soft">Ohne Grafikkarte – ganz sicher, Animation weniger flüssig</option></select></label>
    <div class="dprev" id="anPrev"><div class="pm" id="pmA"><i class="pl"></i><small>Monitor 1</small></div><div class="pm" id="pmB"><i class="pl"></i><small>Hauptmonitor</small></div></div>
    <div class="row" style="gap:8px;margin-top:8px"><button type="button" class="btn sm pri" id="anPlay">▶ Vorschau Start</button><button type="button" class="btn sm" id="anPlayB">▶ Vorschau Beenden</button><button type="button" class="btn sm" id="anReset">↺ Standard</button><small style="color:var(--muted)">Wird sofort gespeichert.</small></div>
@@ -1108,11 +1109,6 @@ resize();if(reduced())render(0);else raf=requestAnimationFrame(render);return {s
 global.Seasons={pick,info,mount};
 })(window);
 
-/* 2.4.1: Modus in der Versions-Leiste */
-var VBASE=VBASE||'';function verMode(){const b=document.body.classList,v=$('#verBadge');if(!v||!VBASE)return;
-  const m=b.contains('span')?'🖥🖥 1 Fenster über 2 Monitore':(b.contains('dual')||b.contains('m2'))?'🖥🖥 2 Fenster':'🖥 1 Monitor';
-  const t=VBASE+' · '+m;if(v.textContent!==t)v.textContent=t}
-setInterval(verMode,1000);
 </script>
 <script>
 (()=>{
@@ -1871,6 +1867,17 @@ function cleanOpen(){const dup=[],orphan=[];
     [{t:'Abbrechen'},{t:'🗑 Angehakte löschen',style:'background:linear-gradient(135deg,#ef5b5b,#c2362f);color:#fff;border:0',fn:()=>{}}]);
   $$('[data-clall]').forEach(c=>c.onchange=()=>$$(`[data-cl="${c.dataset.clall}"]`).forEach(b=>b.checked=c.checked));
   [...$('#mdBtns').children].pop().onclick=()=>{const l=$$('[data-cl]:checked').map(b=>entry(b.value)).filter(Boolean);$('#modal').classList.remove('on');if(l.length)setTimeout(()=>askDelete(l),50);else toast('Nichts angehakt.')}}
+/* 2.6.0: Größe Klein/Mittel/Groß – nur der Inhalt wird skaliert (Rahmen, Monitore, Animationen bleiben unberührt) */
+var UZ=1;function uzVh(){document.documentElement.style.setProperty('--vh',(innerHeight/(UZ||1))+'px')}addEventListener('resize',uzVh);
+function uiSize(v,save){const z=+v||1;document.documentElement.style.zoom=z;UZ=z;uzVh();if(save)KV.set('bvc-uisize',String(z));const e=$('#uiSize');if(e)e.value=String(z);
+  requestAnimationFrame(()=>{try{const t=$('.top');if(t)document.body.style.setProperty('--hH',t.offsetHeight+'px');if(typeof spanVars==='function')spanVars()}catch(e){}dispatchEvent(new Event('resize'))})}
+setTimeout(()=>{uiSize(KV.get('bvc-uisize')||1);const e=$('#uiSize');if(e)e.onchange=()=>{uiSize(e.value,true);toast('🔠 Größe: '+e.selectedOptions[0].text)}},0);
+/* 2.4.1: Modus in der Versions-Leiste */
+var VBASE=VBASE||'';function verMode(){const b=document.body.classList,v=$('#verBadge');if(!v||!VBASE)return;
+  const m=b.contains('span')?'🖥🖥 1 Fenster über 2 Monitore':(b.contains('dual')||b.contains('m2'))?'🖥🖥 2 Fenster':'🖥 1 Monitor';
+  const t=VBASE+' · '+m;if(v.textContent!==t)v.textContent=t}
+setInterval(verMode,1000);
+
 function log(cls,msg){const d=new Date().toLocaleTimeString('de-DE');const el=document.createElement('div');el.innerHTML=`<span class="t">${d}</span><span class="${cls}">${msg}</span>`;$('#log').appendChild(el);$('#log').scrollTop=1e9;const pl=$('#pgLog');if(pl){pl.appendChild(el.cloneNode(true));while(pl.children.length>80)pl.firstChild.remove();pl.scrollTop=1e9}}
 const cv=$('#chart'),cx=cv.getContext('2d');
 function cssv(n){return getComputedStyle(document.body).getPropertyValue(n).trim()}
@@ -3509,7 +3516,7 @@ const isSpan=()=>document.body.classList.contains('span');
 const P2=document.createElement('div');P2.id='pane2';P2.innerHTML='<div class="p2head"><b>🗂️ Ordner-Abgleich</b><small style="color:var(--muted)">Monitor 2 · Player</small><span style="flex:1"></span><button class="btn ghost sm" id="p2swap" title="Monitore tauschen">⇄</button><button class="btn ghost sm" id="p2one">🖥 1 Monitor</button></div><div id="p2body"></div><div id="p2cover"></div>';document.body.appendChild(P2);
 const HOME_CMP={p:$('#v-cmp').parentNode,n:$('#v-cmp').nextSibling},HOME_STAGE={p:$('#stageCard').parentNode,n:$('#stageCard').nextSibling};
 function spanVars(){if(!SPAN)return;const sw=KV.get('bvc-spanswap')==='1',m=sw?SPAN.other:SPAN.main,o=sw?SPAN.main:SPAN.other,b=document.body.style;
-  [['m',m],['o',o]].forEach(([k,r])=>{b.setProperty('--'+k+'L',r[0]+'px');b.setProperty('--'+k+'T',r[1]+'px');b.setProperty('--'+k+'W',r[2]+'px');b.setProperty('--'+k+'H',r[3]+'px')});
+  const z=(typeof UZ!=='undefined'&&UZ)||1;[['m',m],['o',o]].forEach(([k,r])=>{b.setProperty('--'+k+'L',r[0]/z+'px');b.setProperty('--'+k+'T',r[1]/z+'px');b.setProperty('--'+k+'W',r[2]/z+'px');b.setProperty('--'+k+'H',r[3]/z+'px')});
   DINFO.side=o[0]<m[0]?'l':'r';requestAnimationFrame(()=>b.setProperty('--hH',$('.top').offsetHeight+'px'))}
 function stagePlace(where){const st=$('#stageCard');if(!isSpan()){if(st.parentNode!==HOME_STAGE.p)HOME_STAGE.p.insertBefore(st,HOME_STAGE.n);return}
   if(st.parentNode!==$('#p2body'))$('#p2body').insertBefore(st,$('#p2body').firstChild)}

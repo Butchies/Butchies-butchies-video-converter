@@ -1,4 +1,5 @@
 **Neu in 2.6.0**
+- Design-Fenster: Größe der Oberfläche wählbar – Groß (wie bisher), Mittel, Klein. Alles passt sich von selbst an.
 - Ordner-Abgleich: Rechtsklick auf einen Film öffnet ein Menü – Umbenennen, Gruppen-Tag setzen, ähnliche Filme suchen, Standbild als JPG speichern, abspielen, in den Konverter, im Explorer zeigen, löschen.
 - Neues Aufräumen-Fenster: findet doppelte Filme (die kleinere Kopie) und Untertitel/Bilder/Infos ohne passenden Film – angehakte löschen.
 
