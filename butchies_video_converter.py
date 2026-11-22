@@ -10,7 +10,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 APP_NAME = 'Butchies Video Converter'
-VERSION = '1.4.1'
+VERSION = '1.5.0'
 FROZEN = getattr(sys, 'frozen', False)
 BASE = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent))
 UI = BASE / 'ui'
@@ -718,6 +718,7 @@ def run_job(j):
     j['load'] = 100 if plan_state()[0] >= 100 else load_pct()
     shutil.rmtree(work, ignore_errors=True)
     stats_add(j)
+    own_add(final)
 
 
 # ---------- Spar-Statistik ----------
@@ -1225,6 +1226,190 @@ def task_scan(tid, folder, recursive=True):
     T['pct'], T['state'] = 100, 'fertig'
 
 
+# ---------- Gruppen-Name am Ende (z. B. „-WAYNE“) -> „Butchies-Groove“ ----------
+GROUP_TAG = 'Butchies-Groove'
+GROUPS = sorted(set("""
+WvF DETAiLS ZeroTwo SiXTYNiNE WAYNE MGE 4SJ TVARCHiV RSG ZZGtv AIDA iNTENTiON DEFUSED EDITH FLUX NTb SPARKS GECKOS AMIABLE DRONES FGT EVO ION10
+MZABI NOGRP TEPES CMRG KOGi PSA QxR SMURF TGx PECULATE NTG SiGMA BLUTONiUM HONE PLAYWEB SYNCOPY ETHEL GalaxyRG Tigole UTR LAMA FraMeSToR CtrlHD
+DON EbP HiFi TayTO decibeL W4NK3R playHD BHDStudio KiNGS ROVERS CAKES GGEZ GGWP APEX TOMMY HDO RARBG YTS YIFY ELiTE MiNX TBS KILLERS DIMENSION
+LOL AVS SVA FLEET CRiMSON BAMBOO VETO MTB BRiNK CiNEFiLE iFT ROCKETRACCOON GOSSIP DEMAND HiQVE VXT x0r PHOENiX Ralphy PSYCHD SKGTV NOSiViD
+TOPKEK BiQ DUSKLiNE iMPERiUM PRiDEHD JFF SAiNT HDS KiNO EXQUiSiTE DSFM POE WDC TERMiNAL HQC DSG MOViE EXPiRED ROOR ZEST AiRLiNE FiDELiO
+HAXE PTERODACTYL ENTiTY CiDER EAGLE EiSBAER WOMBAT MOOVEE THESHOW EMPiRE OCULAR DTone UNiVERSUM PL3X
+""".split()), key=str.lower)
+GRP_LOW = {g.lower() for g in GROUPS}
+GRP_TAIL = re.compile(r'-([A-Za-z0-9][A-Za-z0-9.&_]{1,24})$')
+GRP_BEFORE = re.compile(r'^(x26[45]|h\.?26[45]|hevc|avc|av1|xvid|divx|vc-?1|mpeg-?2|web(-?dl|rip)?|blu-?ray|bdrip|brrip|hdtv|dvdrip|remux|uhd|hdr(10)?|dv'
+                        r'|\d{3,4}p|dts(-?hd)?|truehd|atmos|ac3|eac3|ddp?\d?|aac\d?|dl|ml|german|nf|amzn|dsnp|atvp|10bit)$', re.I)
+
+
+def grp_of(stem, extra=()):
+    """Gruppen-Name am Ende eines Dateinamens (ohne Endung) – nur wenn er bekannt ist oder direkt hinter Codec/Quelle steht."""
+    if stem.lower().endswith('-' + GROUP_TAG.lower()):
+        return None
+    m = GRP_TAIL.search(stem)
+    if not m:
+        return None
+    g, pre = m.group(1), stem[:m.start()]
+    if g.lower() in GRP_LOW or g.lower() in {str(x).lower() for x in extra}:
+        return g
+    last = re.split(r'[\s._\[\]()]', pre)[-1] if pre else ''
+    return g if GRP_BEFORE.match(last) else None
+
+
+def grp_new(stem, mode='replace', tag=GROUP_TAG, extra=()):
+    g = grp_of(stem, extra)
+    if not g:
+        return stem
+    base = stem[:-(len(g) + 1)]
+    return base if mode == 'remove' else base + '-' + tag
+
+
+# ---------- Eigene Filme merken (nur die werden umbenannt) ----------
+OWN_FILE = HOME / 'own.json'
+OWN_LOCK = threading.Lock()
+STAMP = 'Butchies Video Converter AI'
+
+
+def head_hash(path, n=1 << 20):
+    h = hashlib.sha1()
+    with open(path, 'rb') as f:
+        h.update(f.read(n))
+    return h.hexdigest()[:20]
+
+
+def own_load():
+    try:
+        d = json.loads(OWN_FILE.read_text(encoding='utf-8'))
+        return d if isinstance(d, list) else []
+    except (OSError, ValueError):
+        return []
+
+
+def own_save(d):
+    HOME.mkdir(parents=True, exist_ok=True)
+    tmp = OWN_FILE.with_suffix('.tmp')
+    tmp.write_text(json.dumps(d[-50000:], ensure_ascii=False), encoding='utf-8')
+    os.replace(tmp, OWN_FILE)
+
+
+def own_add(path):
+    try:
+        st = os.stat(path)
+        rec = {'p': str(path), 'n': Path(path).name, 's': st.st_size, 'h': head_hash(path), 't': int(time.time())}
+    except OSError:
+        return
+    with OWN_LOCK:
+        d = [x for x in own_load() if not (x.get('s') == rec['s'] and x.get('h') == rec['h'])]
+        d.append(rec)
+        own_save(d)
+
+
+def has_stamp(path):
+    try:
+        r = run([FFPROBE, '-v', 'error', '-show_entries', 'format_tags', '-of', 'default=nw=1', str(path)], timeout=20)
+        return STAMP.lower() in r.stdout.decode('utf-8', 'replace').lower()
+    except Exception:  # noqa: BLE001
+        return False
+
+
+def task_grpscan(tid, folder, mode, tag, extra):
+    """Ordner nach Filmen mit fremdem Gruppen-Namen durchsuchen und erkennen, welche das Programm selbst umgewandelt hat
+    (gemerkt: Größe + Fingerabdruck der ersten 1 MB, oder unsichtbarer Vermerk in der Datei)."""
+    T = TASKS[tid]
+    files = scan(folder, T=T)
+    by_size = {}
+    for x in own_load():
+        by_size.setdefault(x.get('s'), []).append(x)
+    cands = []
+    for f in files:
+        stem, ext = os.path.splitext(f['name'])
+        if ext.lower() not in VIDEXT:
+            continue
+        g = grp_of(stem, extra)
+        if g:
+            cands.append((f, stem, ext, g))
+    res = []
+    for i, (f, stem, ext, g) in enumerate(cands):
+        check_abort(T)
+        T['pct'], T['phase'] = 50 + round(i / max(1, len(cands)) * 50), 'Prüfe ' + f['name']
+        mine, why = False, ''
+        if f['size'] in by_size:
+            try:
+                hh = head_hash(f['full'])
+                if any(x.get('h') == hh for x in by_size[f['size']]):
+                    mine, why = True, 'gemerkt'
+            except OSError:
+                pass
+        if not mine and has_stamp(f['full']):
+            mine, why = True, 'Vermerk in der Datei'
+        res.append({'full': f['full'], 'path': f['path'], 'name': f['name'], 'size': f['size'], 'group': g,
+                    'new': grp_new(stem, mode, tag, extra) + ext, 'mine': mine, 'why': why})
+    T['result'] = {'root': str(folder), 'items': res, 'total': len(files)}
+    T['pct'], T['state'] = 100, 'fertig'
+
+
+UNDO_FILE = HOME / 'rename_undo.json'
+
+
+def grp_rename(items):
+    """Umbenennen im selben Ordner. Gleichnamige Begleitdateien (.nfo, .srt, -poster.jpg …) werden mit umbenannt.
+    Merkt sich alles für „Rückgängig“."""
+    done, errs = [], []
+    for it in items:
+        src = Path(str(it.get('full', '')))
+        new = str(it.get('new', ''))
+        if not src.is_file() or not new or any(c in new for c in '\\/:*?"<>|'):
+            errs.append({'name': src.name, 'error': 'ungültig'})
+            continue
+        dst = src.with_name(new)
+        if dst.exists():
+            errs.append({'name': src.name, 'error': 'Ziel gibt es schon'})
+            continue
+        try:
+            old_stem, new_stem = src.stem, dst.stem
+            side = [x for x in src.parent.iterdir() if x != src and x.is_file() and x.name.startswith(old_stem) and len(x.name) > len(old_stem)
+                    and x.name[len(old_stem)] in '.-_']
+            src.rename(dst)
+            done.append([str(src), str(dst)])
+            for x in side:
+                nx = x.with_name(new_stem + x.name[len(old_stem):])
+                if not nx.exists():
+                    x.rename(nx)
+                    done.append([str(x), str(nx)])
+        except OSError as ex:
+            errs.append({'name': src.name, 'error': str(ex)})
+    if done:
+        with OWN_LOCK:
+            d = own_load()
+            mp = dict((a, b) for a, b in done)
+            for x in d:
+                if x.get('p') in mp:
+                    x['p'], x['n'] = mp[x['p']], Path(mp[x['p']]).name
+            own_save(d)
+        try:
+            UNDO_FILE.write_text(json.dumps({'t': int(time.time()), 'done': done}, ensure_ascii=False), encoding='utf-8')
+        except OSError:
+            pass
+    return {'renamed': len([1 for a, b in done if Path(a).suffix.lower() in VIDEXT]), 'files': len(done), 'errors': errs}
+
+
+def grp_undo():
+    try:
+        u = json.loads(UNDO_FILE.read_text(encoding='utf-8'))
+    except (OSError, ValueError):
+        return {'undone': 0, 'errors': [{'name': '', 'error': 'Nichts zum Rückgängigmachen'}]}
+    n, errs = 0, []
+    for a, b in reversed(u.get('done', [])):
+        try:
+            if Path(b).exists() and not Path(a).exists():
+                Path(b).rename(a)
+                n += 1
+        except OSError as ex:
+            errs.append({'name': Path(b).name, 'error': str(ex)})
+    UNDO_FILE.unlink(missing_ok=True)
+    return {'undone': n, 'errors': errs}
+
+
 def task_hash(tid, paths):
     T = TASKS[tid]
     res = {}
@@ -1551,7 +1736,8 @@ class Handler(BaseHTTPRequestHandler):
                 HW_DONE.wait(20)
                 conf = load_config()
                 return self.send_json(200, {'version': VERSION, 'ffmpeg': bool(FFMPEG and FFPROBE), 'hw': HW, 'filters': FILTERS, 'gpus': GPU, 'workers': WORKERS, 'cores': os.cpu_count() or 4,
-                                            'disks': disks(), 'outdir': outdir(), 'config': conf, 'native': NATIVE[0]})
+                                            'disks': disks(), 'outdir': outdir(), 'config': conf, 'native': NATIVE[0],
+                                            'groups': GROUPS, 'grptag': GROUP_TAG})
             if path == '/api/stats':
                 return self.send_json(200, {'stats': stats_load(), 'bench': load_config().get('bench'), 'plan': plan_conf()})
             if path == '/api/jobs':
@@ -1624,6 +1810,14 @@ class Handler(BaseHTTPRequestHandler):
                 tg = max(70.0, min(99.0, fnum(d.get('target'), 90)))
                 return self.send_json(200, {'task': start_task(task_qsearch, e, list(d.get('vargs') or []), tg, int(fnum(d.get('start'), 23)),
                                                                d.get('slot') if d.get('slot') in ('cpu', 'gpu1', 'gpu2') else 'cpu')})
+            if path == '/api/grp-scan':
+                ex = [str(x) for x in (d.get('extra') or [])][:2000]
+                return self.send_json(200, {'task': start_task(task_grpscan, str(d.get('dir', '')), 'remove' if d.get('mode') == 'remove' else 'replace',
+                                                               GROUP_TAG, ex)})
+            if path == '/api/grp-rename':
+                return self.send_json(200, grp_rename(list(d.get('items') or [])))
+            if path == '/api/grp-undo':
+                return self.send_json(200, grp_undo())
             if path == '/api/bench':
                 return self.send_json(200, {'task': start_task(task_bench)})
             if path == '/api/stats-reset':
@@ -2312,6 +2506,30 @@ def selftest():
     except Exception as ex:  # noqa: BLE001
         check('Hardware-Test', False, ex)
     check('Monitor-Schutz bei anderen Playern', display_wanted() in (True, False), display_wanted())
+    check('Gruppen-Name erkennen', grp_new('Argylle.2024.German.DL.1080p.WEB.h264-WAYNE') == 'Argylle.2024.German.DL.1080p.WEB.h264-Butchies-Groove'
+          and grp_of('Spider-Man') is None and grp_of('Urlaub 2025') is None and grp_of('Film.x265-Butchies-Groove') is None)
+    try:
+        gd = work / 'grp'
+        gd.mkdir(exist_ok=True)
+        mine_src = Path(tj['out'])
+        own_add(mine_src)
+        shutil.copy(mine_src, gd / 'Mein.Film.2020.German.1080p.WEB.x265-WAYNE.mkv')
+        (gd / 'Mein.Film.2020.German.1080p.WEB.x265-WAYNE.de.srt').write_text('1', encoding='utf-8')
+        shutil.copy(s51, gd / 'Fremd.2021.German.1080p.WEB.x264-FLUX.mkv')
+        for f in gd.iterdir():
+            os.utime(f, (time.time() - 900, time.time() - 900))
+        tid = secrets.token_hex(4)
+        TASKS[tid] = {'state': 'läuft'}
+        task_grpscan(tid, str(gd), 'replace', GROUP_TAG, [])
+        its = {x['name']: x for x in TASKS[tid]['result']['items']}
+        ok_ = its['Mein.Film.2020.German.1080p.WEB.x265-WAYNE.mkv']['mine'] and not its['Fremd.2021.German.1080p.WEB.x264-FLUX.mkv']['mine']
+        check('Eigene Filme erkennen (nur die umbenennen)', ok_, [(k, v['mine']) for k, v in its.items()])
+        r = grp_rename([{'full': its['Mein.Film.2020.German.1080p.WEB.x265-WAYNE.mkv']['full'], 'new': its['Mein.Film.2020.German.1080p.WEB.x265-WAYNE.mkv']['new']}])
+        check('Umbenennen mit Begleitdatei', r['renamed'] == 1 and (gd / 'Mein.Film.2020.German.1080p.WEB.x265-Butchies-Groove.de.srt').exists(), r)
+        u = grp_undo()
+        check('Umbenennen rückgängig', u['undone'] == 2 and (gd / 'Mein.Film.2020.German.1080p.WEB.x265-WAYNE.mkv').exists(), u)
+    except Exception as ex:  # noqa: BLE001
+        check('Gruppen-Namen umbenennen', False, ex)
     ps = plan_state()
     check('Nacht-Planer', ps[0] in LOAD_STEPS, ps)
     d = disks()
