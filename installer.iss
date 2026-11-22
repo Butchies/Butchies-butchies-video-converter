@@ -78,6 +78,7 @@ Name: "{autodesktop}\Butchies Video Converter AI"; Filename: "{app}\Butchies_Vid
 [Run]
 Filename: "{tmp}\MicrosoftEdgeWebview2Setup.exe"; Parameters: "/silent /install"; StatusMsg: "Microsoft WebView2 wird eingerichtet …"; Flags: waituntilterminated; Check: NeedsWebView2
 Filename: "{app}\Butchies_Video_Converter.exe"; Description: "Butchies Video Converter AI jetzt starten – Film ab!"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\Butchies_Video_Converter.exe"; Flags: nowait; Check: WizardSilent
 
 [UninstallRun]
 Filename: "{cmd}"; Parameters: "/c taskkill /f /im Butchies_Video_Converter.exe"; Flags: runhidden; RunOnceId: "StopConverter"

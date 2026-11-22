@@ -1849,6 +1849,19 @@ function netWatch(runs,net){const now=Date.now(),f=n=>(n||0).toLocaleString('de-
     const nd=H.length?Y(H[H.length-1].need):70;
     p.querySelector('.netsvg').innerHTML=red+(H.length>1?`<polyline points="0,70 ${pts} ${X(H.length-1)},70" fill="color-mix(in srgb,var(--a) 18%,transparent)" stroke="none"/><polyline points="${pts}" fill="none" stroke="var(--a)" stroke-width="2" vector-effect="non-scaling-stroke"/>`:'')+`<line x1="0" x2="400" y1="${nd}" y2="${nd}" stroke="var(--b)" stroke-dasharray="6 4" vector-effect="non-scaling-stroke"/>`;
     const w=p.querySelector('.netwarn');w.hidden=!st.warn;if(st.warn)w.innerHTML=`⚠️ <b>Die NAS liefert zu langsam</b> (seit ${st.since}) – die Grafikkarte wartet auf Daten (${Math.round(j.fps)} fps). Tipp: Netzwerkkabel nutzen, prüfen ob die NAS beschäftigt ist (z. B. Emby-Scan) oder den Film vorher auf den PC kopieren.`})}
+/* 2.7.0: Updates über GitHub – beim Start prüfen, Fenster mit „Jetzt aktualisieren“, Bereich in den Einstellungen */
+function updInfoSet(r){const e=$('#updInfo');if(!e)return;e.innerHTML=r.error?`Installiert: <b>Version ${esc(r.current||'')}</b> · ⚠️ ${esc(r.error)}`:r.newer?`Installiert: <b>Version ${esc(r.current)}</b> · <b style="color:var(--ok)">Neu: Version ${esc(r.latest)}</b> <button type="button" class="btn sm pri" id="updGo">⬇️ Jetzt aktualisieren</button>`:`Installiert: <b>Version ${esc(r.current)}</b> · ✓ aktuell`;
+  const g=$('#updGo');if(g)g.onclick=()=>updAsk(r)}
+async function updCheck(force,quiet){if(!REAL)return;try{const r=await api('/api/update',{force:!!force});updInfoSet(r);if(r.newer&&(!quiet||KV.get('bvc-updskip')!==r.latest))updAsk(r,quiet);else if(!quiet)toast(r.error?r.error:'✓ Du hast die neueste Version.');return r}catch(e){if(!quiet)toast('Update-Prüfung fehlgeschlagen: '+e.message)}}
+function updAsk(r,auto){const n=(r.notes||'').replace(/\*\*/g,'').trim();
+  ask(`🔄 Update verfügbar: Version ${esc(r.latest)}`,`<p>Installiert ist Version ${esc(r.current)}. Die neue Version wird direkt von GitHub geladen${r.size?` (${fmtMB(r.size/1048576)})`:''} und installiert – deine Einstellungen, Vorlagen und Ordner bleiben erhalten. Danach startet das Programm von selbst neu.</p>${n?`<div style="margin-top:10px;max-height:40vh;overflow:auto;white-space:pre-wrap;font-size:13px;padding:10px;border-radius:10px;background:var(--inset)">${esc(n)}</div>`:''}`,
+    [auto?{t:'Diese Version überspringen',fn:()=>KV.set('bvc-updskip',r.latest)}:null,{t:'Später'},{t:'⬇️ Jetzt aktualisieren',cls:'pri',fn:()=>updRun(r)}].filter(Boolean))}
+async function updRun(r){if(RUN&&RUN.on)return toast('Es läuft gerade eine Umwandlung – bitte erst danach aktualisieren.');
+  ask('⬇️ Update wird geladen …',`<p id="updTxt">Verbinde mit GitHub …</p><div style="height:10px;border-radius:6px;background:var(--inset);overflow:hidden;margin-top:10px"><i id="updBar" style="display:block;height:100%;width:0;background:linear-gradient(90deg,var(--a),var(--b));transition:width .3s"></i></div><p style="margin-top:8px;font-size:12px">Das Programm schließt sich gleich und startet nach der Installation neu.</p>`,[]);
+  MODAL_LOCK=true;try{const {task}=await api('/api/update',{install:true});await waitTask(task,t=>{$('#updBar').style.width=(t.pct||0)+'%';$('#updTxt').textContent=`${Math.round(t.pct||0)} % · ${t.phase||''}`});$('#updTxt').textContent='✓ Fertig geladen – Installation startet …'}
+  catch(e){MODAL_LOCK=false;$('#modal').classList.remove('on');toast('Update fehlgeschlagen: '+e.message)}}
+setTimeout(()=>{const a=$('#updAuto');if(a){a.checked=KV.get('bvc-updauto')!=='0';a.onchange=()=>KV.set('bvc-updauto',a.checked?'1':'0')}const c=$('#updCheck');if(c)c.onclick=()=>updCheck(true,false);
+  if(REAL&&!M2&&!(typeof POP!=='undefined'&&POP)){api('/api/update',{}).then(updInfoSet).catch(()=>{});if(KV.get('bvc-updauto')!=='0')setTimeout(()=>updCheck(false,true),9000)}},1500);
 function log(cls,msg){const d=new Date().toLocaleTimeString('de-DE');const el=document.createElement('div');el.innerHTML=`<span class="t">${d}</span><span class="${cls}">${msg}</span>`;$('#log').appendChild(el);$('#log').scrollTop=1e9;const pl=$('#pgLog');if(pl){pl.appendChild(el.cloneNode(true));while(pl.children.length>80)pl.firstChild.remove();pl.scrollTop=1e9}}
 const cv=$('#chart'),cx=cv.getContext('2d');
 function cssv(n){return getComputedStyle(document.body).getPropertyValue(n).trim()}
@@ -3067,6 +3080,9 @@ $('#oTopic').addEventListener('change',()=>{if(REAL)api('/api/config',{ntfy:$('#
   const fn=sec('🏷️','Dateinamen','Gilt, wenn als Dateiname „Wie das Original“ bzw. „Original + Codec“ gewählt ist.');
   const gp=$('#grpPrev');['#oSwap','#oGrp'].forEach(id=>{const f=fOf(id);if(f)fn.appendChild(f)});
   const pr=sec('🎞️','Profi-Optionen Video');['content','hdr'].forEach(k=>{const r=rows.querySelector(`.arow[data-sec=${k}]`);if(r)pr.appendChild(r)});
+  {const up=sec('🔄','Updates','Neue Versionen kommen direkt von GitHub – kein Neu-Herunterladen von Hand nötig.');const d=document.createElement('div');d.className='f';
+   d.innerHTML=`<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span id="updInfo" style="flex:1;min-width:200px">Installiert: Version …</span><button type="button" class="btn sm" id="updCheck">🔄 Nach Updates suchen</button></div>
+   <label style="display:flex;gap:8px;align-items:center;margin-top:8px"><input type="checkbox" id="updAuto"> Beim Start automatisch nach Updates suchen</label>`;up.appendChild(d)}
   const nt=sec('📱','Benachrichtigung');['#oPush','#wTopic'].forEach(id=>{const f=fOf(id);if(f)nt.appendChild(f)});
   const ah=sec('🎨','Aussehen &amp; Hilfe');ah.innerHTML='<div class="row" style="gap:8px"><button type="button" class="btn sm" id="sdTheme">🎨 Design wählen</button><button type="button" class="btn sm" id="sdTour">❔ Kurzanleitung zeigen</button></div>';
   /* Namen-Vorschau bleibt bei „Ausgabe“ */

@@ -10,7 +10,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 APP_NAME = 'Butchies Video Converter'
-VERSION = '2.6.6'
+VERSION = '2.7.0'
 FROZEN = getattr(sys, 'frozen', False)
 BASE = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent))
 UI = BASE / 'ui'
@@ -1335,6 +1335,64 @@ def check_abort(T):
         raise Abort()
 
 
+UPD_REPO = 'Butchies/Butchies-butchies-video-converter'
+UPD_CACHE = {'t': 0, 'r': None}
+CLOSE_APP = [None]
+
+
+def vtuple(v):
+    return tuple(int(x) for x in re.findall(r'\d+', str(v))[:4]) or (0,)
+
+
+def update_check(force=False):
+    """Neueste Version auf GitHub (Releases v*) – höchstens alle 30 min neu fragen."""
+    if not force and UPD_CACHE['r'] and time.time() - UPD_CACHE['t'] < 1800:
+        return UPD_CACHE['r']
+    req = urllib.request.Request('https://api.github.com/repos/%s/releases/latest' % UPD_REPO,
+                                 headers={'Accept': 'application/vnd.github+json', 'User-Agent': 'Butchies-Video-Converter'})
+    with urllib.request.urlopen(req, timeout=12) as r:
+        d = json.loads(r.read().decode('utf-8'))
+    tag = d.get('tag_name') or ''
+    asset = next((a for a in d.get('assets') or [] if a.get('name', '').lower().endswith('.exe')), None)
+    res = {'current': VERSION, 'latest': tag.lstrip('v'), 'newer': vtuple(tag) > vtuple(VERSION), 'notes': (d.get('body') or '')[:4000],
+           'url': asset and asset.get('browser_download_url'), 'size': asset and asset.get('size'), 'name': asset and asset.get('name'),
+           'page': d.get('html_url')}
+    UPD_CACHE.update(t=time.time(), r=res)
+    return res
+
+
+def task_update(tid):
+    """Setup herunterladen, starten und das Programm schließen (Setup ersetzt die alte Version)."""
+    T = TASKS[tid]
+    info = update_check(True)
+    if not info.get('newer') or not info.get('url'):
+        raise ValueError('Kein neueres Update gefunden')
+    dest = Path(tempfile.gettempdir()) / (info.get('name') or 'Butchies_Video_Converter-Setup.exe')
+    tmp = dest.with_suffix('.part')
+    req = urllib.request.Request(info['url'], headers={'User-Agent': 'Butchies-Video-Converter'})
+    with urllib.request.urlopen(req, timeout=30) as r, open(tmp, 'wb') as f:
+        total = int(r.headers.get('Content-Length') or info.get('size') or 0)
+        got = 0
+        while True:
+            b = r.read(1 << 20)
+            if not b:
+                break
+            f.write(b)
+            got += len(b)
+            T['pct'] = round(got * 100 / total, 1) if total else 0
+            T['phase'] = 'Lade %.0f von %.0f MB' % (got / 1048576, total / 1048576)
+    if total and got < total:
+        raise ValueError('Download unvollständig')
+    tmp.replace(dest)
+    T['phase'] = 'Starte Installation …'
+    if os.name == 'nt':
+        subprocess.Popen([str(dest), '/SILENT', '/CLOSEAPPLICATIONS', '/RESTARTAPPLICATIONS'], close_fds=True, creationflags=0x00000008)
+    T['result'] = {'path': str(dest)}
+    T['pct'], T['state'] = 100, 'fertig'
+    if CLOSE_APP[0]:
+        threading.Timer(1.5, CLOSE_APP[0]).start()
+
+
 def start_task(fn, *args):
     tid = secrets.token_hex(6)
     TASKS[tid] = {'id': tid, 'state': 'läuft', 'pct': 0, 'phase': 'Starte …'}
@@ -2132,6 +2190,15 @@ class Handler(BaseHTTPRequestHandler):
             if path == '/api/abshot':
                 e = fpath(d.get('id', ''))
                 return self.send_json(200, {'task': start_task(task_abshot, e, list(d.get('vargs') or []), fnum(d.get('frac'), .5))})
+            if path == '/api/update':
+                if busy() and d.get('install'):
+                    raise ValueError('Es läuft gerade eine Umwandlung – bitte erst danach aktualisieren')
+                if d.get('install'):
+                    return self.send_json(200, {'task': start_task(task_update)})
+                try:
+                    return self.send_json(200, update_check(bool(d.get('force'))))
+                except Exception as ex:  # noqa: BLE001
+                    return self.send_json(200, {'current': VERSION, 'error': 'GitHub nicht erreichbar (%s)' % ex})
             if path == '/api/syscheck':
                 r = syscheck(d.get('client') or {})
                 if r['path'] and os.name == 'nt':
@@ -3193,6 +3260,7 @@ def native_window(url):
     except Exception:  # noqa: BLE001
         return False
     frame = WinFrame()
+    CLOSE_APP[0] = lambda: frame.close()
     NATIVE[0] = True
     # Zeichnen nicht drosseln: Chromium hält ein Fenster über zwei Monitore sonst teilweise für „verdeckt“
     # (Studio auf dem zweiten Monitor) und malt die andere Seite erst nach einem Fensterwechsel neu.

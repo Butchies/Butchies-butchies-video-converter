@@ -1,3 +1,7 @@
+**Neu in 2.7.0**
+- Updates direkt im Programm: Beim Start prüft es auf GitHub, ob es eine neue Version gibt, und zeigt ein Fenster mit „Jetzt aktualisieren“ – lädt, installiert und startet von selbst neu. Einstellungen bleiben erhalten.
+- In den Einstellungen gibt es den neuen Bereich „🔄 Updates“ (Version, „Nach Updates suchen“, automatische Prüfung an/aus).
+
 **Neu in 2.6.6**
 - Netzwerk-Überwachung als eigener Kasten (statt Text im Protokoll): Lesen/Schreiben NAS, gebrauchtes Tempo, WLAN/Kabel, Verlaufskurve und gelbe Warnung, wenn die NAS bremst – im KI-Monitor und im Fortschrittsfenster. Das Textprotokoll ist ausgeblendet.
 - KI-Analyse klappt beim Klick auf einen wartenden Film wieder auf (nur beim gerade laufenden bleibt sie zu).
