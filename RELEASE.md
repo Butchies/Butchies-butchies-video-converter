@@ -35,7 +35,10 @@ FFmpeg mit allen Codecs ist dabei (inklusive VMAF-Messung und HDR). WebView2 wir
 **Neu in 1.1.3**
 - Das Programm **merkt sich jetzt alles** bis zum nächsten Start: Design, Start-Animation an/aus, Auto/Manuell-Schalter, eigene Einstellungen (Codec, Zielgröße, Zeitplan …) und eigene Vorlagen. Bisher ging das beim Neustart verloren
 
-**Neu in 1.6.2 – Final (stabile Version)**
+**Neu in 1.6.3 – Final (stabile Version)**
+- 🧠 KI-Analyse: Film anklicken → klappt auf (wie immer). Während umgewandelt wird bleibt sie zu, nach dem Ende klappt sie wieder auf
+
+**Neu in 1.6.2**
 - 🌡️ PC-Auslastung: **Auto = immer 100 %** (volle Leistung). Nur auf „Manuell“ kann man herunterstellen – dein Wert wird gemerkt
 - 📁 Ausgabe: Deine Einstellungen bleiben gespeichert, auch auf **Auto**. Neuer Knopf **↺ Auf Original zurücksetzen**, falls man aus Versehen etwas verstellt hat
 

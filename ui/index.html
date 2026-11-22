@@ -1645,7 +1645,7 @@ function renderQ(){
   $$('[data-qprobe]').forEach(b=>b.onclick=e=>{e.stopPropagation();const q=Q.find(x=>x.id==b.dataset.qprobe);if(!q)return;selId=q.id;renderQ();update();runProbe(q,q.a)});
   $$('[data-qab]').forEach(b=>b.onclick=e=>{e.stopPropagation();const q=Q.find(x=>x.id==b.dataset.qab);if(!q)return;selId=q.id;openInPlayer(q);showTab('play');setMode('ab')});
   $$('[data-qsrc]').forEach(b=>b.onclick=e=>{e.stopPropagation();const q=Q.find(x=>x.id==b.dataset.qsrc);if(q)api('/api/show',{path:q.path}).catch(()=>{})});
-  $$('#queue .qi').forEach(el=>el.onclick=()=>{selId=+el.dataset.id;if(!RUN.on)anaFold(ANA_SHUT);renderQ();update()});
+  $$('#queue .qi').forEach(el=>el.onclick=()=>{selId=+el.dataset.id;anaFold(!!RUN.on);renderQ();update()});
   $$('[data-show]').forEach(b=>b.onclick=e=>{e.stopPropagation();const q=Q.find(x=>x.id==b.dataset.show);if(q&&q.out)api('/api/show',{path:q.out}).catch(()=>{})});
   $$('[data-play]').forEach(b=>b.onclick=e=>{e.stopPropagation();openInPlayer(Q.find(x=>x.id==b.dataset.play));showTab('play')});
   $$('[data-rm]').forEach(b=>b.onclick=e=>{e.stopPropagation();const q=Q.find(x=>x.id==b.dataset.rm);if(q)rmQ(q)});
@@ -1759,7 +1759,9 @@ function pgSync(){if(!$('#progDlg').open)return;
   $('#pgSpeed').textContent=$('#mSpd').textContent;$('#pgEta').textContent=$('#mEta').textContent;
   const runs=PGX&&PGX.runs||[];$('#pgPar').innerHTML=runs.length>1?runs.map(({q,j})=>`<div>${wIcon(q.slot)} <b>${esc(wName(q.slot))}</b>${doing(q)} · ${esc(q.name)} · ${Math.floor(j.pct)} %</div>`).join(''):'';
   $('#pgPause').textContent=RUN.pause?'▶ Weiter':'⏸ Pause'}
-function pgEnd(kind){clearInterval(PGT);PGX=null;$('#pgOpen').hidden=true;const d=$('#progDlg');if(!d.open)return;
+/* nach dem Umwandeln (fertig/Stopp): KI-Analyse wieder aufklappen */
+function pgEnd(...x){const r=pgEnd_(...x);setTimeout(()=>{if(!RUN.on)anaFold(false)},300);return r}
+function pgEnd_(kind){clearInterval(PGT);PGX=null;$('#pgOpen').hidden=true;const d=$('#progDlg');if(!d.open)return;
   const done=kind==='done',n=Q.filter(q=>q.state==='done').length;
   $('#pgIco').className='pg-ico '+(done?'done':'err');$('#pgIco').textContent=done?'✓':'✕';
   $('#pgTitle').textContent=done?(n===1?'Fertig! Dein Video ist bereit':`Fertig! ${n} Videos sind bereit`):'Abgebrochen';
