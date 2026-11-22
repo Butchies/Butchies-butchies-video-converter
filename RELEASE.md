@@ -35,6 +35,11 @@ FFmpeg mit allen Codecs ist dabei (inklusive VMAF-Messung und HDR). WebView2 wir
 **Neu in 1.1.3**
 - Das Programm **merkt sich jetzt alles** bis zum nächsten Start: Design, Start-Animation an/aus, Auto/Manuell-Schalter, eigene Einstellungen (Codec, Zielgröße, Zeitplan …) und eigene Vorlagen. Bisher ging das beim Neustart verloren
 
+**Neu in 1.7.7**
+- Start/Beenden mit 2 Monitoren: Lichtstreifen genau auf Höhe der Logo-Mitte, bleibt immer hinter dem Logo (überholt es nie). Auf dem anderen Monitor nur ein kurzes Stück (max. ¼ Bildschirm), das schnell und weich ausblendet
+- Vorher/Nachher-Testbild im Look der Start-Animation (Logo, Schriftzug, Farben des gewählten Designs)
+- Die Ecken „VORHER“ / „NACHHER“ sind jetzt in jedem Design gut lesbar
+
 **Neu in 1.7.6**
 - Start-Animation: Lichtstreifen sitzt genau auf Höhe des Logos und schießt vom Logo-Rand zur Bildschirmkante – das Logo fliegt darüber, der Streifen ist nie im Logo zu sehen
 - Release-Text zeigt nur noch, was in der jeweiligen Version neu ist

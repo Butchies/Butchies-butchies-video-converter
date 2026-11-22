@@ -503,7 +503,7 @@ dialog[open]{animation:dlg .3s ease}
 @keyframes sppop{from{opacity:0;transform:scale(.6)}}
 @media (prefers-reduced-motion:reduce){.splash *,.viz-prev i{animation:none!important}}
 /* ---------- Zwei-Monitor-Ansicht ---------- */
-.splash.hold{cursor:default}.splash.hold :is(.sp-kicker,.sp-title,.sp-tag,.sp-skip){display:none}
+.splash.hold{cursor:default}.splash.hold :is(.sp-kicker,.sp-title,.sp-tag,.sp-skip){visibility:hidden}
 .splash.m2wait .sp-center,.splash.m2wait .sp-orbs{opacity:0}
 .dflash{position:fixed;inset:0;background:#fff;z-index:400;pointer-events:none;animation:dflash .7s ease-out forwards}
 .dprev .dflash,.dprev .dstreak{position:absolute}
@@ -3131,8 +3131,7 @@ const dwait=t=>new Promise(r=>setTimeout(r,t));
 const RED=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
 function sessM2(){try{return JSON.parse(KV.get('bvc-m2s')||'null')}catch(e){return null}}
 function dDir(){const d=$('#dualDir')?$('#dualDir').value:DINFO.dir;return d==='l'||d==='r'?d:(DINFO.side||'l')}
-function spUnhold(sp){/* Logo steht mittig; wenn die Schrift dazukommt, gleitet es sanft nach oben */const lg=sp.querySelector('.sp-logo'),y0=lg?lg.getBoundingClientRect().top:0;
-  sp.classList.remove('hold','m2wait');if(lg){const y1=lg.getBoundingClientRect().top;lg.style.transition='none';lg.style.transform=`translateY(${y0-y1}px)`;void lg.offsetWidth;lg.style.transition='transform .7s cubic-bezier(.2,.8,.3,1)';lg.style.transform='none'}sp.querySelectorAll('.sp-kicker,.sp-title,.sp-tag,.sp-skip').forEach(e=>{e.style.animation='none';void e.offsetWidth;e.style.animation=''})}
+function spUnhold(sp){sp.classList.remove('hold','m2wait');sp.querySelectorAll('.sp-kicker,.sp-title,.sp-tag,.sp-skip').forEach(e=>{e.style.animation='none';void e.offsetWidth;e.style.animation=''})}
 /* Animations-Einstellungen (Design-Fenster): Tempo, Flash, Lichtstreifen, Farbe */
 let ANIM={speed:'n',flash:'s',streak:'thick',color:'theme'};try{Object.assign(ANIM,JSON.parse(KV.get('bvc-anim')||'{}'))}catch(e){}
 const AK=()=>({s:1.45,n:1,f:.65}[ANIM.speed]||1);
@@ -3163,12 +3162,13 @@ function dStreak(d,mode,root,hold,ref){if(RED()||ANIM.streak==='off')return;cons
       else{const st=x0-rad,rr=Math.min(W,r.left-R.left-6);e.style.left=px(st);e.style.width=px(rr-st)}
       if(now-t0<T*1.15+80)requestAnimationFrame(step)};e.style.width='0px';requestAnimationFrame(step)}
   else if(mode==='in'&&ref){/* Streifen hängt hinten am Logo und geht nie hinein */const t0=performance.now();
-    const step=now=>{const r=ref.getBoundingClientRect();if(d==='l'){const w=r.left-R.left-6;e.style.left='0px';e.style.width=px(w)}else{const l=r.right-R.left+6;e.style.left=px(l);e.style.width=px(W-l)}
+    const Q=W/4;const step=now=>{const r=ref.getBoundingClientRect();if(d==='l'){const end=r.left-R.left-6,w=Math.min(Q,end);e.style.left=px(end-w);e.style.width=px(w)}else{const l=r.right-R.left+6;e.style.left=px(l);e.style.width=px(Math.min(Q,W-l))}
       if(now-t0<T+60)requestAnimationFrame(step)};requestAnimationFrame(step)}
   else e.animate(fr,{duration:mode==='out'?T*.45:T,easing:mode==='in'?'cubic-bezier(.2,.8,.3,1)':'cubic-bezier(.6,0,.4,1)',fill:'forwards'});
   /* auf dem Ankunfts-Bildschirm nur kurz, dann weg */
-  const keep=mode==='in'?120*k:(hold!=null?hold:1300*k);
-  setTimeout(()=>{e.style.transition=`opacity ${mode==='in'?.3:.5}s`;e.style.opacity='0';setTimeout(()=>e.remove(),550)},T+keep)}
+  const keep=mode==='in'?0:(hold!=null?hold:800*k);
+  setTimeout(()=>{/* weich ausblenden: wird dünner, kürzer (zum Logo hin) und blasser */const f=(mode==='in'?.65:.6)*k;e.style.transformOrigin=mode==='in'?(d==='l'?'right center':'left center'):'center';
+    e.style.transition=`opacity ${f}s ease-out, transform ${f}s ease-out`;e.style.opacity='0';e.style.transform=mode==='in'?'scaleX(.25) scaleY(.4)':'scaleY(.4)';setTimeout(()=>e.remove(),f*1000+100)},T+keep)}
 /* Logo fliegt in Richtung d ('l'/'r') aus dem Bild */
 async function flyOut(el,d,hold){if(!el)return;const k=AK();el.style.animation='none';el.style.transition=`transform ${.7*k}s cubic-bezier(.6,0,.4,1),opacity ${.7*k}s`;void el.offsetWidth;
   dStreak(d,'out',null,hold,el);el.style.transform=`translateX(${d==='l'?-110:110}vw) scale(.8)`;el.style.opacity='0';setTimeout(()=>dFlash(),250*k);await dwait(RED()?50:650*k)}
