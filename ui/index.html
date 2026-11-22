@@ -3132,20 +3132,29 @@ function stkBg(head){const c=ANIM.color==='white'?'#fff,#fff':ANIM.color==='rain
   return `linear-gradient(${head==='l'?'270deg':'90deg'},transparent,${c})`}
 /* Lichtstreifen: mode 'out' = vom Logo zur Kante (Logo fliegt nach d raus), 'in' = von der Kante d bis zur Mitte (Logo kommt von d).
    Er bleibt stehen, bis das Logo wieder steht, und blendet dann aus – auf beiden Monitoren sichtbar. */
-function dStreak(d,mode,root,hold){if(RED()||ANIM.streak==='off')return;const e=document.createElement('div');e.className='dstreak';
-  const h=ANIM.streak==='thin'?3:8;e.style.height=h+'px';e.style.marginTop=(-h/2)+'px';
+function dStreak(d,mode,root,hold,ref){if(RED()||ANIM.streak==='off')return;const e=document.createElement('div');e.className='dstreak';
+  const h=ANIM.streak==='thin'?3:8;const R=root?root.getBoundingClientRect():{left:0,top:0,width:innerWidth,height:innerHeight};
+  /* Höhe und Lage am Logo ausrichten (das Logo sitzt nicht immer in der Bildschirmmitte) */
+  let cy=R.height/2,cx=R.width/2,rad=0;if(ref){const tr=ref.style.transform,tn=ref.style.transition;ref.style.transition='none';ref.style.transform='none';const r=ref.getBoundingClientRect();ref.style.transform=tr;void ref.offsetWidth;ref.style.transition=tn;if(r.width){cy=r.top-R.top+r.height/2;cx=r.left-R.left+r.width/2;rad=r.width/2}}
+  e.style.height=h+'px';e.style.top=(cy-h/2)+'px';e.style.marginTop='0';
   const head=mode==='in'?(d==='l'?'r':'l'):d;e.style.background=stkBg(head);(root||document.body).appendChild(e);
-  const k=AK(),T=(mode==='in'?750:650)*k;
-  const a=d==='l'?[{left:'50%',width:'0%'},{left:'0%',width:'50%'}]:[{left:'50%',width:'0%'},{left:'50%',width:'50%'}];
-  const b=d==='l'?[{left:'0%',width:'0%'},{left:'0%',width:'50%'}]:[{left:'100%',width:'0%'},{left:'50%',width:'50%'}];
-  e.animate(mode==='in'?b:a,{duration:T,easing:mode==='in'?'cubic-bezier(.2,.8,.3,1)':'cubic-bezier(.6,0,.4,1)',fill:'forwards'});
-  setTimeout(()=>{e.style.transition='opacity .5s';e.style.opacity='0';setTimeout(()=>e.remove(),550)},T+(hold!=null?hold:1300*k))}
+  const k=AK(),T=(mode==='in'?750:650)*k,W=R.width,px=v=>Math.max(0,v)+'px';
+  let fr;
+  if(mode==='out')fr=d==='l'?[{left:px(cx),width:'0px'},{left:'0px',width:px(cx)}]:[{left:px(cx),width:'0px'},{left:px(cx),width:px(W-cx)}];
+  else{const stop=rad+10;fr=d==='l'?[{left:'0px',width:'0px'},{left:'0px',width:px(cx-stop)}]:[{left:px(W),width:'0px'},{left:px(cx+stop),width:px(W-cx-stop)}]}
+  if(mode==='in'&&ref){/* Streifen hängt hinten am Logo und geht nie hinein */const t0=performance.now();
+    const step=now=>{const r=ref.getBoundingClientRect();if(d==='l'){const w=r.left-R.left-6;e.style.left='0px';e.style.width=px(w)}else{const l=r.right-R.left+6;e.style.left=px(l);e.style.width=px(W-l)}
+      if(now-t0<T+60)requestAnimationFrame(step)};requestAnimationFrame(step)}
+  else e.animate(fr,{duration:T,easing:mode==='in'?'cubic-bezier(.2,.8,.3,1)':'cubic-bezier(.6,0,.4,1)',fill:'forwards'});
+  /* auf dem Ankunfts-Bildschirm nur kurz, dann weg */
+  const keep=mode==='in'?120*k:(hold!=null?hold:1300*k);
+  setTimeout(()=>{e.style.transition=`opacity ${mode==='in'?.3:.5}s`;e.style.opacity='0';setTimeout(()=>e.remove(),550)},T+keep)}
 /* Logo fliegt in Richtung d ('l'/'r') aus dem Bild */
 async function flyOut(el,d,hold){if(!el)return;const k=AK();el.style.animation='none';el.style.transition=`transform ${.7*k}s cubic-bezier(.6,0,.4,1),opacity ${.7*k}s`;void el.offsetWidth;
-  dStreak(d,'out',null,hold);el.style.transform=`translateX(${d==='l'?-110:110}vw) scale(.8)`;el.style.opacity='0';setTimeout(()=>dFlash(),250*k);await dwait(RED()?50:650*k)}
+  dStreak(d,'out',null,hold,el);el.style.transform=`translateX(${d==='l'?-110:110}vw) scale(.8)`;el.style.opacity='0';setTimeout(()=>dFlash(),250*k);await dwait(RED()?50:650*k)}
 /* Logo kommt von Seite d ('l'/'r') herein */
 async function flyIn(el,d){if(!el)return;const k=AK();el.style.animation='none';el.style.transition='none';el.style.transform=`translateX(${d==='l'?-110:110}vw) scale(.8)`;el.style.opacity='0';void el.offsetWidth;
-  dFlash();dStreak(d,'in');el.style.transition=`transform ${.75*k}s cubic-bezier(.2,.8,.3,1),opacity ${.6*k}s`;requestAnimationFrame(()=>{el.style.transform='none';el.style.opacity='1'});await dwait(RED()?50:750*k)}
+  dFlash();dStreak(d,'in',null,null,el);el.style.transition=`transform ${.75*k}s cubic-bezier(.2,.8,.3,1),opacity ${.6*k}s`;requestAnimationFrame(()=>{el.style.transform='none';el.style.opacity='1'});await dwait(RED()?50:750*k)}
 const opp=d=>d==='l'?'r':'l';
 function animUi(){$('#anSpeed').value=ANIM.speed;$('#anFlash').value=ANIM.flash;$('#anStreak').value=ANIM.streak;$('#anColor').value=ANIM.color}
 [['#anSpeed','speed'],['#anFlash','flash'],['#anStreak','streak'],['#anColor','color']].forEach(([id,k])=>$(id).onchange=e=>{ANIM[k]=e.target.value;KV.set('bvc-anim',JSON.stringify(ANIM));animPrev(false)});
@@ -3155,8 +3164,8 @@ async function animPrev(bye){const id=++APV,d=dDir(),k=AK();const box=$('#anPrev
   /* Monitor 1 liegt auf der Seite d vom Hauptmonitor */
   const ex=$('#pmA'),mn=$('#pmB');box.style.flexDirection=d==='l'?'row':'row-reverse';
   const lo=m=>m.querySelector('.pl'),set=(m,x,o,t)=>{const l=lo(m);l.style.transition=t||'none';l.style.transform=`translateX(${x}px) scale(${o?1:.8})`;l.style.opacity=o?1:0};
-  const out=(m,dd)=>{set(m,0,1);void lo(m).offsetWidth;dStreak(dd,'out',m);setTimeout(()=>dFlash(m),250*k);set(m,dd==='l'?-200:200,0,`transform ${.7*k}s cubic-bezier(.6,0,.4,1),opacity ${.7*k}s`)};
-  const inn=(m,dd)=>{set(m,dd==='l'?-200:200,0);void lo(m).offsetWidth;dFlash(m);dStreak(dd,'in',m);requestAnimationFrame(()=>set(m,0,1,`transform ${.75*k}s cubic-bezier(.2,.8,.3,1),opacity ${.6*k}s`))};
+  const out=(m,dd)=>{set(m,0,1);void lo(m).offsetWidth;dStreak(dd,'out',m,null,lo(m));setTimeout(()=>dFlash(m),250*k);set(m,dd==='l'?-200:200,0,`transform ${.7*k}s cubic-bezier(.6,0,.4,1),opacity ${.7*k}s`)};
+  const inn=(m,dd)=>{set(m,dd==='l'?-200:200,0);void lo(m).offsetWidth;dFlash(m);dStreak(dd,'in',m,null,lo(m));requestAnimationFrame(()=>set(m,0,1,`transform ${.75*k}s cubic-bezier(.2,.8,.3,1),opacity ${.6*k}s`))};
   const [from,to,dOut]=bye?[ex,mn,opp(d)]:[mn,ex,d];
   from.classList.remove('off');to.classList.add('off');set(from,0,1);set(to,0,0);await dwait(700);if(id!==APV)return;
   out(from,dOut);await dwait(350*k);if(id!==APV)return;to.classList.remove('off');inn(to,opp(dOut));
@@ -3236,7 +3245,7 @@ if(M2){document.body.classList.add('m2');document.title='Butchies Video Converte
   addEventListener('pywebviewready',()=>setTimeout(()=>{const w=wapi();if(w){w.send('main','m2Ready()');m2Info()}},300));
   setTimeout(()=>{const w=wapi();if(w)w.send('main','m2Ready()')},2500)}
 else addEventListener('pywebviewready',()=>setTimeout(dualBoot,200));
-window.m2Play=m2Play;window.m2Arrive=m2Arrive;window.m2Bye=m2Bye;window.m2Info=m2Info;window.m2Ready=m2Ready;window.dualToggle=dualToggle;window.dualInfo=dualInfo;window.applyTheme=applyTheme;window.realAdd=(...a)=>realAdd(...a);
+window.flyIn=flyIn;window.flyOut=flyOut;window.m2Play=m2Play;window.m2Arrive=m2Arrive;window.m2Bye=m2Bye;window.m2Info=m2Info;window.m2Ready=m2Ready;window.dualToggle=dualToggle;window.dualInfo=dualInfo;window.applyTheme=applyTheme;window.realAdd=(...a)=>realAdd(...a);
 bindRows();renderPresets();applyAuto();applyCmpAuto();renderBil();
 if(REAL)realInit();
 update();
