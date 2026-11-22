@@ -35,6 +35,10 @@ FFmpeg mit allen Codecs ist dabei (inklusive VMAF-Messung und HDR). WebView2 wir
 **Neu in 1.1.3**
 - Das Programm **merkt sich jetzt alles** bis zum nächsten Start: Design, Start-Animation an/aus, Auto/Manuell-Schalter, eigene Einstellungen (Codec, Zielgröße, Zeitplan …) und eigene Vorlagen. Bisher ging das beim Neustart verloren
 
+**Neu in 1.7.4**
+- Lichtstreifen beim Monitor-Wechsel ist jetzt auf **beiden** Monitoren zu sehen und bleibt stehen, bis das Logo angekommen ist
+- 🎨 Design-Fenster: eigene Einstellung „Animation beim Monitor-Wechsel“ mit Vorschau – Richtung, Tempo, Flash, Lichtstreifen (aus/dünn/dick) und Farbe (Design-Farben/Weiß/Regenbogen). Wird gespeichert
+
 **Neu in 1.7.3**
 - Beenden mit 2 Monitoren: Flash wie beim Start – das Logo fliegt drüben mit Lichtstreifen und Flash raus und kommt im selben Moment auf dem Hauptmonitor mit Flash an. Erst danach geht Monitor 2 aus
 

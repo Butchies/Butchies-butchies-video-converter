@@ -505,10 +505,16 @@ dialog[open]{animation:dlg .3s ease}
 .splash.hold{cursor:default}.splash.hold :is(.sp-kicker,.sp-title,.sp-tag,.sp-skip){visibility:hidden}
 .splash.m2wait .sp-center,.splash.m2wait .sp-orbs{opacity:0}
 .dflash{position:fixed;inset:0;background:#fff;z-index:400;pointer-events:none;animation:dflash .7s ease-out forwards}
-@keyframes dflash{0%{opacity:0}15%{opacity:.95}100%{opacity:0}}
-.dstreak{position:fixed;top:50%;height:6px;margin-top:-3px;z-index:399;pointer-events:none;border-radius:6px;background:linear-gradient(90deg,transparent,#fff,var(--b),var(--a));box-shadow:0 0 30px var(--b)}
+.dprev .dflash,.dprev .dstreak{position:absolute}
+@keyframes dflash{0%{opacity:0}15%{opacity:var(--fo,.95)}100%{opacity:0}}
+.dstreak{position:fixed;top:50%;height:6px;margin-top:-3px;z-index:399;pointer-events:none;border-radius:6px;box-shadow:0 0 24px var(--b)}
 .dstreak.rt{background:linear-gradient(270deg,transparent,#fff,var(--b),var(--a))}
 .goodbye.instant{transition:none}
+.anset{margin:10px 0;padding:12px;border-radius:14px;background:var(--panel);border:1px solid var(--line)}.anset small{color:var(--muted)}
+.anrow{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-top:8px}.anrow label{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:700;color:var(--muted)}
+.dprev{display:flex;gap:14px;justify-content:center;margin-top:10px}.dprev .pm{position:relative;width:240px;height:135px;border-radius:10px;border:4px solid #1e293b;overflow:hidden;background:radial-gradient(60% 60% at 50% 40%,var(--bg2),var(--bg))}
+.dprev .pm small{position:absolute;left:8px;bottom:5px;font-size:10px;color:var(--muted)}.dprev .pm.off{background:#05060a}
+.dprev .pl{position:absolute;left:50%;top:50%;width:34px;height:34px;margin:-17px 0 0 -17px;border-radius:50%;border:3px solid var(--a);box-shadow:0 0 16px var(--glow);opacity:0}
 .goodbye.late :is(.g-kicker,.g-title,.g-tag,.g-hint,.g-actions){animation-delay:1s}
 body.dual .tab[data-v=cmp],body.dual #stMode [data-m=play],body.dual #pMiniAb{display:none!important}
 body.m2 .tabs,body.m2 #queueBtn,body.m2 #statBtn,body.m2 #helpBtn,body.m2 #themeBtn,body.m2 #v-conv,body.m2 #stMode,body.m2 #pMiniAb,body.m2 #mAb,body.m2 #pShot,body.m2 #winMon{display:none!important}
@@ -961,7 +967,17 @@ body.m2 .cmpgrid .card{padding:14px 16px}
   <p class="hint" style="margin:0">Die Designs der Butchies-Webseite – mit Farben und Schriften, wie im Encode Studio.</p>
   <div class="themes" id="themeGrid"></div>
   <label class="check"><input type="checkbox" id="introCheck" checked> Start-Animation beim Öffnen zeigen</label>
-  <label class="check" id="dualDirRow" hidden>↔ Animation bei 2 Monitoren:&nbsp;<select id="dualDir" style="width:auto"><option value="auto">Automatisch (wie die Monitore stehen)</option><option value="l">nach links</option><option value="r">nach rechts</option></select></label>
+  <div class="anset"><b>✨ Animation beim Monitor-Wechsel</b> <small>(Start und Beenden mit 2 Monitoren)</small>
+   <div class="anrow">
+    <label>Richtung<select id="dualDir"><option value="auto">Automatisch (wie die Monitore stehen)</option><option value="l">nach links</option><option value="r">nach rechts</option></select></label>
+    <label>Tempo<select id="anSpeed"><option value="s">Langsam</option><option value="n">Normal</option><option value="f">Schnell</option></select></label>
+    <label>Flash<select id="anFlash"><option value="off">Aus</option><option value="l">Leicht</option><option value="s">Stark</option></select></label>
+    <label>Lichtstreifen<select id="anStreak"><option value="off">Aus</option><option value="thin">Dünn</option><option value="thick">Dick</option></select></label>
+    <label>Farbe<select id="anColor"><option value="theme">Design-Farben</option><option value="white">Weiß</option><option value="rainbow">Regenbogen</option></select></label>
+   </div>
+   <div class="dprev" id="anPrev"><div class="pm" id="pmA"><i class="pl"></i><small>Monitor 1</small></div><div class="pm" id="pmB"><i class="pl"></i><small>Hauptmonitor</small></div></div>
+   <div class="row" style="gap:8px;margin-top:8px"><button type="button" class="btn sm pri" id="anPlay">▶ Vorschau Start</button><button type="button" class="btn sm" id="anPlayB">▶ Vorschau Beenden</button><button type="button" class="btn sm" id="anReset">↺ Standard</button><small style="color:var(--muted)">Wird sofort gespeichert.</small></div>
+  </div>
   <label class="check"><input type="checkbox" id="ssnCheck" checked> 🍂 Jahreszeit beim Starten und Beenden zeigen <small style="opacity:.7">(je 2 Wochen ab 1. März, Juni, September, Dezember)</small></label>
   <div class="dlg-actions"><button type="button" class="btn pri" id="thOk">Fertig</button></div>
  </div>
@@ -2184,7 +2200,7 @@ function openThemes(){const g=$('#themeGrid');g.innerHTML=THEMES.map(([id,n,sub,
   $$('[data-th]').forEach(b=>b.onclick=()=>{applyTheme(b.dataset.th);$$('[data-th]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)))});
   $('#introCheck').checked=store('bvc-intro')!=='0';$('#ssnCheck').checked=store('bvc-seasons')!=='0';const d=$('#themeDlg');try{d.showModal()}catch(e){d.setAttribute('open','')}}
 const closeTh=()=>{const d=$('#themeDlg');try{d.close()}catch(e){d.removeAttribute('open')}};
-$('#themeBtn').onclick=openThemes;$('#thClose').onclick=closeTh;$('#thOk').onclick=closeTh;
+$('#themeBtn').onclick=()=>{openThemes();setTimeout(()=>animPrev(false),400)};$('#thClose').onclick=closeTh;$('#thOk').onclick=closeTh;
 $('#introCheck').onchange=e=>store('bvc-intro',e.target.checked?'1':'0');
 $('#ssnCheck').onchange=e=>store('bvc-seasons',e.target.checked?'1':'0');
 applyTheme(store('bvc-theme')||'neon');
@@ -3105,20 +3121,51 @@ const RED=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
 function sessM2(){try{return JSON.parse(KV.get('bvc-m2s')||'null')}catch(e){return null}}
 function dDir(){const d=$('#dualDir')?$('#dualDir').value:DINFO.dir;return d==='l'||d==='r'?d:(DINFO.side||'l')}
 function spUnhold(sp){sp.classList.remove('hold','m2wait');sp.querySelectorAll('.sp-kicker,.sp-title,.sp-tag,.sp-skip').forEach(e=>{e.style.animation='none';void e.offsetWidth;e.style.animation=''})}
-function dFlash(){const f=document.createElement('div');f.className='dflash';document.body.appendChild(f);setTimeout(()=>f.remove(),700)}
-function dStreak(to){if(RED())return;const e=document.createElement('div');e.className='dstreak'+(to==='r'?' rt':'');document.body.appendChild(e);
-  const k=to==='l'?[{left:'50%',width:'0%'},{left:'-15%',width:'65%'}]:[{left:'50%',width:'0%'},{left:'50%',width:'65%'}];
-  e.animate(k,{duration:600,easing:'cubic-bezier(.6,0,.4,1)',fill:'forwards'}).onfinish=()=>e.remove()}
+/* Animations-Einstellungen (Design-Fenster): Tempo, Flash, Lichtstreifen, Farbe */
+let ANIM={speed:'n',flash:'s',streak:'thick',color:'theme'};try{Object.assign(ANIM,JSON.parse(KV.get('bvc-anim')||'{}'))}catch(e){}
+const AK=()=>({s:1.45,n:1,f:.65}[ANIM.speed]||1);
+const aj=()=>JSON.stringify(ANIM);
+function setAnim(o){if(o)Object.assign(ANIM,o)}
+function dFlash(root){const op={off:0,l:.5,s:.95}[ANIM.flash];if(!op||RED())return;const f=document.createElement('div');f.className='dflash';f.style.setProperty('--fo',op);
+  f.style.animationDuration=(.7*AK())+'s';(root||document.body).appendChild(f);setTimeout(()=>f.remove(),800*AK())}
+function stkBg(head){const c=ANIM.color==='white'?'#fff,#fff':ANIM.color==='rainbow'?'#ff4d4d,#ffb84d,#fff84d,#4dff88,#4dc3ff,#b84dff':'var(--a),var(--b),#fff';
+  return `linear-gradient(${head==='l'?'270deg':'90deg'},transparent,${c})`}
+/* Lichtstreifen: mode 'out' = vom Logo zur Kante (Logo fliegt nach d raus), 'in' = von der Kante d bis zur Mitte (Logo kommt von d).
+   Er bleibt stehen, bis das Logo wieder steht, und blendet dann aus – auf beiden Monitoren sichtbar. */
+function dStreak(d,mode,root,hold){if(RED()||ANIM.streak==='off')return;const e=document.createElement('div');e.className='dstreak';
+  const h=ANIM.streak==='thin'?3:8;e.style.height=h+'px';e.style.marginTop=(-h/2)+'px';
+  const head=mode==='in'?(d==='l'?'r':'l'):d;e.style.background=stkBg(head);(root||document.body).appendChild(e);
+  const k=AK(),T=(mode==='in'?750:650)*k;
+  const a=d==='l'?[{left:'50%',width:'0%'},{left:'0%',width:'50%'}]:[{left:'50%',width:'0%'},{left:'50%',width:'50%'}];
+  const b=d==='l'?[{left:'0%',width:'0%'},{left:'0%',width:'50%'}]:[{left:'100%',width:'0%'},{left:'50%',width:'50%'}];
+  e.animate(mode==='in'?b:a,{duration:T,easing:mode==='in'?'cubic-bezier(.2,.8,.3,1)':'cubic-bezier(.6,0,.4,1)',fill:'forwards'});
+  setTimeout(()=>{e.style.transition='opacity .5s';e.style.opacity='0';setTimeout(()=>e.remove(),550)},T+(hold!=null?hold:1300*k))}
 /* Logo fliegt in Richtung d ('l'/'r') aus dem Bild */
-async function flyOut(el,d){if(!el)return;el.style.animation='none';el.style.transition='transform .7s cubic-bezier(.6,0,.4,1),opacity .7s';void el.offsetWidth;
-  dStreak(d);el.style.transform=`translateX(${d==='l'?-110:110}vw) scale(.8)`;el.style.opacity='0';setTimeout(dFlash,250);await dwait(RED()?50:650)}
+async function flyOut(el,d,hold){if(!el)return;const k=AK();el.style.animation='none';el.style.transition=`transform ${.7*k}s cubic-bezier(.6,0,.4,1),opacity ${.7*k}s`;void el.offsetWidth;
+  dStreak(d,'out',null,hold);el.style.transform=`translateX(${d==='l'?-110:110}vw) scale(.8)`;el.style.opacity='0';setTimeout(()=>dFlash(),250*k);await dwait(RED()?50:650*k)}
 /* Logo kommt von Seite d ('l'/'r') herein */
-async function flyIn(el,d){if(!el)return;el.style.animation='none';el.style.transition='none';el.style.transform=`translateX(${d==='l'?-110:110}vw) scale(.8)`;el.style.opacity='0';void el.offsetWidth;
-  dFlash();el.style.transition='transform .75s cubic-bezier(.2,.8,.3,1),opacity .6s';requestAnimationFrame(()=>{el.style.transform='none';el.style.opacity='1'});await dwait(RED()?50:750)}
+async function flyIn(el,d){if(!el)return;const k=AK();el.style.animation='none';el.style.transition='none';el.style.transform=`translateX(${d==='l'?-110:110}vw) scale(.8)`;el.style.opacity='0';void el.offsetWidth;
+  dFlash();dStreak(d,'in');el.style.transition=`transform ${.75*k}s cubic-bezier(.2,.8,.3,1),opacity ${.6*k}s`;requestAnimationFrame(()=>{el.style.transform='none';el.style.opacity='1'});await dwait(RED()?50:750*k)}
 const opp=d=>d==='l'?'r':'l';
+function animUi(){$('#anSpeed').value=ANIM.speed;$('#anFlash').value=ANIM.flash;$('#anStreak').value=ANIM.streak;$('#anColor').value=ANIM.color}
+[['#anSpeed','speed'],['#anFlash','flash'],['#anStreak','streak'],['#anColor','color']].forEach(([id,k])=>$(id).onchange=e=>{ANIM[k]=e.target.value;KV.set('bvc-anim',JSON.stringify(ANIM));animPrev(false)});
+$('#anReset').onclick=()=>{ANIM={speed:'n',flash:'s',streak:'thick',color:'theme'};KV.set('bvc-anim',JSON.stringify(ANIM));animUi();animPrev(false)};
+let APV=0;
+async function animPrev(bye){const id=++APV,d=dDir(),k=AK();const box=$('#anPrev');
+  /* Monitor 1 liegt auf der Seite d vom Hauptmonitor */
+  const ex=$('#pmA'),mn=$('#pmB');box.style.flexDirection=d==='l'?'row':'row-reverse';
+  const lo=m=>m.querySelector('.pl'),set=(m,x,o,t)=>{const l=lo(m);l.style.transition=t||'none';l.style.transform=`translateX(${x}px) scale(${o?1:.8})`;l.style.opacity=o?1:0};
+  const out=(m,dd)=>{set(m,0,1);void lo(m).offsetWidth;dStreak(dd,'out',m);setTimeout(()=>dFlash(m),250*k);set(m,dd==='l'?-200:200,0,`transform ${.7*k}s cubic-bezier(.6,0,.4,1),opacity ${.7*k}s`)};
+  const inn=(m,dd)=>{set(m,dd==='l'?-200:200,0);void lo(m).offsetWidth;dFlash(m);dStreak(dd,'in',m);requestAnimationFrame(()=>set(m,0,1,`transform ${.75*k}s cubic-bezier(.2,.8,.3,1),opacity ${.6*k}s`))};
+  const [from,to,dOut]=bye?[ex,mn,opp(d)]:[mn,ex,d];
+  from.classList.remove('off');to.classList.add('off');set(from,0,1);set(to,0,0);await dwait(700);if(id!==APV)return;
+  out(from,dOut);await dwait(350*k);if(id!==APV)return;to.classList.remove('off');inn(to,opp(dOut));
+  await dwait(1500*k);if(id!==APV)return;if(bye){from.classList.add('off')}}
+$('#anPlay').onclick=()=>animPrev(false);$('#anPlayB').onclick=()=>animPrev(true);
+animUi();
 function dualUi(){const on=document.body.classList.contains('dual')||M2;
   $('#dualBtn').hidden=!(M2||DINFO.n>1);$('#dualLbl').textContent=on?'1 Monitor':'2 Monitore';$('#dualBtn').firstChild.textContent=on?'🖥':'🖥🖥';
-  $('#swapBtn').hidden=!on;$('#dualDirRow').hidden=!(DINFO.n>1);if($('#dualDir')&&DINFO.dir)$('#dualDir').value=DINFO.dir}
+  $('#swapBtn').hidden=!on;if($('#dualDir')&&DINFO.dir)$('#dualDir').value=DINFO.dir}
 function dualMain(on){document.body.classList.toggle('dual',on);
   if(on){if($('#v-cmp').classList.contains('on'))_showTab('conv');_setMode('ab')}else{_setMode(KV.get('bvc-pmode')==='ab'?'ab':'play')}dualUi()}
 function m2Ready(){if(M2READY)M2READY.r()}
@@ -3131,30 +3178,30 @@ async function dualBoot(){const w=wapi();if(!w||!w.dual_info||M2)return;
     if(sp&&sp.classList.contains('hold')&&!DSTART){DSTART=true;spUnhold(sp);setTimeout(splashLeave,2400)}return}
   DSTART=true;KV.set('bvc-dual','1');SRC.A=SRC.B='';dualMain(true);const ready=newReady();await w.dual_prepare();
   if(sp&&sp.classList.contains('hold')){await dwait(RED()?200:1500);await ready;const d=dDir();
-    await flyOut(sp.querySelector('.sp-logo'),d);await w.dual_show();DOPEN=true;w.send('m2',`m2Arrive('${opp(d)}')`);await dwait(300);splashLeave()}
-  else{await ready;await w.dual_show();DOPEN=true;w.send('m2',`m2Arrive('${opp(dDir())}')`)}}
+    await flyOut(sp.querySelector('.sp-logo'),d);await w.dual_show();DOPEN=true;w.send('m2',`m2Arrive('${opp(d)}',${aj()})`);await dwait(300);splashLeave()}
+  else{await ready;await w.dual_show();DOPEN=true;w.send('m2',`m2Arrive('${opp(dDir())}',${aj()})`)}}
 /* Knopf „2 Monitore“ / „1 Monitor“ */
 async function dualToggle(){const w=wapi();if(!w||!w.dual_set)return;
   if(!document.body.classList.contains('dual')){if(DINFO.n<2)return toast('Nur ein Bildschirm gefunden.');
     KV.set('bvc-dual','1');await w.dual_set(true);DINFO.on=true;dualMain(true);const ready=newReady();await w.dual_prepare();await ready;
-    const d=dDir();dStreak(d);dFlash();await dwait(350);await w.dual_show();DOPEN=true;w.send('m2',`m2Arrive('${opp(d)}')`);
+    const d=dDir();dStreak(d,'out');dFlash();await dwait(350);await w.dual_show();DOPEN=true;w.send('m2',`m2Arrive('${opp(d)}',${aj()})`);
     SRC.A=SRC.B='';toast('🖥🖥 Ordner-Abgleich + Player laufen jetzt auf dem anderen Bildschirm.')}
-  else{const d=dDir();if(DOPEN){w.send('m2',`m2Bye('${opp(d)}',1)`);await dwait(RED()?400:1450)}setTimeout(()=>w.dual_hide(),700);DOPEN=false;
-    KV.set('bvc-dual','0');await w.dual_set(false);DINFO.on=false;dStreak(opp(d));dFlash();dualMain(false);
+  else{const d=dDir();if(DOPEN){w.send('m2',`m2Bye('${opp(d)}',1,${aj()})`);await dwait(RED()?400:1200+250*AK())}setTimeout(()=>w.dual_hide(),1600*AK());DOPEN=false;
+    KV.set('bvc-dual','0');await w.dual_set(false);DINFO.on=false;dStreak(d,'in');dFlash();dualMain(false);
     const m=sessM2();if(m)for(const x of ['A','B'])if(m[x])realScan(x,m[x]);toast('🖥 Alles wieder in einem Fenster.')}}
 $('#dualBtn').onclick=()=>{if(M2){const w=wapi();if(w)w.send('main','dualToggle()')}else dualToggle()};
 $('#swapBtn').onclick=async()=>{const w=wapi();if(w&&w.dual_swap){await w.dual_swap();DINFO=await w.dual_info().catch(()=>DINFO);if(!M2)w.send('m2','m2Info()');else w.send('main','dualInfo()')}};
 async function dualInfo(){const w=wapi();if(w)DINFO=await w.dual_info().catch(()=>DINFO);dualUi()}
-$('#dualDir').onchange=e=>{const w=wapi();DINFO.dir=e.target.value;if(w&&w.dual_dir)w.dual_dir(e.target.value)};
+$('#dualDir').onchange=e=>{const w=wapi();DINFO.dir=e.target.value;setTimeout(()=>animPrev(false),50);if(w&&w.dual_dir)w.dual_dir(e.target.value)};
 /* Beenden: erst Monitor 2, dann rüber zum Hauptmonitor */
 {const quit0=$('#quitBtn').onclick;
  $('#quitBtn').onclick=async()=>{const w=wapi();
   if(M2){if(w)w.send('main',"document.getElementById('quitBtn').click()");return}
   const g=$('#goodbye');g.classList.remove('late');
-  if(DOPEN&&w){const d=dDir();w.send('m2',`m2Bye('${opp(d)}')`);
+  if(DOPEN&&w){const d=dDir();w.send('m2',`m2Bye('${opp(d)}',0,${aj()})`);
     /* genau wie beim Start: in dem Moment, in dem das Logo drüben rausfliegt (Flash), kommt es hier mit Flash an */
-    await dwait(RED()?400:2650);g.classList.add('late','instant');const lg=g.querySelector('.g-logo');lg.style.opacity='0';
-    const r=quit0();requestAnimationFrame(()=>flyIn(lg,d));setTimeout(()=>{g.classList.remove('instant');w.dual_hide();DOPEN=false},900);return r}
+    await dwait(RED()?400:2400+250*AK());g.classList.add('late','instant');const lg=g.querySelector('.g-logo');lg.style.opacity='0';
+    const r=quit0();requestAnimationFrame(()=>flyIn(lg,d));setTimeout(()=>{g.classList.remove('instant');w.dual_hide();DOPEN=false},1700*AK());return r}
   return quit0()}}
 /* Player gehört bei 2 Monitoren auf den anderen Bildschirm */
 const _oip=openInPlayer,_showTab=showTab,_setMode=setMode,_applyTheme=applyTheme;
@@ -3168,9 +3215,9 @@ async function playEntry(x){if(!REAL||!x.full)return;try{const r=await api('/api
   let q=Q.find(y=>y.fid===e.id)||PL.find(y=>y.fid===e.id);if(!q){q=eToQ(e);PL.push(q)}openInPlayer(q);showTab('play')}catch(err){toast(err.message)}}
 /* ---------- Fenster 2 (Monitor 2) ---------- */
 function m2Play(js){try{playerMini(false)}catch(e){}const o=JSON.parse(js);let q=PL.find(y=>y.fid===o.fid);if(!q){q=Object.assign({id:++uid},o);PL.push(q)}_oip(q)}
-async function m2Arrive(d){const sp=$('#splash');DINFO.on=true;dualUi();
+async function m2Arrive(d,cfg){setAnim(cfg);const sp=$('#splash');DINFO.on=true;dualUi();
   if(!sp){dFlash();return}sp.classList.remove('m2wait');const lg=sp.querySelector('.sp-logo');await flyIn(lg,d);spUnhold(sp);await dwait(RED()?500:2600);splashLeave()}
-async function m2Bye(d,quick){try{pPause()}catch(e){}const g=$('#goodbye');g.hidden=false;g.classList.remove('closing','done','late');$('#gBack').hidden=true;
+async function m2Bye(d,quick,cfg){setAnim(cfg);try{pPause()}catch(e){}const g=$('#goodbye');g.hidden=false;g.classList.remove('closing','done','late');$('#gBack').hidden=true;
   $('#gHint').textContent=quick?'Alles wieder auf einem Bildschirm.':'Bis zum nächsten Film.';requestAnimationFrame(()=>g.classList.add('show'));
   await dwait(quick?(RED()?100:900):(RED()?300:2100));g.querySelector('.g-center').querySelectorAll('p,h1,.g-actions').forEach(e=>{e.style.transition='opacity .35s';e.style.opacity='0'});await dwait(300);
   await flyOut(g.querySelector('.g-logo'),d)}
