@@ -72,6 +72,7 @@ button{cursor:pointer}
 .hwb{display:grid;grid-template-columns:minmax(150px,auto) 1fr 80px;gap:7px 12px;align-items:center;font-size:13px}
 .hwb .b{height:11px;border-radius:9px;background:var(--inset);overflow:hidden}.hwb .b i{display:block;height:100%;background:linear-gradient(90deg,var(--a),var(--b))}
 .hold{color:var(--warn);font-weight:700}
+.sdbody .stsec{padding:12px 14px;border-radius:14px;background:var(--panel);border:1px solid var(--line)}.sdbody .stsec h3{margin:0 0 8px;font:800 15px var(--fh)}.sdform{display:grid!important;grid-template-columns:1fr!important;gap:10px}.sdform>.f{margin:0}
 .sdbody{overflow:auto;max-height:70vh;padding-right:4px;display:grid;gap:10px}
 #setDlg .dlg{width:min(760px,94vw)}#sndDlg .dlg{width:min(620px,94vw)}
 #snBody .adrawer{display:block!important;max-height:none!important;opacity:1!important;grid-template-rows:1fr!important}#snBody .ahead .am{display:none}
@@ -924,7 +925,7 @@ dialog[open]{animation:dlg .3s ease}
 </div></dialog>
 <dialog id="setDlg" class="qdlg" aria-labelledby="sdTitle"><div class="dlg">
   <div class="dlg-head"><h2 id="sdTitle">⚙ Einstellungen</h2><button type="button" class="x" id="sdClose" aria-label="Schließen"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
-  <p class="hint" style="margin:0 0 10px">Auf <b>Auto</b> entscheidet die KI. Stellst du einen Bereich auf <b>Manuell</b>, gilt ab dann immer genau deine Einstellung – sie wird gespeichert.</p>
+  <p class="hint" style="margin:0 0 10px">Seltener gebrauchte Einstellungen. Alles wird automatisch gespeichert.</p>
   <div id="sdBody" class="sdbody"></div>
 </div></dialog>
 <dialog id="sndDlg" class="qdlg" aria-labelledby="snTitle"><div class="dlg">
@@ -1297,7 +1298,7 @@ function askHdr(q,force){
 function updSums(){
   const q=selQ(),s=settings(),d=q?det(q):null;
   const encS={libx264:'x264',libx265:'x265',h264_amf:'AMD',hevc_amf:'AMD',h264_nvenc:'NVIDIA',hevc_nvenc:'NVIDIA',h264_qsv:'Intel',hevc_qsv:'Intel'}[s.enc];
-  const set=(k,t)=>{const e=$('#sum-'+k);if(e)e.textContent=(AUTO[k]?'KI: ':'Manuell: ')+t};
+  const set=(k,t)=>{const e=$('#sum-'+k);if(e)e.textContent=(AUTO[k]?'KI: ':'⭐ Dein Standard: ')+t};
   if(REAL&&INFO&&INFO.workers){const sl=parSlots();set('par',sl.map(x=>wName(x)).join(' + ')+(sl.length>1?' – parallel':''));try{renderPar()}catch(e){}}
   {const pt=typeof planTxt==='function'?planTxt():'';set('load',(LOAD>=100?'volle Leistung':`höchstens ${LOAD} %`+(AUTO.load?' (Standard)':''))+(pt?' · '+pt:''))}try{renderLoad()}catch(e){}
   set('codec',`${s.fam==='h265'?'H.265':'H.264'} · ${encS} ${s.pre} · ${s.profName.split(' (')[0]} · ${s.cont.toUpperCase()}`);
@@ -2887,19 +2888,28 @@ $('#oShow').onclick=()=>api('/api/show',{path:$('#oDir').value}).catch(e=>toast(
 $('#oDir').addEventListener('change',()=>{if(REAL&&!AUTO.out)api('/api/config',{outdir:$('#oDir').value}).then(x=>{if(INFO)INFO.outdir=x.outdir}).catch(()=>{})});
 $('#oTopic').addEventListener('change',()=>{if(REAL)api('/api/config',{ntfy:$('#oTopic').value}).catch(()=>{})});
 /* Eigene (manuelle) Einstellungen merken und beim nächsten Start wiederherstellen */
-/* ---------- Aufgeräumt: im KI-Autopilot nur „Ausgabe“, alles andere unter ⚙ Einstellungen ---------- */
+/* ---------- Aufgeräumt: KI-Autopilot behält seine Bereiche; Selten-Gebrauchtes unter ⚙ Einstellungen ---------- */
 (function(){
   const card=$('#setCard'),body=$('#sdBody'),rows=card.querySelector('.arows');
-  const head=document.createElement('div');head.className='sdtop';
-  [...card.children].filter(x=>x!==rows&&x.id!=='apHead'&&x.id!=='apMini').forEach(x=>head.appendChild(x));
-  body.appendChild(head);
-  const sd=document.createElement('div');sd.className='arows';body.appendChild(sd);
-  [...rows.querySelectorAll(':scope>.arow')].forEach(r=>{const k=r.dataset.sec;if(k==='out')return;if(k==='snd'){$('#snBody').appendChild(r);return}sd.appendChild(r)});
-  const ki=document.createElement('div');ki.className='kionly';ki.innerHTML='<span>🧠 Alles andere – Größe, Codec, Grafikkarten, Ton … – entscheidet die KI bzw. gilt deine Einstellung.</span><button class="btn sm" id="setOpen">⚙ Einstellungen</button>';
-  card.appendChild(ki);
-  const ab=$('#allAuto');if(ab)ab.closest('.sub')&&ab.closest('.sub').remove();
+  const sec=(ic,t,txt)=>{const d=document.createElement('div');d.className='stsec';d.innerHTML=`<h3>${ic} ${t}</h3>${txt?`<p class="hint" style="margin:0 0 8px">${txt}</p>`:''}<div class="form sdform"></div>`;body.appendChild(d);return d.querySelector('.sdform')};
+  const fOf=id=>{const e=$(id);return e&&(e.closest('.f')||e)};
+  const pc=sec('💻','PC &amp; Strom');
+  const ld=rows.querySelector('.arow[data-sec=load]');if(ld)pc.appendChild(ld);
+  ['#oStart','#oAfter','#oMon'].forEach(id=>{const f=fOf(id);if(f)pc.appendChild(f)});
+  const fn=sec('🏷️','Dateinamen','Gilt, wenn als Dateiname „Wie das Original“ bzw. „Original + Codec“ gewählt ist.');
+  const gp=$('#grpPrev');['#oSwap','#oGrp'].forEach(id=>{const f=fOf(id);if(f)fn.appendChild(f)});
+  const pr=sec('🎞️','Profi-Optionen Video');['content','hdr'].forEach(k=>{const r=rows.querySelector(`.arow[data-sec=${k}]`);if(r)pr.appendChild(r)});
+  const nt=sec('📱','Benachrichtigung');['#oPush','#wTopic'].forEach(id=>{const f=fOf(id);if(f)nt.appendChild(f)});
+  const ah=sec('🎨','Aussehen &amp; Hilfe');ah.innerHTML='<div class="row" style="gap:8px"><button type="button" class="btn sm" id="sdTheme">🎨 Design wählen</button><button type="button" class="btn sm" id="sdTour">❔ Kurzanleitung zeigen</button></div>';
+  /* Namen-Vorschau bleibt bei „Ausgabe“ */
+  const out=rows.querySelector('.arow[data-sec=out]');if(gp&&out){const f=fOf('#oName');if(f)f.after(gp)}
+  if(out){const b=out.querySelector('.atx b');if(b)b.textContent='Ausgabe'}
+  const sn=rows.querySelector('.arow[data-sec=snd]');if(sn)$('#snBody').appendChild(sn);
+  const h=card.querySelector('#apHead .sub');if(h){const bt=document.createElement('button');bt.className='btn sm';bt.id='setOpen';bt.type='button';bt.textContent='⚙ Einstellungen';h.prepend(bt)}
 })();
-$('#setOpen').onclick=()=>{const d=$('#setDlg');try{d.showModal()}catch(e){d.setAttribute('open','')}};
+$('#sdTheme').onclick=()=>{$('#setDlg').close();$('#themeBtn').click()};
+$('#sdTour').onclick=()=>{$('#setDlg').close();$('#helpBtn').click()};
+$('#setOpen').onclick=e=>{e.stopPropagation();const d=$('#setDlg');try{d.showModal()}catch(e){d.setAttribute('open','')}};
 $('#sdClose').onclick=()=>$('#setDlg').close();
 $('#snClose').onclick=()=>$('#sndDlg').close();
 $('#bSnd').onclick=()=>{const d=$('#sndDlg');try{d.showModal()}catch(e){d.setAttribute('open','')}};
@@ -3009,7 +3019,7 @@ function grpDraw(){
 /* ---------- Kurzanleitung beim ersten Start ---------- */
 const TOUR=[
   {t:'👋 Willkommen im Butchies Video Converter AI',b:'<p>In 6 kurzen Schritten zeige ich dir die wichtigsten Stellen. Dauert eine Minute.</p><ul><li>🎬 Filme hineinziehen</li><li>🧠 KI-Autopilot – alles auf <b>Auto</b> lassen oder selbst einstellen</li><li>▶ Umwandeln &amp; Fortschritt</li><li>🗂️ Ordner-Abgleich, 📊 Statistik, 🎨 Design</li></ul>',go:'Los geht’s →'},
-  {s:'#setCard',t:'🧠 KI-Autopilot',b:'<p>Hier stellst du nur die <b>Ausgabe</b> ein: Ordner und Dateiname. Alles andere entscheidet die KI.</p><p>Willst du selbst etwas festlegen (Grafikkarte, Größe, Codec, Ton …), öffne <b>⚙ Einstellungen</b> und stelle den Bereich auf <b>Manuell</b> – deine Einstellung wird gespeichert.</p>'},
+  {s:'#setCard',t:'🧠 KI-Autopilot – deine Optionen',b:'<p>Jede Zeile ist eine Option. <b>Auto</b> = die KI entscheidet. <b>Manuell</b> = du stellst selbst ein – das wird gespeichert und gilt ab dann als <b>⭐ Dein Standard</b>.</p><p>Selten Gebrauchtes (Strom, Dateinamen, Profi-Optionen, Handy-Nachricht) findest du unter <b>⚙ Einstellungen</b>.</p>'},
   {s:'#drop',t:'🎬 Filme hineinziehen',b:'<p>Ziehe Videos oder ganze Ordner hier hinein – oder nutze „Dateien wählen“. Die KI prüft jeden Film sofort und zeigt rechts in der <b>KI-Analyse</b>, wie groß und wie gut er wird.</p>'},
   {s:'#bStart',t:'▶ Umwandeln starten',b:'<p>Hier geht’s los. Im <b>KI-Monitor</b> siehst du Fortschritt, Restzeit und Geschwindigkeit, über <b>Warteschlange</b> oben alle Filme.</p><p>Tipp: Unter „PC-Auslastung“ kannst du festlegen, dass nur umgewandelt wird, wenn du den PC nicht benutzt.</p>'},
   {s:'.tab[data-v=cmp]',t:'🗂️ Ordner-Abgleich',b:'<p>Vergleicht zwei Ordner (z. B. Downloads ↔ NAS), findet doppelte Filme und benennt deine umgewandelten Filme in „Butchies-Groove“ um.</p>'},
