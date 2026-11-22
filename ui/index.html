@@ -534,7 +534,7 @@ body.span{overflow:hidden}
 body.span .grips,body.span #winMax,body.span #winFull,body.span .tab[data-v=cmp]{display:none!important}
 body.span .top{position:fixed;left:var(--mL);top:var(--mT);width:var(--mW);box-sizing:border-box}
 body.span .wrap{position:fixed;left:var(--mL);top:calc(var(--mT) + var(--hH,70px));width:var(--mW);height:calc(var(--mH) - var(--hH,70px));overflow:auto;box-sizing:border-box;max-width:none;margin:0}
-body.span .splash,body.span>.goodbye{inset:auto;left:var(--mL);top:var(--mT);width:var(--mW);height:var(--mH)}
+body.span>.splash,body.span #goodbye{inset:auto;left:var(--mL);top:var(--mT);width:var(--mW);height:var(--mH)}
 body.span .toast{left:calc(var(--mL) + var(--mW) / 2)}
 body.span .modal{inset:auto;left:var(--mL);top:var(--mT);width:var(--mW);height:var(--mH)}
 #pane2{display:none}
@@ -2844,7 +2844,7 @@ $('#pMini').onclick=e=>{if(e.target.closest('#pMiniAb'))return;playerMini(false)
 $('#pMiniAb').onclick=e=>{e.stopPropagation();playerMini(false);setMode('ab')};
 $('#pClose').onclick=()=>{try{pPause()}catch(e){}playerMini(true)};
 makeDrop($('#pMini'),addPlayerFiles,'play');
-playerMini(KV.get('bvc-pmini')!=='0');
+playerMini(false); /* beim Start offen – klappt nach ca. 10 s ohne Maus von selbst zu */
 {const pm=KV.get('bvc-pmode');if(pm==='ab'){const mini=$('#stageCard').classList.contains('mini');try{setMode('ab')}catch(e){}if(mini)playerMini(true)}}
 
 /* ---------- KI-Autopilot einklappen ---------- */
@@ -3425,6 +3425,7 @@ if(POP){document.body.classList.add('pop');const sp=$('#splash');if(sp)sp.remove
   addEventListener('pywebviewready',()=>setTimeout(()=>fwd(`popReady(${JSON.stringify(POP)})`),200));setTimeout(()=>fwd(`popReady(${JSON.stringify(POP)})`),1500)}
 
 /* ================= Zwei-Monitor-Ansicht: EIN Fenster über beide Bildschirme ================= */
+['#goodbye','#modal','.toast'].forEach(q=>{const el=$(q);if(el)document.body.appendChild(el)}); /* über allem, auch wenn .wrap fest steht */
 let SPAN=null;const SPL_HTML=$('#splash')?$('#splash').innerHTML:'',GB_HTML=$('#goodbye').innerHTML;
 const isSpan=()=>document.body.classList.contains('span');
 const P2=document.createElement('div');P2.id='pane2';P2.innerHTML='<div class="p2head"><b>🗂️ Ordner-Abgleich</b><small style="color:var(--muted)">Monitor 2 · Player</small><span style="flex:1"></span><button class="btn ghost sm" id="p2swap" title="Monitore tauschen">⇄</button><button class="btn ghost sm" id="p2one">🖥 1 Monitor</button></div><div id="p2body"></div><div id="p2cover"></div>';document.body.appendChild(P2);
@@ -3434,7 +3435,7 @@ function spanVars(){if(!SPAN)return;const sw=KV.get('bvc-spanswap')==='1',m=sw?S
   DINFO.side=o[0]<m[0]?'l':'r';requestAnimationFrame(()=>b.setProperty('--hH',$('.top').offsetHeight+'px'))}
 function stagePlace(where){const st=$('#stageCard');if(!isSpan()){if(st.parentNode!==HOME_STAGE.p)HOME_STAGE.p.insertBefore(st,HOME_STAGE.n);return}
   if(where==='p2'){if(st.parentNode!==$('#p2body'))$('#p2body').insertBefore(st,$('#p2body').firstChild)}else if(st.parentNode!==HOME_STAGE.p)HOME_STAGE.p.insertBefore(st,HOME_STAGE.n)}
-function spanNodes(on){const c=$('#v-cmp');if(on){_showTab('conv');$('#p2body').appendChild(c);stagePlace('p2');try{playerMini(true)}catch(e){}}
+function spanNodes(on){const c=$('#v-cmp');if(on){_showTab('conv');$('#p2body').appendChild(c);stagePlace('main');try{_setMode('ab');playerMini(false)}catch(e){}}
   else{HOME_CMP.p.insertBefore(c,HOME_CMP.n);c.classList.remove('on');stagePlace('main')}dualUi2()}
 function dualUi2(){const on=isSpan();$('#dualBtn').hidden=!(DINFO.n>1||on);$('#dualLbl').textContent=on?'1 Monitor':'2 Monitore';$('#dualBtn').firstChild.textContent=on?'🖥':'🖥🖥'}
 async function spanGo(){const w=wapi();document.documentElement.classList.add('spanpre');const sp=$('#splash');if(sp){sp.style.width=innerWidth+'px';sp.style.height=innerHeight+'px';sp.style.inset='0 auto auto 0'}
