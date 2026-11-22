@@ -35,6 +35,9 @@ FFmpeg mit allen Codecs ist dabei (inklusive VMAF-Messung und HDR). WebView2 wir
 **Neu in 1.1.3**
 - Das Programm **merkt sich jetzt alles** bis zum nächsten Start: Design, Start-Animation an/aus, Auto/Manuell-Schalter, eigene Einstellungen (Codec, Zielgröße, Zeitplan …) und eigene Vorlagen. Bisher ging das beim Neustart verloren
 
+**Neu in 1.9.4**
+- 2 Monitore: Der Player ist von Anfang an nur auf dem Monitor mit dem Ordner-Abgleich (vorher stand er beim Start im Studio und sprang später rüber). Mit „1 Monitor“ kommt alles wieder zusammen ins Studio
+
 **Neu in 1.9.3**
 - 2 Monitore: Beim Start schob das Einpassen des Fensters es manchmal wieder auf einen Monitor zurück – die rechte Seite war dann nur noch ein „Standbild“ (kein Abschied, Klicks ohne Wirkung). Jetzt wartet die Zwei-Monitor-Ansicht, bis das Einpassen fertig ist
 - Player: Zugeklappt sitzt er als „Player“-Leiste auf dem Monitor mit dem Ordner-Abgleich; Vorher/Nachher klappt im Studio auf
