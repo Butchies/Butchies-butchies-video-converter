@@ -355,8 +355,8 @@ td .p{color:var(--muted);font-size:11px;word-break:break-all}
 #abA{position:absolute;inset:0;width:100%;height:100%}
 .abLine{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;background:#fff;box-shadow:0 0 8px #000;left:50%;pointer-events:none}
 .abKnob{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--acc),var(--acc2));display:grid;place-items:center;color:var(--on);font-weight:800;box-shadow:0 2px 12px #000}
-.abTag{position:absolute;top:10px;padding:6px 10px;border-radius:8px;background:#000b;font:600 12px var(--fb);pointer-events:none;line-height:1.4}
-.abTag.l{left:10px}.abTag.r{right:10px;text-align:right}.abTag b{color:var(--acc)}
+.abTag{position:absolute;top:10px;padding:7px 12px;border-radius:10px;background:rgba(8,10,20,.72);backdrop-filter:blur(6px);color:#fff;font:700 12px var(--fb);letter-spacing:.06em;pointer-events:none;line-height:1.45;box-shadow:0 4px 14px rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.14)}
+.abTag.l{left:10px}.abTag.r{right:10px;text-align:right}.abTag b{color:#fff;letter-spacing:0;background:linear-gradient(110deg,var(--a),var(--b));padding:1px 6px;border-radius:6px}
 .modal{position:fixed;inset:0;background:#000b;display:none;place-items:center;z-index:50;padding:16px}
 .modal.on{display:grid}
 .modal .box{max-width:480px;width:100%;background:linear-gradient(160deg,color-mix(in srgb,var(--a) 10%,var(--bg2)),var(--bg));box-shadow:0 24px 60px rgba(0,0,0,.45);border:1px solid var(--line);border-radius:14px;padding:16px}
@@ -476,6 +476,7 @@ dialog[open]{animation:dlg .3s ease}
 /* ---------- Start-Animation (Butchies-Webseite) ---------- */
 .splash{position:fixed;inset:0;z-index:150;display:grid;place-items:center;text-align:center;padding:24px;overflow:hidden;background:radial-gradient(60% 60% at 50% 40%,var(--bg2),var(--bg));transition:opacity .9s ease,visibility .9s,transform .9s ease;cursor:pointer}
 .splash.leave{opacity:0;visibility:hidden;transform:scale(1.06)}
+.splash.leave.nofx{transform:none}
 .sp-orbs i{position:absolute;border-radius:50%;filter:blur(60px);opacity:.55;animation:sporb 14s ease-in-out infinite alternate}
 .sp-orbs i:nth-child(1){width:42vmax;height:42vmax;left:-12vmax;top:-10vmax;background:var(--a)}
 .sp-orbs i:nth-child(2){width:36vmax;height:36vmax;right:-10vmax;bottom:-12vmax;background:var(--b);animation-delay:-5s}
@@ -502,7 +503,7 @@ dialog[open]{animation:dlg .3s ease}
 @keyframes sppop{from{opacity:0;transform:scale(.6)}}
 @media (prefers-reduced-motion:reduce){.splash *,.viz-prev i{animation:none!important}}
 /* ---------- Zwei-Monitor-Ansicht ---------- */
-.splash.hold{cursor:default}.splash.hold :is(.sp-kicker,.sp-title,.sp-tag,.sp-skip){visibility:hidden}
+.splash.hold{cursor:default}.splash.hold :is(.sp-kicker,.sp-title,.sp-tag,.sp-skip){display:none}
 .splash.m2wait .sp-center,.splash.m2wait .sp-orbs{opacity:0}
 .dflash{position:fixed;inset:0;background:#fff;z-index:400;pointer-events:none;animation:dflash .7s ease-out forwards}
 .dprev .dflash,.dprev .dstreak{position:absolute}
@@ -2231,24 +2232,34 @@ $('#gBackBtn').onclick=()=>{const g=$('#goodbye');g.classList.remove('show');set
 /* ================= PLAYER ================= */
 const vid=$('#vid'),dcv=$('#demoCv'),dcx=dcv.getContext('2d');
 const NZ=document.createElement('canvas');NZ.width=NZ.height=128;{const c=NZ.getContext('2d'),d=c.createImageData(128,128);for(let i=0;i<d.data.length;i+=4){const v=Math.random()*255;d.data[i]=d.data[i+1]=d.data[i+2]=v;d.data[i+3]=22}c.putImageData(d,0,0)}
+/* Testbild im Look der Start-Animation: Design-Farben, Lichtkugeln, Logo mit Ringen, Schriftzug – dazu feine Details für den Vorher/Nachher-Vergleich */
 function drawScene(c,w,h,t,title){
-  const k=w/1280;c.save();
-  let g=c.createLinearGradient(0,0,0,h*.62);g.addColorStop(0,'#1d2b5a');g.addColorStop(.55,'#c8643a');g.addColorStop(1,'#f6c26b');c.fillStyle=g;c.fillRect(0,0,w,h);
-  const sx=w*.72,sy=h*(.34+.04*Math.sin(t*.2));g=c.createRadialGradient(sx,sy,0,sx,sy,120*k);g.addColorStop(0,'#fff6d8');g.addColorStop(.25,'#ffd27a');g.addColorStop(1,'#ffd27a00');c.fillStyle=g;c.beginPath();c.arc(sx,sy,120*k,0,7);c.fill();
-  [['#3b2a3f',.55,90,.004],['#24192a',.66,70,.007],['#130d14',.76,50,.012]].forEach(([col,base,amp,f],j)=>{c.fillStyle=col;c.beginPath();c.moveTo(0,h);
-    for(let x=0;x<=w;x+=4*k){c.lineTo(x,h*base-amp*k*Math.abs(Math.sin((x/k)*f+j*2))-20*k*Math.sin((x/k)*f*3.7+t*.05*j))}c.lineTo(w,h);c.fill()});
-  c.fillStyle='#0a0709';c.fillRect(0,h*.8,w,h*.2);
-  c.strokeStyle='#f2a33a';c.lineWidth=2*k;for(let i=0;i<14;i++){const x=((i*110*k-t*90*k)%(w+120*k)+w+120*k)%(w+120*k)-60*k;c.beginPath();c.moveTo(x,h*.9);c.lineTo(x+50*k,h*.9);c.stroke()}
-  const cx=((t*160*k)%(w+300*k))-150*k;c.fillStyle='#e5602b';c.fillRect(cx,h*.83,140*k,34*k);c.fillStyle='#ffd27a';c.fillRect(cx+130*k,h*.845,10*k,8*k);c.fillStyle='#111';[cx+28*k,cx+108*k].forEach(x=>{c.beginPath();c.arc(x,h*.83+36*k,13*k,0,7);c.fill()});
-  // Detail-Testfeld (feine Linien + Kreise) – zeigt Kompression gut
-  const bx=40*k,by=40*k,bw=300*k,bh=170*k;c.fillStyle='#000c';c.fillRect(bx-10*k,by-10*k,bw+20*k,bh+20*k);
-  for(let i=0;i<bw/2;i++){c.fillStyle=i%2?'#fff':'#000';c.fillRect(bx+i*2*(1+i/bw*2)%bw,by,Math.max(1,k),bh*.35)}
-  c.strokeStyle='#fff';c.lineWidth=Math.max(1,k*.8);for(let r=2;r<80*k;r+=3*k){c.beginPath();c.arc(bx+bw*.25,by+bh*.72,r,0,7);c.stroke()}
-  const bars=['#c0c0c0','#c0c000','#00c0c0','#00c000','#c000c0','#c00000','#0000c0'];bars.forEach((b,i)=>{c.fillStyle=b;c.fillRect(bx+bw*.55+i*(bw*.45/7),by+bh*.45,bw*.45/7+1,bh*.55)});
-  c.fillStyle='#fff';c.font=`600 ${11*k}px Inter,sans-serif`;c.fillText('Feine Details 0123456789 – Testbild',bx+bw*.55,by+bh*.4);
-  c.font=`700 ${34*k}px Outfit,Inter,sans-serif`;c.fillStyle='#fff';c.fillText('Butchies Testbild',w-420*k,h-120*k);
-  c.font=`500 ${16*k}px "JetBrains Mono",monospace`;c.fillStyle='#ffd27a';c.fillText((title||'').slice(0,40),w-420*k,h-92*k);
-  c.fillText('TC '+fmtT(t)+':'+String(Math.floor((t%1)*25)).padStart(2,'0'),w-420*k,h-66*k);
+  const k=w/1280,cs=getComputedStyle(document.body),v=(n,d)=>(cs.getPropertyValue(n)||'').trim()||d;
+  const A=v('--a','#a46bff'),B=v('--b','#ff6fc4'),BG=v('--bg','#0b0614'),BG2=v('--bg2','#160c26'),TX=v('--text','#f6f1ff'),MU=v('--muted','#b3a6c9');
+  const light=/^(light|lightblue)$/.test(document.body.dataset.theme);
+  c.save();let g=c.createRadialGradient(w*.5,h*.4,0,w*.5,h*.4,w*.7);g.addColorStop(0,BG2);g.addColorStop(1,BG);c.fillStyle=g;c.fillRect(0,0,w,h);
+  /* Lichtkugeln wie im Startbild, langsam treibend */
+  [[A,.12,.1,.42,0],[B,.9,.95,.36,2],[A,.55,.75,.2,4]].forEach(([col,x,y,r,ph])=>{const X=w*(x+.04*Math.sin(t*.25+ph)),Y=h*(y+.04*Math.cos(t*.2+ph)),R=w*r;
+    const o=c.createRadialGradient(X,Y,0,X,Y,R);o.addColorStop(0,col+(light?'88':'99'));o.addColorStop(1,col+'00');c.fillStyle=o;c.fillRect(0,0,w,h)});
+  /* Logo: drei drehende Ringe + Equalizer */
+  const lx=w/2,ly=h*.36,lr=78*k;c.lineCap='round';
+  [[lr,3*k,t*1.05,1],[lr-16*k,2.4*k,-t*.7,.8],[lr-32*k,2*k,t*1.6,.6]].forEach(([r,lw,rot,al])=>{const cg=c.createConicGradient?c.createConicGradient(rot,lx,ly):null;
+    if(cg){cg.addColorStop(0,A);cg.addColorStop(.35,B);cg.addColorStop(.7,B+'00');cg.addColorStop(1,A)}c.globalAlpha=al;c.strokeStyle=cg||A;c.lineWidth=lw;c.beginPath();c.arc(lx,ly,r,0,7);c.stroke()});
+  c.globalAlpha=1;c.shadowColor=B;c.shadowBlur=30*k;c.strokeStyle=A+'55';c.lineWidth=2*k;c.beginPath();c.arc(lx,ly,lr,0,7);c.stroke();c.shadowBlur=0;
+  for(let i=0;i<5;i++){const hh=(10+34*Math.abs(Math.sin(t*3.1+i*1.7)))*k,x=lx+(i-2)*11*k;const eg=c.createLinearGradient(0,ly-hh/2,0,ly+hh/2);eg.addColorStop(0,B);eg.addColorStop(1,A);
+    c.strokeStyle=eg;c.lineWidth=6*k;c.beginPath();c.moveTo(x,ly-hh/2);c.lineTo(x,ly+hh/2);c.stroke()}
+  /* Schriftzug */
+  c.textAlign='center';c.fillStyle=MU;c.font=`700 ${13*k}px "DM Sans",Inter,sans-serif`;c.fillText('W I L L K O M M E N   I M',lx,h*.58);
+  c.font=`900 ${58*k}px Outfit,Inter,sans-serif`;const tg=c.createLinearGradient(lx-330*k,0,lx+330*k,0);const sh=(Math.sin(t*.6)+1)/2;
+  tg.addColorStop(0,TX);tg.addColorStop(Math.min(.95,.2+sh*.5),B);tg.addColorStop(1,A);c.fillStyle=tg;c.fillText('Butchies Video Converter AI',lx,h*.67);
+  c.fillStyle=MU;c.font=`500 ${18*k}px "DM Sans",Inter,sans-serif`;c.fillText('Umwandeln. Vergleichen. Aufräumen – mit KI.',lx,h*.73);c.textAlign='left';
+  /* Detail-Leiste unten: feine Linien, Kreise, Farbbalken (zeigt Kompression gut) */
+  const by=h*.8,bh=h*.14,bx=40*k,bw=w-80*k;c.fillStyle=light?'#ffffffaa':'#00000066';c.beginPath();c.roundRect?c.roundRect(bx,by,bw,bh,14*k):c.rect(bx,by,bw,bh);c.fill();
+  const lw=bw*.32;for(let i=0;i<lw/2;i++){c.fillStyle=i%2?TX:BG;c.fillRect(bx+12*k+i*2,by+12*k,Math.max(1,k*(1+i/lw)),bh-24*k)}
+  c.strokeStyle=TX;c.lineWidth=Math.max(1,k*.8);for(let r=2;r<bh/2-10*k;r+=3*k){c.beginPath();c.arc(bx+lw+70*k,by+bh/2,r,0,7);c.stroke()}
+  const bars=[A,B,'#c0c0c0','#c0c000','#00c0c0','#00c000','#c000c0','#c00000','#0000c0'],bw2=bw*.3/bars.length;bars.forEach((col,i)=>{c.fillStyle=col;c.fillRect(bx+lw+130*k+i*bw2,by+12*k,bw2+1,bh-24*k)});
+  c.fillStyle=TX;c.font=`700 ${15*k}px "JetBrains Mono",monospace`;const tx=bx+lw+150*k+bw*.3;
+  c.fillText((title||'Butchies Testbild').slice(0,30),tx,by+bh*.42);c.fillStyle=B;c.fillText('TC '+fmtT(t)+':'+String(Math.floor((t%1)*25)).padStart(2,'0'),tx,by+bh*.75);
   c.translate(-(t*37%128),-(t*53%128));c.fillStyle=c.createPattern(NZ,'repeat');c.fillRect(0,0,w+128,h+128);
   c.restore();
 }
@@ -3120,7 +3131,8 @@ const dwait=t=>new Promise(r=>setTimeout(r,t));
 const RED=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
 function sessM2(){try{return JSON.parse(KV.get('bvc-m2s')||'null')}catch(e){return null}}
 function dDir(){const d=$('#dualDir')?$('#dualDir').value:DINFO.dir;return d==='l'||d==='r'?d:(DINFO.side||'l')}
-function spUnhold(sp){sp.classList.remove('hold','m2wait');sp.querySelectorAll('.sp-kicker,.sp-title,.sp-tag,.sp-skip').forEach(e=>{e.style.animation='none';void e.offsetWidth;e.style.animation=''})}
+function spUnhold(sp){/* Logo steht mittig; wenn die Schrift dazukommt, gleitet es sanft nach oben */const lg=sp.querySelector('.sp-logo'),y0=lg?lg.getBoundingClientRect().top:0;
+  sp.classList.remove('hold','m2wait');if(lg){const y1=lg.getBoundingClientRect().top;lg.style.transition='none';lg.style.transform=`translateY(${y0-y1}px)`;void lg.offsetWidth;lg.style.transition='transform .7s cubic-bezier(.2,.8,.3,1)';lg.style.transform='none'}sp.querySelectorAll('.sp-kicker,.sp-title,.sp-tag,.sp-skip').forEach(e=>{e.style.animation='none';void e.offsetWidth;e.style.animation=''})}
 /* Animations-Einstellungen (Design-Fenster): Tempo, Flash, Lichtstreifen, Farbe */
 let ANIM={speed:'n',flash:'s',streak:'thick',color:'theme'};try{Object.assign(ANIM,JSON.parse(KV.get('bvc-anim')||'{}'))}catch(e){}
 const AK=()=>({s:1.45,n:1,f:.65}[ANIM.speed]||1);
@@ -3140,13 +3152,17 @@ function dStreak(d,mode,root,hold,ref){if(RED()||ANIM.streak==='off')return;cons
   const head=mode==='in'?(d==='l'?'r':'l'):d;e.style.background=stkBg(head);
   /* unter das Logo legen (im Start-/Abschiedsbild), damit es nie im Logo zu sehen ist */
   const host=!root&&ref&&ref.closest('.splash,.goodbye');if(host){e.style.zIndex='1';ref.style.zIndex='2';host.insertBefore(e,host.firstChild)}else(root||document.body).appendChild(e);
-  const k=AK(),T=(mode==='in'?750:650)*k,W=R.width,px=v=>Math.max(0,v)+'px';
+  const k=AK(),T=(mode==='in'?750:700)*k,W=R.width,px=v=>Math.max(0,v)+'px';
   let fr;
   const gap=rad+6;
   /* raus: Streifen schießt vom Logo-Rand zur Bildschirmkante, das Logo fliegt darüber */
   if(mode==='out')fr=d==='l'?[{left:px(cx-gap),width:'0px'},{left:'0px',width:px(cx-gap)}]:[{left:px(cx+gap),width:'0px'},{left:px(cx+gap),width:px(W-cx-gap)}];
   else{const stop=rad+10;fr=d==='l'?[{left:'0px',width:'0px'},{left:'0px',width:px(cx-stop)}]:[{left:px(W),width:'0px'},{left:px(cx+stop),width:px(W-cx-stop)}]}
-  if(mode==='in'&&ref){/* Streifen hängt hinten am Logo und geht nie hinein */const t0=performance.now();
+  if(mode==='out'&&ref){/* Schweif HINTER dem Logo: nie schneller als das Logo, beginnt dort, wo das Logo stand */const t0=performance.now(),x0=cx;
+    const step=now=>{const r=ref.getBoundingClientRect();if(d==='l'){const l=Math.max(0,r.right-R.left+6),end=x0+rad;e.style.left=px(l);e.style.width=px(end-l)}
+      else{const st=x0-rad,rr=Math.min(W,r.left-R.left-6);e.style.left=px(st);e.style.width=px(rr-st)}
+      if(now-t0<T*1.15+80)requestAnimationFrame(step)};e.style.width='0px';requestAnimationFrame(step)}
+  else if(mode==='in'&&ref){/* Streifen hängt hinten am Logo und geht nie hinein */const t0=performance.now();
     const step=now=>{const r=ref.getBoundingClientRect();if(d==='l'){const w=r.left-R.left-6;e.style.left='0px';e.style.width=px(w)}else{const l=r.right-R.left+6;e.style.left=px(l);e.style.width=px(W-l)}
       if(now-t0<T+60)requestAnimationFrame(step)};requestAnimationFrame(step)}
   else e.animate(fr,{duration:mode==='out'?T*.45:T,easing:mode==='in'?'cubic-bezier(.2,.8,.3,1)':'cubic-bezier(.6,0,.4,1)',fill:'forwards'});
@@ -3191,7 +3207,7 @@ async function dualBoot(){const w=wapi();if(!w||!w.dual_info||M2)return;
     if(sp&&sp.classList.contains('hold')&&!DSTART){DSTART=true;spUnhold(sp);setTimeout(splashLeave,2400)}return}
   DSTART=true;KV.set('bvc-dual','1');SRC.A=SRC.B='';dualMain(true);const ready=newReady();await w.dual_prepare();
   if(sp&&sp.classList.contains('hold')){await dwait(RED()?200:1500);await ready;const d=dDir();
-    await flyOut(sp.querySelector('.sp-logo'),d);await w.dual_show();DOPEN=true;w.send('m2',`m2Arrive('${opp(d)}',${aj()})`);await dwait(300);splashLeave()}
+    await flyOut(sp.querySelector('.sp-logo'),d);await w.dual_show();DOPEN=true;w.send('m2',`m2Arrive('${opp(d)}',${aj()})`);await dwait(300);sp.classList.add('nofx');splashLeave()}
   else{await ready;await w.dual_show();DOPEN=true;w.send('m2',`m2Arrive('${opp(dDir())}',${aj()})`)}}
 /* Knopf „2 Monitore“ / „1 Monitor“ */
 async function dualToggle(){const w=wapi();if(!w||!w.dual_set)return;
