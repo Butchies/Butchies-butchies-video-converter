@@ -3137,15 +3137,19 @@ function dStreak(d,mode,root,hold,ref){if(RED()||ANIM.streak==='off')return;cons
   /* Höhe und Lage am Logo ausrichten (das Logo sitzt nicht immer in der Bildschirmmitte) */
   let cy=R.height/2,cx=R.width/2,rad=0;if(ref){const tr=ref.style.transform,tn=ref.style.transition;ref.style.transition='none';ref.style.transform='none';const r=ref.getBoundingClientRect();ref.style.transform=tr;void ref.offsetWidth;ref.style.transition=tn;if(r.width){cy=r.top-R.top+r.height/2;cx=r.left-R.left+r.width/2;rad=r.width/2}}
   e.style.height=h+'px';e.style.top=(cy-h/2)+'px';e.style.marginTop='0';
-  const head=mode==='in'?(d==='l'?'r':'l'):d;e.style.background=stkBg(head);(root||document.body).appendChild(e);
+  const head=mode==='in'?(d==='l'?'r':'l'):d;e.style.background=stkBg(head);
+  /* unter das Logo legen (im Start-/Abschiedsbild), damit es nie im Logo zu sehen ist */
+  const host=!root&&ref&&ref.closest('.splash,.goodbye');if(host){e.style.zIndex='1';ref.style.zIndex='2';host.insertBefore(e,host.firstChild)}else(root||document.body).appendChild(e);
   const k=AK(),T=(mode==='in'?750:650)*k,W=R.width,px=v=>Math.max(0,v)+'px';
   let fr;
-  if(mode==='out')fr=d==='l'?[{left:px(cx),width:'0px'},{left:'0px',width:px(cx)}]:[{left:px(cx),width:'0px'},{left:px(cx),width:px(W-cx)}];
+  const gap=rad+6;
+  /* raus: Streifen schießt vom Logo-Rand zur Bildschirmkante, das Logo fliegt darüber */
+  if(mode==='out')fr=d==='l'?[{left:px(cx-gap),width:'0px'},{left:'0px',width:px(cx-gap)}]:[{left:px(cx+gap),width:'0px'},{left:px(cx+gap),width:px(W-cx-gap)}];
   else{const stop=rad+10;fr=d==='l'?[{left:'0px',width:'0px'},{left:'0px',width:px(cx-stop)}]:[{left:px(W),width:'0px'},{left:px(cx+stop),width:px(W-cx-stop)}]}
   if(mode==='in'&&ref){/* Streifen hängt hinten am Logo und geht nie hinein */const t0=performance.now();
     const step=now=>{const r=ref.getBoundingClientRect();if(d==='l'){const w=r.left-R.left-6;e.style.left='0px';e.style.width=px(w)}else{const l=r.right-R.left+6;e.style.left=px(l);e.style.width=px(W-l)}
       if(now-t0<T+60)requestAnimationFrame(step)};requestAnimationFrame(step)}
-  else e.animate(fr,{duration:T,easing:mode==='in'?'cubic-bezier(.2,.8,.3,1)':'cubic-bezier(.6,0,.4,1)',fill:'forwards'});
+  else e.animate(fr,{duration:mode==='out'?T*.45:T,easing:mode==='in'?'cubic-bezier(.2,.8,.3,1)':'cubic-bezier(.6,0,.4,1)',fill:'forwards'});
   /* auf dem Ankunfts-Bildschirm nur kurz, dann weg */
   const keep=mode==='in'?120*k:(hold!=null?hold:1300*k);
   setTimeout(()=>{e.style.transition=`opacity ${mode==='in'?.3:.5}s`;e.style.opacity='0';setTimeout(()=>e.remove(),550)},T+keep)}

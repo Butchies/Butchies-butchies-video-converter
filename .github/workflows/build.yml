@@ -79,10 +79,16 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           $tag = "v$env:VER"
+          # Release-Text: nur das, was in dieser Version neu ist (oberster „Neu in …“-Abschnitt aus RELEASE.md)
+          $all = Get-Content RELEASE.md -Raw
+          $v = [regex]::Escape($env:VER)
+          $neu = [regex]::Match($all, "(?s)\*\*Neu in $v\b.*?(?=\r?\n\*\*Neu in |\z)").Value.Trim()
+          if (-not $neu) { $neu = "**Butchies Video Converter AI $env:VER**" }
+          "$neu`n`n**Installieren:** ``Butchies_Video_Converter-Setup.exe`` herunterladen und starten (ohne Administratorrechte)." | Set-Content notes.md -Encoding utf8
           gh release view $tag 2>$null
-          if ($LASTEXITCODE -eq 0) { gh release upload $tag dist\Butchies_Video_Converter-Setup.exe --clobber }
-          else { gh release create $tag dist\Butchies_Video_Converter-Setup.exe --title "Butchies Video Converter $env:VER" --notes-file RELEASE.md --latest --target $env:GITHUB_SHA }
-          if ((Test-Path FINAL.txt) -and ((Get-Content FINAL.txt -Raw).Trim() -eq $env:VER)) { gh release edit $tag --title "Butchies Video Converter AI $env:VER – Final" --notes-file RELEASE.md --prerelease=false --latest }
+          if ($LASTEXITCODE -eq 0) { gh release upload $tag dist\Butchies_Video_Converter-Setup.exe --clobber; gh release edit $tag --notes-file notes.md }
+          else { gh release create $tag dist\Butchies_Video_Converter-Setup.exe --title "Butchies Video Converter $env:VER" --notes-file notes.md --latest --target $env:GITHUB_SHA }
+          if ((Test-Path FINAL.txt) -and ((Get-Content FINAL.txt -Raw).Trim() -eq $env:VER)) { gh release edit $tag --title "Butchies Video Converter AI $env:VER – Final" --notes-file notes.md --prerelease=false --latest }
 
       - uses: actions/upload-artifact@v4
         if: always()
