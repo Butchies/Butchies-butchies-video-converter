@@ -10,7 +10,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 APP_NAME = 'Butchies Video Converter'
-VERSION = '2.0.5'
+VERSION = '2.0.6'
 FROZEN = getattr(sys, 'frozen', False)
 BASE = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent))
 UI = BASE / 'ui'
@@ -2897,6 +2897,12 @@ def native_window(url):
         return False
     frame = WinFrame()
     NATIVE[0] = True
+    # Zeichnen nicht drosseln: Chromium hält ein Fenster über zwei Monitore sonst teilweise für „verdeckt“
+    # (Studio auf dem zweiten Monitor) und malt die andere Seite erst nach einem Fensterwechsel neu.
+    flags = '--disable-features=CalculateNativeWinOcclusion --disable-backgrounding-occluded-windows --disable-renderer-backgrounding --disable-background-timer-throttling'
+    old = os.environ.get('WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS', '')
+    if 'CalculateNativeWinOcclusion' not in old:
+        os.environ['WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS'] = (old + ' ' + flags).strip()
 
     class Api:
         def __init__(self, role='main'):
