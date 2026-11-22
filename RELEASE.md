@@ -35,6 +35,9 @@ FFmpeg mit allen Codecs ist dabei (inklusive VMAF-Messung und HDR). WebView2 wir
 **Neu in 1.1.3**
 - Das Programm **merkt sich jetzt alles** bis zum nächsten Start: Design, Start-Animation an/aus, Auto/Manuell-Schalter, eigene Einstellungen (Codec, Zielgröße, Zeitplan …) und eigene Vorlagen. Bisher ging das beim Neustart verloren
 
+**Neu in 2.0.7 (Fehlersuche)**
+- 🔧 Strg + Alt + D misst jetzt auch die Hänger: „Bild-Lücken“ (Zeichnen hing) und „Lange Programm-Aufgaben“ – damit lässt sich sehen, ob das Programm selbst oder das Zeichnen auf dem Monitor hängt
+
 **Neu in 2.0.6**
 - 2 Monitore: Läuft das Studio auf dem **zweiten** Windows-Monitor, hat Windows/Chromium einen Teil des Fensters für „verdeckt“ gehalten und dort erst nach einem Fensterwechsel neu gezeichnet. Diese Sparfunktion ist jetzt für das Programm abgeschaltet – beide Seiten reagieren sofort, egal welcher Monitor der Hauptmonitor ist
 
