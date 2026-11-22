@@ -35,6 +35,11 @@ FFmpeg mit allen Codecs ist dabei (inklusive VMAF-Messung und HDR). WebView2 wir
 **Neu in 1.1.3**
 - Das Programm **merkt sich jetzt alles** bis zum nächsten Start: Design, Start-Animation an/aus, Auto/Manuell-Schalter, eigene Einstellungen (Codec, Zielgröße, Zeitplan …) und eigene Vorlagen. Bisher ging das beim Neustart verloren
 
+**Neu in 2.0.0: Hintergrund-Modus + automatisches Zusammenklappen**
+- 🖥 2 Monitore: Wechselst du mit **Alt+Tab, Windows-Taste** oder Klick in eine andere App (länger als 1,5 s), zieht sich das Programm auf den Hauptmonitor zurück – der zweite Monitor ist frei. Kommst du zurück, geht es wieder über beide Monitore
+- 🖼 Neuer Knopf **„Hintergrund“** oben: Das ganze Programm legt sich als lebendiges Hintergrundbild hinter die Desktop-Symbole – Umwandeln, Fortschritt, Abgleich und Player laufen weiter, du arbeitest normal mit anderen Apps. Zurück nach vorne: **Strg + Alt + B** (geht auch andersherum: Strg + Alt + B schickt es in den Hintergrund)
+- Alles ist automatisch eingerichtet – nichts extra installieren oder einstellen
+
 **Neu in 1.9.4**
 - 2 Monitore: Der Player ist von Anfang an nur auf dem Monitor mit dem Ordner-Abgleich (vorher stand er beim Start im Studio und sprang später rüber). Mit „1 Monitor“ kommt alles wieder zusammen ins Studio
 

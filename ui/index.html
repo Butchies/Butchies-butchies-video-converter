@@ -656,6 +656,7 @@ body.m2 .cmpgrid .card{padding:14px 16px}
   <button type="button" class="btn ghost" id="queueBtn" title="Warteschlange öffnen"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg><span class="lbl">Warteschlange</span><span class="qbadge" id="qBadge" hidden>0</span></button>
   <button type="button" class="btn ghost" id="statBtn" title="Spar-Statistik, Hardware-Test und was die KI gelernt hat"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span class="lbl">Statistik</span></button>
   <button type="button" class="btn ghost" id="swapBtn" hidden title="Monitore tauschen: Studio und Ordner-Abgleich wechseln den Bildschirm">⇄<span class="lbl">Monitore tauschen</span></button>
+  <button type="button" class="btn ghost" id="bgBtn" hidden title="Programm als lebendiges Hintergrundbild hinter die Desktop-Symbole legen – alles läuft weiter. Zurück: Strg+Alt+B">🖼<span class="lbl">Hintergrund</span></button>
   <button type="button" class="btn ghost" id="dualBtn" hidden title="Zwei-Monitor-Ansicht: Ordner-Abgleich + Player auf dem anderen Bildschirm">🖥🖥<span class="lbl" id="dualLbl">2 Monitore</span></button>
   <button type="button" class="btn ghost" id="helpBtn" title="Kurzanleitung">❔</button>
   <button type="button" class="btn ghost" id="themeBtn"><span class="theme-dot" aria-hidden="true"></span><span class="lbl">Design</span></button>
@@ -3486,6 +3487,19 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-dp]');if(!
   g.classList.add('instant','late');g.classList.remove('on2','show');tx.forEach(e=>{e.style.transition='';e.style.opacity=''});lg.style.opacity='0';
   DOPEN=false;const r=q0();requestAnimationFrame(()=>flyIn(lg,d));setTimeout(()=>g.classList.remove('instant'),1700*AK());return r}}
 if(!M2&&!POP)addEventListener('pywebviewready',()=>setTimeout(spanBoot,200));
+
+/* ---------- Wechsel in andere Apps (Alt+Tab / Windows-Taste): 2 Monitore -> 1, zurück -> wieder 2 ---------- */
+let AWAY=false;
+async function spanAway(){if(!isSpan()||AWAY)return;const w=wapi();if(!w)return;AWAY=true;try{pPause()}catch(e){}
+  $('#p2cover').classList.remove('off');await dwait(180);await w.span_set(false);SPAN=null;document.body.classList.remove('span');spanNodes(false)}
+async function spanBack(){if(!AWAY)return;AWAY=false;if(KV.get('bvc-dual')!=='1')return;if(await spanGo()){dFlash();await dwait(120);$('#p2cover').classList.add('off');dFlash($('#pane2'))}}
+/* ---------- Hintergrund-Modus ---------- */
+async function bgGo(){const w=wapi();if(!w||!w.bg_set)return;toast('🖼 Das Programm wird zum Hintergrundbild – alles läuft weiter. Zurückholen: Strg + Alt + B');await dwait(1400);dFlash();
+  const ok=await w.bg_set(true).catch(()=>false);if(!ok)toast('Hintergrund-Modus geht auf diesem PC leider nicht.')}
+function bgBack(){dFlash();toast('👋 Wieder da – Hintergrund beendet.')}
+$('#bgBtn').onclick=bgGo;
+addEventListener('pywebviewready',()=>{const w=wapi();if(w&&w.bg_set&&!M2&&!POP)$('#bgBtn').hidden=false});
+window.spanAway=spanAway;window.spanBack=spanBack;window.bgGo=bgGo;window.bgBack=bgBack;
 window.monSpanTest=g=>{SPAN=g;document.body.classList.add('span');spanVars();spanNodes(true);$('#p2cover').classList.add('off')};
 window.monSet=a=>{MONS=a};window.popGone=popGone;window.popReady=popReady;window.popAct=popAct;
 window.flyIn=flyIn;window.flyOut=flyOut;window.m2Play=m2Play;window.m2Arrive=m2Arrive;window.m2Bye=m2Bye;window.m2Info=m2Info;window.m2Ready=m2Ready;window.dualToggle=dualToggle;window.dualInfo=dualInfo;window.applyTheme=applyTheme;window.realAdd=(...a)=>realAdd(...a);

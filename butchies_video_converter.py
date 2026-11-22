@@ -10,7 +10,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 APP_NAME = 'Butchies Video Converter'
-VERSION = '1.9.4'
+VERSION = '2.0.0'
 FROZEN = getattr(sys, 'frozen', False)
 BASE = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent))
 UI = BASE / 'ui'
@@ -2625,6 +2625,122 @@ class Dual:
             f._place(*self.work_of(main))
         return True
 
+    # ---- Wechsel in andere Apps: Zwei-Monitor-Ansicht auf den Hauptmonitor zurück ----
+    def focus_loop(self):
+        """Läuft im Hintergrund: Ist das Programm über beide Monitore aufgezogen und der Nutzer wechselt
+        (Alt+Tab, Windows-Taste, Klick in eine andere App) länger als 1,5 s weg, zieht es sich auf den
+        Hauptmonitor zurück. Kommt er zurück, geht es wieder über beide Monitore."""
+        import ctypes
+        from ctypes import wintypes
+        u = ctypes.windll.user32
+        u.GetWindowThreadProcessId.argtypes = [wintypes.HWND, ctypes.POINTER(wintypes.DWORD)]
+        me = os.getpid()
+        away_since, away = 0.0, False
+        while True:
+            time.sleep(0.3)
+            try:
+                if self.bg:
+                    away_since = 0.0
+                    continue
+                fg = u.GetForegroundWindow()
+                pid = wintypes.DWORD()
+                u.GetWindowThreadProcessId(fg, ctypes.byref(pid))
+                mine = pid.value == me
+                if not away:
+                    if getattr(self.frame, 'span', None) and not mine:
+                        away_since = away_since or time.time()
+                        if time.time() - away_since > 1.5:
+                            away = True
+                            self.to('main', 'window.spanAway && spanAway()')
+                    else:
+                        away_since = 0.0
+                elif mine and fg == self.frame.handle():
+                    away, away_since = False, 0.0
+                    self.to('main', 'window.spanBack && spanBack()')
+            except Exception:  # noqa: BLE001
+                pass
+
+    # ---- Hintergrund-Modus: das ganze Programm als lebendiges Desktop-Hintergrundbild ----
+    bg = False
+
+    def _workerw(self):
+        import ctypes
+        from ctypes import wintypes
+        u = ctypes.windll.user32
+        progman = u.FindWindowW('Progman', None)
+        res = ctypes.c_size_t()
+        u.SendMessageTimeoutW(progman, 0x052C, 0xD, 0x1, 0, 1000, ctypes.byref(res))
+        u.SendMessageTimeoutW(progman, 0x052C, 0, 0, 0, 1000, ctypes.byref(res))
+        found = [0]
+        proc = ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
+
+        def cb(h, lp):
+            if u.FindWindowExW(h, 0, 'SHELLDLL_DefView', None):
+                w = u.FindWindowExW(0, h, 'WorkerW', None)      # klassisch: WorkerW hinter den Symbolen
+                if w:
+                    found[0] = w
+            return True
+        u.EnumWindows(proc(cb), 0)
+        if found[0]:
+            return found[0], False
+        w = u.FindWindowExW(progman, 0, 'WorkerW', None)          # Windows 11 24H2: WorkerW unter Progman
+        return (w or progman), True
+
+    def bg_set(self, on):
+        import ctypes
+        from ctypes import wintypes
+        u = ctypes.windll.user32
+        u.SetParent.restype = wintypes.HWND
+        f = self.frame
+        h = f.handle()
+        if on and not self.bg:
+            rect = f._rect()
+            parent, new = self._workerw()
+            if not parent:
+                return False
+            vx, vy = u.GetSystemMetrics(76), u.GetSystemMetrics(77)
+            self.bg_rect = rect
+            u.SetParent(h, parent)
+            x, y = rect[0] - vx, rect[1] - vy
+            if new:                                   # 24H2: hinter die Desktop-Symbole legen
+                dv = u.FindWindowExW(parent, 0, 'SHELLDLL_DefView', None) or u.FindWindowExW(u.GetParent(parent), 0, 'SHELLDLL_DefView', None)
+                u.SetWindowPos(h, dv or 1, x, y, rect[2], rect[3], 0x0010 | 0x0040)
+            else:
+                u.SetWindowPos(h, 1, x, y, rect[2], rect[3], 0x0010 | 0x0040)
+            self.bg = True
+            return True
+        if not on and self.bg:
+            self.bg = False
+            u.SetParent(h, 0)
+            r = getattr(self, 'bg_rect', None) or f._rect()
+            u.SetWindowPos(h, 0, r[0], r[1], r[2], r[3], 0x0040)
+            try:
+                u.ShowWindow(h, 9)
+                u.SetForegroundWindow(h)
+            except Exception:  # noqa: BLE001
+                pass
+            self.to('main', 'window.bgBack && bgBack()')
+            return True
+        return self.bg
+
+    def hotkey_loop(self):
+        """Strg+Alt+B holt das Programm aus dem Hintergrund zurück (oder schickt es hinein)."""
+        import ctypes
+        from ctypes import wintypes
+        u = ctypes.windll.user32
+        if not u.RegisterHotKey(None, 0xB7, 0x0002 | 0x0001 | 0x4000, ord('B')):
+            return
+        msg = wintypes.MSG()
+        while u.GetMessageW(ctypes.byref(msg), None, 0, 0) != 0:
+            if msg.message == 0x0312:
+                try:
+                    if self.bg:
+                        self.bg_set(False)
+                    else:
+                        self.to('main', 'window.bgGo && bgGo()')
+                except Exception:  # noqa: BLE001
+                    pass
+
     # ---- Extra-Fenster (Dialoge) auf einen anderen Monitor auslagern ----
     def monitors(self):
         cur = self.frame._cur_monitor()
@@ -2760,6 +2876,13 @@ def native_window(url):
                 print('Zwei-Monitor:', ex, flush=True)
                 return None
 
+        def bg_set(self, on):
+            try:
+                return dual.bg_set(bool(on))
+            except Exception as ex:  # noqa: BLE001
+                print('Hintergrund:', ex, flush=True)
+                return False
+
         def monitors(self):
             try:
                 return dual.monitors()
@@ -2862,6 +2985,9 @@ def native_window(url):
         frame.handle()
         taskbar_loop(frame)
     threading.Thread(target=start_taskbar, daemon=True).start()
+    if os.name == 'nt':
+        threading.Thread(target=dual.focus_loop, daemon=True).start()
+        threading.Thread(target=dual.hotkey_loop, daemon=True).start()
 
     frame.fit_done = threading.Event()
 
