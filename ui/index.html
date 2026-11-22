@@ -2409,8 +2409,8 @@ async function realStart0(opts){
   if(opts.snd){
     const c=s.snd||{voice:'light',loud:'tv',night:false};
     RUN.on=true;RUN.pause=false;$('#bStart').disabled=true;$('#bPause').disabled=false;$('#bStop').disabled=false;anaFold(true);pgShow();
-    const plan=todo.map(q=>({q,slot:'cpu',a:sndJob(q,c)}));
-    return realRun({plan,slots:['cpu'],single:0,par:0},s,`🎙️ Nur Ton überarbeiten (${sndTxt(c)}) · ${todo.length} Datei(en)`);
+    const sl=sndSlot(parSlots()),plan=todo.map(q=>({q,slot:sl,a:sndJob(q,c)}));
+    return realRun({plan,slots:[sl],single:0,par:0},s,`🎙️ Nur Ton überarbeiten (${sndTxt(c)}) · ${todo.length} Datei(en)`);
   }
   await askSwap(todo);
   todo.forEach(q=>{q.sndOnly=false;q.skipped=false});
@@ -2425,7 +2425,8 @@ async function realStart0(opts){
   }
   const pl=planJobs(todo);
   if(s.mode==='vmaf'&&!s.yt){if(!await vmSearch(pl,s))return}
-  sndQ.forEach(q=>pl.plan.push({q,slot:'cpu',a:sndJob(q,s.snd)}));if(sndQ.length&&!pl.slots.includes('cpu'))pl.slots.push('cpu');
+  /* Ton-Jobs: nur auf dem Prozessor-Platz, wenn er ausgewählt ist – sonst hinten in die Reihe einer Grafikkarte (läuft danach, nicht gleichzeitig) */
+  const sSlot=sndSlot(pl.slots);sndQ.forEach(q=>pl.plan.push({q,slot:sSlot,a:sndJob(q,s.snd)}));if(sndQ.length&&!pl.slots.includes(sSlot))pl.slots.push(sSlot);
   if(!pl.plan.length){finishAll();return}
   return realRun(pl,s);
 }
@@ -2446,7 +2447,7 @@ async function vmSearch(pl,s){
 }
 async function realRun(pl,s,startMsg){
   const items=pl.plan.map(p=>{p.q.a=p.a;p.q.run=p.a;p.q.slot=p.slot;return {id:p.q.fid,passes:p.a.job.passes,outname:p.a.job.outname,outdir:settings().out.dir,slot:p.slot,
-    kind:p.a.snd?'snd':'video',enc:p.a.snd?'':(p.a.job.vargs[p.a.job.vargs.indexOf('-c:v')+1]||''),score:p.a.score||0}});
+    kind:p.a.snd?'snd':'video',after:!!(p.a.snd&&p.slot!=='cpu'),enc:p.a.snd?'':(p.a.job.vargs[p.a.job.vargs.indexOf('-c:v')+1]||''),score:p.a.score||0}});
   if(pl.slots.length>1){log('ai','KI verteilt: '+pl.plan.map(p=>`${esc(p.q.name)} → ${wIcon(p.slot)} ${esc(wName(p.slot))}${p.slot==='cpu'?' (x265)':''}`).join(' · '));
     if(pl.single>pl.par*1.1)log('ai',`Geschätzt fertig in ${fmtT(pl.par)} statt ${fmtT(pl.single)} nacheinander.`)}
   try{const r=await api('/api/convert',{items});r.jobs.forEach((j,i)=>{const q=pl.plan[i].q;q.jid=j.id;q.state='queued';q.prog=0})}
@@ -2500,6 +2501,7 @@ function learnJob(q,j){
 }
 /* Gleicher Codec wie das Ziel? (z. B. H.265 -> H.265) */
 const SAME_MIN=20;
+function sndSlot(slots){slots=slots&&slots.length?slots:['cpu'];return slots.includes('cpu')?'cpu':slots[slots.length-1]}
 /* Was macht der Arbeiter gerade? (neben dem Namen anzeigen) */
 function doing(q){const a=q&&(q.run||null);if(!a)return '';return a.snd?' · 🎙️ nur Ton aufbereiten (Bild wird kopiert)':' · 🎞️ wandelt um'}
 function sameCodec(f,s){const c=(f.vcodec||'').toLowerCase();if(s.yt)return null;

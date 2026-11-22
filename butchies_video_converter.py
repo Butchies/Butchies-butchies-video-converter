@@ -10,7 +10,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 APP_NAME = 'Butchies Video Converter'
-VERSION = '1.5.3'
+VERSION = '1.5.4'
 FROZEN = getattr(sys, 'frozen', False)
 BASE = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent))
 UI = BASE / 'ui'
@@ -526,7 +526,7 @@ def new_job(item):
          'dur': e.get('dur') or 0, 'state': 'wartet', 'pct': 0.0, 'fps': 0, 'speed': 0, 'kbps': 0, 'size': 0, 'eta': None,
          'error': '', 'out': '', 'proc': None, 'paused': False, 'cancel': False, 'started': 0, 'pass': 0,
          'held': 0.0, 'hold': '', 'frames': 0, 'kind': str(item.get('kind') or 'video')[:10], 'enc': str(item.get('enc') or '')[:20],
-         'score': fnum(item.get('score')), 'ssize': e.get('size') or 0}
+         'score': fnum(item.get('score')), 'ssize': e.get('size') or 0, 'after': bool(item.get('after'))}
     with QLOCK:
         JOBS[jid] = j
         QUEUE.append(jid)
@@ -752,7 +752,10 @@ def worker(slot='cpu'):
     """Ein Arbeiter pro Prozessor / Grafikkarte – so laufen mehrere Videos gleichzeitig."""
     while True:
         with QLOCK:
-            jid = next((x for x in QUEUE if JOBS.get(x, {}).get('state') == 'wartet' and JOBS[x].get('slot', 'cpu') == slot), None)
+            busy_main = any(JOBS.get(x, {}).get('state') in ('wartet', 'läuft') and not JOBS[x].get('after') for x in QUEUE) or \
+                any(j2.get('state') == 'läuft' and not j2.get('after') for j2 in JOBS.values())
+            jid = next((x for x in QUEUE if JOBS.get(x, {}).get('state') == 'wartet' and JOBS[x].get('slot', 'cpu') == slot
+                        and not (JOBS[x].get('after') and busy_main)), None)
             if jid:
                 JOBS[jid]['state'] = 'läuft'
         if not jid:
