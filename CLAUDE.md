@@ -55,3 +55,4 @@ Nutzer schreibt Deutsch, technisch unerfahren – einfach erklären. Bei Release
 - 2.6.5: `.cmpgrid` minmax(0,1fr), `.card>*` min-width:0, `.dhead`/`.card .row` flex-wrap (nichts ragt aus Karten bei schmalem Fenster).
 - 2.6.6: `#log`/`#pgLog` hidden, stattdessen `.netp` (Kacheln `data-n`, `.netsvg` Verlauf `NETW.h`, `.netwarn`) gefüllt von `netWatch`. Klick in Liste -> `anaFold` nur zu beim laufenden Film.
 - 2.7.0: Updater: `update_check` (GitHub releases/latest, `vtuple`, 30-min-Cache), `task_update` (Setup nach %TEMP%, `/SILENT /CLOSEAPPLICATIONS`, dann `CLOSE_APP`), `/api/update` {force|install}. installer.iss [Run] startet App bei `WizardSilent`. JS `updCheck`/`updAsk`/`updRun`/`updInfoSet`, Bereich in `#setDlg` (`#updInfo`, `#updCheck`, `#updAuto`, KV `bvc-updauto`, `bvc-updskip`). Prüfung 9 s nach Start.
+- 2.7.1 (Nutzerwunsch): Setup-Name OHNE Version (`Butchies_Video_Converter-Setup.exe`) – Updates laufen über den Updater.

@@ -1,3 +1,7 @@
+**Neu in 2.7.1**
+- Setup-Datei heißt wieder einfach `Butchies_Video_Converter-Setup.exe` (ohne Versionsnummer). Neue Versionen kommen ab jetzt über den eingebauten Updater.
+- Enthält alles aus 2.7.0: Updates direkt im Programm (Fenster beim Start + Bereich „🔄 Updates“ in den Einstellungen).
+
 **Neu in 2.7.0**
 - Updates direkt im Programm: Beim Start prüft es auf GitHub, ob es eine neue Version gibt, und zeigt ein Fenster mit „Jetzt aktualisieren“ – lädt, installiert und startet von selbst neu. Einstellungen bleiben erhalten.
 - In den Einstellungen gibt es den neuen Bereich „🔄 Updates“ (Version, „Nach Updates suchen“, automatische Prüfung an/aus).

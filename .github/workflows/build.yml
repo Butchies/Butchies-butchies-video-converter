@@ -71,7 +71,7 @@ jobs:
           if (!(Test-Path $iscc)) { choco install innosetup -y --no-progress | Out-Null }
           $ver = (Select-String -Path butchies_video_converter.py -Pattern "^VERSION = '([^']+)'").Matches[0].Groups[1].Value
           & $iscc "/DAppVersion=$ver" installer.iss 2>&1 | Tee-Object -FilePath installer.log
-          if (!(Test-Path "dist\Butchies_Video_Converter-Setup-$ver.exe")) { exit 1 }
+          if (!(Test-Path "dist\Butchies_Video_Converter-Setup.exe")) { exit 1 }
           "VER=$ver" >> $env:GITHUB_ENV
 
       - name: Als GitHub-Release veröffentlichen
@@ -84,10 +84,10 @@ jobs:
           $v = [regex]::Escape($env:VER)
           $neu = [regex]::Match($all, "(?s)\*\*Neu in $v\b.*?(?=\r?\n\*\*Neu in |\z)").Value.Trim()
           if (-not $neu) { $neu = "**Butchies Video Converter AI $env:VER**" }
-          "$neu`n`n**Installieren:** ``Butchies_Video_Converter-Setup-$env:VER.exe`` herunterladen und starten (ohne Administratorrechte)." | Set-Content notes.md -Encoding utf8
+          "$neu`n`n**Installieren:** ``Butchies_Video_Converter-Setup.exe`` herunterladen und starten (ohne Administratorrechte)." | Set-Content notes.md -Encoding utf8
           gh release view $tag 2>$null
-          if ($LASTEXITCODE -eq 0) { gh release upload $tag "dist\Butchies_Video_Converter-Setup-$env:VER.exe" --clobber; gh release edit $tag --notes-file notes.md }
-          else { gh release create $tag "dist\Butchies_Video_Converter-Setup-$env:VER.exe" --title "Butchies Video Converter $env:VER" --notes-file notes.md --latest --target $env:GITHUB_SHA }
+          if ($LASTEXITCODE -eq 0) { gh release upload $tag "dist\Butchies_Video_Converter-Setup.exe" --clobber; gh release edit $tag --notes-file notes.md }
+          else { gh release create $tag "dist\Butchies_Video_Converter-Setup.exe" --title "Butchies Video Converter $env:VER" --notes-file notes.md --latest --target $env:GITHUB_SHA }
           if ((Test-Path FINAL.txt) -and ((Get-Content FINAL.txt -Raw).Trim() -eq $env:VER)) { gh release edit $tag --title "Butchies Video Converter AI $env:VER – Final" --notes-file notes.md --prerelease=false --latest }
 
       - uses: actions/upload-artifact@v4
@@ -95,5 +95,5 @@ jobs:
         with:
           name: Butchies_Video_Converter
           path: |
-            dist/Butchies_Video_Converter-Setup-*.exe
+            dist/Butchies_Video_Converter-Setup.exe
             *.log
