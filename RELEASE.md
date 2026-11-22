@@ -1,3 +1,6 @@
+**Neu in 2.6.1**
+- Größe Mittel/Klein: Die Oberfläche nutzt jetzt die ganze Breite und Höhe, der Player wächst mit, und alle Fenster (Design, Warteschlange, Statistik, Details …) behalten ihre Größe – der gewonnene Platz zeigt mehr Inhalt.
+
 **Neu in 2.6.0**
 - Design-Fenster: Größe der Oberfläche wählbar – Groß (wie bisher), Mittel, Klein. Alles passt sich von selbst an.
 - Ordner-Abgleich: Rechtsklick auf einen Film öffnet ein Menü – Umbenennen, Gruppen-Tag setzen, ähnliche Filme suchen, Standbild als JPG speichern, abspielen, in den Konverter, im Explorer zeigen, löschen.
