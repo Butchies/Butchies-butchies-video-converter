@@ -35,6 +35,10 @@ FFmpeg mit allen Codecs ist dabei (inklusive VMAF-Messung und HDR). WebView2 wir
 **Neu in 1.1.3**
 - Das Programm **merkt sich jetzt alles** bis zum nächsten Start: Design, Start-Animation an/aus, Auto/Manuell-Schalter, eigene Einstellungen (Codec, Zielgröße, Zeitplan …) und eigene Vorlagen. Bisher ging das beim Neustart verloren
 
+**Neu in 2.0.5**
+- ⚡ Ordner-Abgleich viel flüssiger: Die Vergleichsliste zeichnet nur noch die ersten 200 Einträge (Knopf „Weitere 200 anzeigen“) statt tausende auf einmal – vorher hat das bei großen NAS-Ordnern alles ausgebremst, besonders mit 2 Monitoren, wo die Liste immer sichtbar ist
+- Studio und Monitor 2 werden getrennt gezeichnet – Änderungen auf der einen Seite bremsen die andere nicht mehr
+
 **Neu in 2.0.4 (Test-Version 2 Monitore)**
 - 2 Monitore: Nach dem Aufziehen über beide Bildschirme bekommt das Fenster einen kleinen „Ruck“, damit Anzeige und Mausklicks auf der zweiten Seite sofort richtig ankommen
 - 🔧 Fehlersuche: **Strg + Alt + D** zeigt unten links technische Werte und zwei Test-Knöpfe (Studio / Monitor 2). Bitte ein Bildschirmfoto davon schicken, wenn rechts etwas nicht reagiert
