@@ -1840,7 +1840,7 @@ document.addEventListener('contextmenu',e=>{const c=e.target.closest('#cmpTbl .f
     ['▶','Abspielen',()=>playEntry(x)],['⚙','In den Konverter',()=>procEntries([x])],['📂','Im Explorer zeigen',()=>api('/api/show',{path:x.full}).catch(()=>{})],null,
     ['🧹','Aufräumen …',()=>cleanOpen()],['🗑','Löschen',()=>askDelete([x])]];
   m.innerHTML=`<div class="ctxh">${esc(x.name)}</div>`+it.map((t,i)=>t?`<button data-ci="${i}"><span>${t[0]}</span>${t[1]}</button>`:'<hr>').join('');
-  document.body.appendChild(m);const r=m.getBoundingClientRect();m.style.left=Math.min(e.clientX,innerWidth-r.width-8)+'px';m.style.top=Math.min(e.clientY,innerHeight-r.height-8)+'px';
+  document.body.appendChild(m);const r=m.getBoundingClientRect(),z=ZF();m.style.left=Math.min(e.clientX,innerWidth-r.width-8)/z+'px';m.style.top=Math.min(e.clientY,innerHeight-r.height-8)/z+'px';
   m.onclick=ev=>{const bt=ev.target.closest('[data-ci]');if(!bt)return;ctxClose();it[+bt.dataset.ci][2]()}},true);
 addEventListener('mousedown',e=>{if(!e.target.closest('#ctxMenu'))ctxClose()},true);addEventListener('keydown',e=>{if(e.key==='Escape')ctxClose()});addEventListener('blur',ctxClose);
 const ctxStem=x=>x.name.replace(/\.[^.]+$/,''),ctxExt=x=>(x.name.match(/\.[^.]+$/)||[''])[0];
@@ -3236,9 +3236,9 @@ function tourShow(i){
   const st=TOUR[i],el=st.s&&$(st.s),c=document.createElement('div');c.className='tour-card';
   c.innerHTML=`<span class="k">Kurzanleitung · Schritt ${i+1} von ${TOUR.length}</span><h3>${st.t}</h3>${st.b}<div class="tour-dots">${TOUR.map((x,k)=>`<i class="${k<=i?'on':''}"></i>`).join('')}</div>
     <div class="tour-btns">${i?'<button class="btn sm" data-tb="back">‹ Zurück</button>':''}<span class="sp"></span><button class="btn sm" data-tb="skip">Überspringen</button><button class="btn sm pri" data-tb="next">${st.go||'Weiter →'}</button></div>`;
-  if(el){el.scrollIntoView({block:'nearest'});const r=el.getBoundingClientRect(),h=document.createElement('div');h.className='tour-hole';
+  if(el){el.scrollIntoView({block:'nearest'});const r=zr(el),h=document.createElement('div');h.className='tour-hole';
     Object.assign(h.style,{left:r.left-6+'px',top:r.top-6+'px',width:r.width+12+'px',height:r.height+12+'px'});document.body.appendChild(h);document.body.appendChild(c);
-    const cw=c.offsetWidth,ch=c.offsetHeight,W=innerWidth,H=innerHeight;let x=r.right+20,y=r.top;
+    const cw=c.offsetWidth,ch=c.offsetHeight,W=innerWidth/ZF(),H=innerHeight/ZF();let x=r.right+20,y=r.top;
     if(x+cw>W-10)x=r.left-cw-20;if(x<10){x=Math.max(10,Math.min(W-cw-10,r.left));y=r.bottom+16;if(y+ch>H-10)y=r.top-ch-16}
     c.style.left=x+'px';c.style.top=Math.max(10,Math.min(H-ch-10,y))+'px'}
   else{const d=document.createElement('div');d.className='tour-dim';document.body.appendChild(d);c.style.cssText='left:50%;top:50%;transform:translate(-50%,-50%);width:480px';document.body.appendChild(c)}
@@ -3281,10 +3281,12 @@ function stkBg(head){const c=ANIM.color==='white'?'#fff,#fff':ANIM.color==='rain
   return `linear-gradient(${head==='l'?'270deg':'90deg'},transparent,${c})`}
 /* Lichtstreifen: mode 'out' = vom Logo zur Kante (Logo fliegt nach d raus), 'in' = von der Kante d bis zur Mitte (Logo kommt von d).
    Er bleibt stehen, bis das Logo wieder steht, und blendet dann aus – auf beiden Monitoren sichtbar. */
+/* Bei Größe Mittel/Klein (html-Zoom) liefert getBoundingClientRect Bildschirm-Pixel – für style-Werte durch den Zoom teilen */
+const ZF=()=>(typeof UZ!=='undefined'&&UZ)||1;function zr(el){const r=el.getBoundingClientRect(),z=ZF();return {left:r.left/z,top:r.top/z,width:r.width/z,height:r.height/z,right:r.right/z,bottom:r.bottom/z}}
 function dStreak(d,mode,root,hold,ref){if(RED()||ANIM.streak==='off')return;const e=document.createElement('div');e.className='dstreak';
-  const h=ANIM.streak==='thin'?3:8;const hostR=!root&&ref&&ref.closest('.splash,.goodbye');const R=root?root.getBoundingClientRect():hostR?hostR.getBoundingClientRect():{left:0,top:0,width:innerWidth,height:innerHeight};
+  const h=ANIM.streak==='thin'?3:8;const hostR=!root&&ref&&ref.closest('.splash,.goodbye');const R=root?zr(root):hostR?zr(hostR):{left:0,top:0,width:innerWidth/ZF(),height:innerHeight/ZF()};
   /* Höhe und Lage am Logo ausrichten (das Logo sitzt nicht immer in der Bildschirmmitte) */
-  let cy=R.height/2,cx=R.width/2,rad=0;if(ref){const tr=ref.style.transform,tn=ref.style.transition;ref.style.transition='none';ref.style.transform='none';const r=ref.getBoundingClientRect();ref.style.transform=tr;void ref.offsetWidth;ref.style.transition=tn;if(r.width){cy=r.top-R.top+r.height/2;cx=r.left-R.left+r.width/2;rad=r.width/2}}
+  let cy=R.height/2,cx=R.width/2,rad=0;if(ref){const tr=ref.style.transform,tn=ref.style.transition;ref.style.transition='none';ref.style.transform='none';const r=zr(ref);ref.style.transform=tr;void ref.offsetWidth;ref.style.transition=tn;if(r.width){cy=r.top-R.top+r.height/2;cx=r.left-R.left+r.width/2;rad=r.width/2}}
   e.style.height=h+'px';e.style.top=(cy-h/2)+'px';e.style.marginTop='0';
   const head=mode==='in'?(d==='l'?'r':'l'):d;e.style.background=stkBg(head);
   /* unter das Logo legen (im Start-/Abschiedsbild), damit es nie im Logo zu sehen ist */
@@ -3296,11 +3298,11 @@ function dStreak(d,mode,root,hold,ref){if(RED()||ANIM.streak==='off')return;cons
   if(mode==='out')fr=d==='l'?[{left:px(cx-gap),width:'0px'},{left:'0px',width:px(cx-gap)}]:[{left:px(cx+gap),width:'0px'},{left:px(cx+gap),width:px(W-cx-gap)}];
   else{const stop=rad+10;fr=d==='l'?[{left:'0px',width:'0px'},{left:'0px',width:px(cx-stop)}]:[{left:px(W),width:'0px'},{left:px(cx+stop),width:px(W-cx-stop)}]}
   if(mode==='out'&&ref){/* Schweif HINTER dem Logo: nie schneller als das Logo, beginnt dort, wo das Logo stand */const t0=performance.now(),x0=cx;
-    const step=now=>{const r=ref.getBoundingClientRect();e.style.top=(r.top-R.top+r.height/2-h/2)+'px';if(d==='l'){const l=Math.max(0,r.right-R.left+6),end=x0+rad;e.style.left=px(l);e.style.width=px(end-l)}
+    const step=now=>{const r=zr(ref);e.style.top=(r.top-R.top+r.height/2-h/2)+'px';if(d==='l'){const l=Math.max(0,r.right-R.left+6),end=x0+rad;e.style.left=px(l);e.style.width=px(end-l)}
       else{const st=x0-rad,rr=Math.min(W,r.left-R.left-6);e.style.left=px(st);e.style.width=px(rr-st)}
       if(now-t0<T*1.15+80)requestAnimationFrame(step)};e.style.width='0px';requestAnimationFrame(step)}
   else if(mode==='in'&&ref){/* Streifen hängt hinten am Logo und geht nie hinein */const t0=performance.now();
-    const Q=W/4;const step=now=>{const r=ref.getBoundingClientRect();e.style.top=(r.top-R.top+r.height/2-h/2)+'px';if(d==='l'){const end=r.left-R.left-6,w=Math.min(Q,end);e.style.left=px(end-w);e.style.width=px(w)}else{const l=r.right-R.left+6;e.style.left=px(l);e.style.width=px(Math.min(Q,W-l))}
+    const Q=W/4;const step=now=>{const r=zr(ref);e.style.top=(r.top-R.top+r.height/2-h/2)+'px';if(d==='l'){const end=r.left-R.left-6,w=Math.min(Q,end);e.style.left=px(end-w);e.style.width=px(w)}else{const l=r.right-R.left+6;e.style.left=px(l);e.style.width=px(Math.min(Q,W-l))}
       if(now-t0<T+60)requestAnimationFrame(step)};requestAnimationFrame(step)}
   else e.animate(fr,{duration:mode==='out'?T*.45:T,easing:mode==='in'?'cubic-bezier(.2,.8,.3,1)':'cubic-bezier(.6,0,.4,1)',fill:'forwards'});
   /* auf dem Ankunfts-Bildschirm nur kurz, dann weg */
@@ -3535,7 +3537,7 @@ document.addEventListener('pointermove',e=>{const c=$('#abCard');if(c&&c.contain
 function spanNodes(on){const c=$('#v-cmp');if(on){_showTab('conv');$('#p2body').appendChild(c);abSplit(true);stagePlace('p2');try{_setMode('play');$('#mAb').hidden=false;playerMini(true)}catch(e){}}
   else{HOME_CMP.p.insertBefore(c,HOME_CMP.n);c.classList.remove('on');stagePlace('main');abSplit(false)}dualUi2()}
 function dualUi2(){const on=isSpan();$('#dualBtn').hidden=!(DINFO.n>1||on);$('#dualLbl').textContent=on?'1 Monitor':'2 Monitore';$('#dualBtn').firstChild.textContent=on?'🖥':'🖥🖥'}
-async function spanGo(){const w=wapi();document.documentElement.classList.add('spanpre');const sp=$('#splash');if(sp){sp.style.width=innerWidth+'px';sp.style.height=innerHeight+'px';sp.style.inset='0 auto auto 0'}
+async function spanGo(){const w=wapi();document.documentElement.classList.add('spanpre');const sp=$('#splash');if(sp){sp.style.width=innerWidth/ZF()+'px';sp.style.height=innerHeight/ZF()+'px';sp.style.inset='0 auto auto 0'}
   const g=await w.span_set(true).catch(()=>null);if(!g){document.documentElement.classList.remove('spanpre');if(sp){sp.style.width=sp.style.height=sp.style.inset=''}return false}
   SPAN=g;$('#p2cover').classList.remove('off');document.body.classList.add('span');spanVars();spanNodes(true);if(sp){sp.style.width=sp.style.height=sp.style.inset=''}
   setTimeout(()=>document.documentElement.classList.remove('spanpre'),50);return true}
