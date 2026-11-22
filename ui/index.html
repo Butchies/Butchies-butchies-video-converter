@@ -621,6 +621,7 @@ body.m2 .cmpgrid .card{padding:14px 16px}
 .ssn-caption{position:absolute;z-index:2;left:0;right:0;bottom:8%;text-align:center;pointer-events:none;color:var(--b);font:italic clamp(14px,2vw,24px) Georgia,serif;text-shadow:0 0 18px var(--glow)}
 .ssn-layer.ssn-light .ssn-caption{color:var(--a)}
 @media(prefers-reduced-motion:reduce){.ssn-layer canvas{opacity:.8}}
+body.twowin #bgBtn,body.m2 #bgBtn{display:none!important}
 </style>
 </head>
 <body data-theme="neon" data-skin="club">
@@ -3487,7 +3488,9 @@ async function spanToggle(){const w=wapi();if(!w||!w.span_set)return;
     const d=dDir();dFlash();await dwait(150);const c=$('#p2cover');c.classList.add('off');dFlash($('#pane2'));dStreak(opp(d),'in',$('#pane2'));toast('🖥🖥 Ordner-Abgleich + Player jetzt auf dem anderen Bildschirm.')}
   else{const c=$('#p2cover');dFlash($('#pane2'));c.classList.remove('off');await dwait(350);KV.set('bvc-dual','0');await w.dual_set(false);await w.span_set(false);
     SPAN=null;document.body.classList.remove('span');spanNodes(false);DINFO.on=false;dFlash();toast('🖥 Alles wieder in einem Fenster.')}}
-$('#dualBtn').onclick=()=>spanToggle();$('#p2one').onclick=()=>spanToggle();
+/* 2.4.0: Monitore an verschiedenen Grafikkarten -> 2 Fenster (je Monitor eins), sonst EIN Fenster über beide */
+const twoWin=()=>!!(DINFO&&DINFO.mixed);
+$('#dualBtn').onclick=()=>{if(M2){const w=wapi();if(w)w.send('main','dualToggle()');return}twoWin()?dualToggle():spanToggle()};$('#p2one').onclick=()=>spanToggle();
 const spanSwap=()=>{KV.set('bvc-spanswap',KV.get('bvc-spanswap')==='1'?'0':'1');spanVars();dFlash()};$('#p2swap').onclick=spanSwap;
 {const wm=$('#winMon').onclick;$('#winMon').onclick=e=>{if(isSpan())return spanSwap();return wm&&wm(e)}}
 addEventListener('resize',()=>{if(isSpan())spanVars()});
@@ -3515,7 +3518,8 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-dp]');if(!
   let bl=$('#p2black');if(!bl){bl=document.createElement('div');bl.id='p2black';document.body.appendChild(bl)}bl.classList.add('on');
   g.classList.add('instant','late');g.classList.remove('on2','show');tx.forEach(e=>{e.style.transition='';e.style.opacity=''});lg.style.opacity='0';
   DOPEN=false;const r=q0();requestAnimationFrame(()=>flyIn(lg,d));setTimeout(()=>g.classList.remove('instant'),1700*AK());return r}}
-if(!M2&&!POP)addEventListener('pywebviewready',()=>setTimeout(spanBoot,200));
+if(!M2&&!POP)addEventListener('pywebviewready',()=>setTimeout(async()=>{const w=wapi();if(w&&w.dual_info)DINFO=await w.dual_info().catch(()=>DINFO);
+  if(twoWin()){document.body.classList.add('twowin');return dualBoot()}spanBoot()},200));
 
 /* ---------- Wechsel in andere Apps (Alt+Tab / Windows-Taste): 2 Monitore -> 1, zurück -> wieder 2 ---------- */
 let AWAY=false;

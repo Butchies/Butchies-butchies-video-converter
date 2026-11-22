@@ -1,3 +1,7 @@
+**Neu in 2.4.0**
+- 2 Monitore an verschiedenen Grafikkarten (z. B. externe Grafik per USB-C): das Programm öffnet automatisch 2 eigene Fenster (eins je Monitor) statt einem großen – keine Hänger mehr. An derselben Grafik bleibt es wie bisher EIN Fenster über beide Monitore.
+- Im 2-Fenster-Modus gibt es kein Verschieben von Extra-Fenstern und keinen Hintergrund-Modus (nur im 1-Fenster-Modus).
+
 **Butchies Video Converter AI 1.1.4**: Videos mit KI-Hilfe in H.264 / H.265 umwandeln. Dazu gibt es einen Player für alle Codecs, einen Vorher/Nachher-Vergleich und einen Ordner-Abgleich.
 
 **Installieren:** `Butchies_Video_Converter-Setup.exe` herunterladen und starten. Du brauchst dafür keine Administratorrechte.
