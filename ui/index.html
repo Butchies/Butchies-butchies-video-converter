@@ -1818,6 +1818,18 @@ $('#iDir').onchange=e=>{addFiles([...e.target.files]);e.target.value=''};
 $('#bClear').onclick=()=>{if(RUN.on)return;Q=[];selId=null;renderQ();update()};
 
 /* ---------- Log + Chart ---------- */
+/* 2.5.0: Netzwerk-Überwachung – Meldungen im Protokoll, nur wenn die Datei auf der NAS/im Netzwerk liegt */
+const NETW={best:{},st:{},t:0};
+function netWatch(runs,net){const now=Date.now(),f=n=>(n||0).toLocaleString('de-DE',{maximumFractionDigits:1});
+  const con=net.kind?(net.kind==='WLAN'?`📶 WLAN ${net.sig} %${net.name?' ('+esc(net.name)+')':''}`:'🔌 Kabel'):'';
+  for(const {q,j} of runs){const src=j.src||'',out=(j.folder||'');const nsrc=src.startsWith('\\\\'),nout=out.startsWith('\\\\');if(!(nsrc||nout)||j.phase)continue;
+    const k=j.slot||'cpu',sp=j.speed||0;if(j.nrd==null)continue;const st=NETW.st[j.id]||(NETW.st[j.id]={slow:0,warn:false,info:0});
+    if(sp>(NETW.best[k]||0))NETW.best[k]=sp;const best=NETW.best[k]||0;
+    const need=j.dur?(j.ssize||0)/j.dur/1048576*Math.max(best,1):0;
+    if(!st.info||now-st.info>60000){st.info=now;log('',`📡 Netzwerk: liest ${f(j.nrd)} MB/s · schreibt ${f(j.nwr)} MB/s${con?' · '+con:''}`)}
+    if(best>=1.5&&sp<best*.45&&nsrc&&j.nrd<need*.6)st.slow++;else if(sp>=best*.7)st.slow=0;
+    if(st.slow>=3&&!st.warn){st.warn=true;log('bad',`⚠️ Die NAS liefert zu langsam: ${f(j.nrd)} MB/s statt ≈ ${f(need)} MB/s – die Grafikkarte wartet auf Daten (${Math.round(j.fps)} fps). Tipp: Netzwerkkabel nutzen, prüfen ob die NAS beschäftigt ist (z. B. Emby-Scan) oder Film vorher auf den PC kopieren.`)}
+    if(st.warn&&st.slow===0){st.warn=false;log('ok',`✓ Netzwerk wieder schnell: ${f(j.nrd)} MB/s · ${Math.round(j.fps)} fps`)}}}
 function log(cls,msg){const d=new Date().toLocaleTimeString('de-DE');const el=document.createElement('div');el.innerHTML=`<span class="t">${d}</span><span class="${cls}">${msg}</span>`;$('#log').appendChild(el);$('#log').scrollTop=1e9;const pl=$('#pgLog');if(pl){pl.appendChild(el.cloneNode(true));while(pl.children.length>80)pl.firstChild.remove();pl.scrollTop=1e9}}
 const cv=$('#chart'),cx=cv.getContext('2d');
 function cssv(n){return getComputedStyle(document.body).getPropertyValue(n).trim()}
@@ -2621,7 +2633,7 @@ async function realRun(pl,s,startMsg){
     const mine=Q.filter(q=>q.jid&&byId[q.jid]);
     const all=mine.length?mine.reduce((s,q)=>s+q.prog,0)/mine.length*100:0;setSeg(all);
     $('#monRun').innerHTML=runs.length>=1?runs.map(({q,j})=>`<div>${wIcon(q.slot)} <b>${esc(wName(q.slot))}</b>${doing(q)} · ${esc(q.name)} · ${j.phase?'🎙️ '+esc(j.phase):Math.floor(j.pct)+' % · '+Math.round(j.fps)+' fps'}</div>`).join(''):'';
-    PGX={running,runs,all};
+    PGX={running,runs,all};try{netWatch(runs,r.net||{})}catch(e){}
     if(running){const {q,j}=running,a=q.run||q.a;$('#monFile').title=q.name;$('#monFile').textContent=q.name+(j.pass&&(q.run||q.a).job.passes.length>1?` · Durchgang ${j.pass}/2`:'');
       $('#mPct').textContent=Math.floor(j.pct)+' %';$('#mSpd').textContent=`${Math.round(j.fps)} fps · ${String(j.speed.toFixed(2)).replace('.',',')}×`;
       if(j.phase)$('#mSpd').textContent='🎙️ '+j.phase;

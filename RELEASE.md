@@ -1,3 +1,6 @@
+**Neu in 2.5.0**
+- Netzwerk-Überwachung im Protokoll der Umwandlung: jede Minute, wie schnell von der NAS gelesen/geschrieben wird (+ WLAN-Stärke bzw. Kabel). Bremst die NAS die Umwandlung aus, kommt eine Warnung mit Tipp – und eine Meldung, sobald es wieder schnell ist.
+
 **Neu in 2.4.1**
 - Oben in der blauen Versions-Leiste steht jetzt, welcher Modus läuft: „1 Monitor“, „1 Fenster über 2 Monitore“ oder „2 Fenster“.
 

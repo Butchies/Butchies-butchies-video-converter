@@ -10,7 +10,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 APP_NAME = 'Butchies Video Converter'
-VERSION = '2.4.1'
+VERSION = '2.5.0'
 FROZEN = getattr(sys, 'frozen', False)
 BASE = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent))
 UI = BASE / 'ui'
@@ -631,6 +631,56 @@ def new_job(item):
         QUEUE.append(jid)
     QEVENT.set()
     return j
+
+
+NET = {'kind': '', 'sig': 0, 'name': ''}
+
+
+def net_info():
+    """WLAN oder Kabel + Signalstärke (netsh)."""
+    try:
+        r = run(['netsh', 'wlan', 'show', 'interfaces'], timeout=8)
+        t = r.stdout if isinstance(r.stdout, str) else (r.stdout or b'').decode('cp850', 'replace')
+        st = re.search(r'^\s*(Status|State)\s*:\s*(\S+)', t, re.M)
+        sig = re.search(r'^\s*Signal\s*:\s*(\d+)', t, re.M)
+        ssid = re.search(r'^\s*SSID\s*:\s*(.+)$', t, re.M)
+        if st and st.group(2).lower() in ('verbunden', 'connected') and sig:
+            return {'kind': 'WLAN', 'sig': int(sig.group(1)), 'name': (ssid.group(1).strip() if ssid else '')}
+    except Exception:  # noqa: BLE001
+        pass
+    return {'kind': 'Kabel', 'sig': 0, 'name': ''}
+
+
+def net_loop():
+    """Alle 3 s: wie viel liest/schreibt jede laufende Umwandlung (über Netzwerk = NAS) – für die Netzwerk-Meldungen."""
+    import ctypes
+
+    class IOC(ctypes.Structure):
+        _fields_ = [(n, ctypes.c_ulonglong) for n in ('ro', 'wo', 'oo', 'rb', 'wb', 'ob')]
+    k = ctypes.windll.kernel32
+    last, tick = {}, 0
+    while True:
+        time.sleep(3)
+        tick += 1
+        if tick % 10 == 1 and any(j.get('state') == 'läuft' for j in JOBS.values()):
+            NET.update(net_info())
+        now = time.time()
+        for j in list(JOBS.values()):
+            p = j.get('proc')
+            if j.get('state') != 'läuft' or p is None:
+                last.pop(j['id'], None)
+                continue
+            c = IOC()
+            try:
+                if not k.GetProcessIoCounters(ctypes.c_void_p(int(p._handle)), ctypes.byref(c)):
+                    continue
+            except Exception:  # noqa: BLE001
+                continue
+            o = last.get(j['id'])
+            last[j['id']] = (now, c.rb, c.wb, p.pid)
+            if o and o[3] == p.pid and now > o[0]:
+                j['nrd'] = round(max(0, c.rb - o[1]) / (now - o[0]) / 1048576, 2)
+                j['nwr'] = round(max(0, c.wb - o[2]) / (now - o[0]) / 1048576, 2)
 
 
 def job_view(j):
@@ -1996,7 +2046,7 @@ class Handler(BaseHTTPRequestHandler):
             if path == '/api/stats':
                 return self.send_json(200, {'stats': stats_load(), 'bench': load_config().get('bench'), 'plan': plan_conf()})
             if path == '/api/jobs':
-                return self.send_json(200, {'jobs': [job_view(JOBS[j]) for j in QUEUE if j in JOBS]})
+                return self.send_json(200, {'jobs': [job_view(JOBS[j]) for j in QUEUE if j in JOBS], 'net': NET})
             m = re.fullmatch(r'/api/task/([0-9a-f]+)', path)
             if m:
                 t = TASKS.get(m.group(1))
@@ -3585,6 +3635,8 @@ def main():
         threading.Thread(target=worker, args=(slot,), daemon=True).start()
     threading.Thread(target=awake_loop, daemon=True).start()
     threading.Thread(target=throttle_loop, daemon=True).start()
+    if os.name == 'nt':
+        threading.Thread(target=net_loop, daemon=True).start()
     port = 0
     if '--port' in sys.argv:
         port = int(sys.argv[sys.argv.index('--port') + 1])
