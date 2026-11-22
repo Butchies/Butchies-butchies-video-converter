@@ -540,7 +540,7 @@ body.span #goodbye{will-change:opacity}body.span #goodbye.on2{left:var(--oL);top
 #p2black{display:none}body.span #p2black.on{display:block;position:fixed;left:var(--oL);top:var(--oT);width:var(--oW);height:var(--oH);background:#000;z-index:400}
 body.span .modal{inset:auto;left:var(--mL);top:var(--mT);width:var(--mW);height:var(--mH)}
 #pane2{display:none}
-body.span #pane2{will-change:transform;transform:translateZ(0);display:flex;flex-direction:column;position:fixed;left:var(--oL);top:var(--oT);width:var(--oW);height:var(--oH);contain:paint;z-index:30;background:radial-gradient(60% 60% at 50% 30%,var(--bg2),var(--bg));border-left:1px solid var(--line)}
+body.span #pane2{display:flex;flex-direction:column;position:fixed;left:var(--oL);top:var(--oT);width:var(--oW);height:var(--oH);contain:paint;z-index:30;background:radial-gradient(60% 60% at 50% 30%,var(--bg2),var(--bg));border-left:1px solid var(--line)}
 #pane2 .p2head{display:flex;align-items:center;gap:10px;padding:12px 20px;border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--bg) 65%,transparent)}
 #pane2 .p2head b{font:800 18px var(--fh)}
 #p2body{flex:1;overflow:auto;padding:16px 20px}
@@ -3516,6 +3516,17 @@ function bgBack(){dFlash();toast('👋 Wieder da – Hintergrund beendet.')}
 $('#bgBtn').onclick=bgGo;
 addEventListener('pywebviewready',()=>{const w=wapi();if(w&&w.bg_set&&!M2&&!POP)$('#bgBtn').hidden=false});
 window.spanAway=spanAway;window.spanBack=spanBack;window.bgGo=bgGo;window.bgBack=bgBack;
+
+/* ---------- Fehlersuche 2 Monitore: Strg + Alt + D ---------- */
+let DIAG=null,DCLK=[];
+document.addEventListener('pointerdown',e=>{DCLK.unshift(`${Math.round(e.clientX)},${Math.round(e.clientY)} → ${(e.target.id?'#'+e.target.id:e.target.tagName.toLowerCase()+'.'+[...e.target.classList].slice(0,2).join('.'))}`);DCLK.length=Math.min(DCLK.length,5)},true);
+async function diagDraw(){if(!DIAG)return;const w=wapi();let py={};try{py=w&&w.diag?await w.diag():{}}catch(e){py={err:String(e)}}
+  DIAG.innerHTML=`<b>🔧 Fehlersuche (Strg+Alt+D schließt)</b><br>Version ${INFO?INFO.version:'?'} · span=${isSpan()} · away=${AWAY}<br>Seite: ${innerWidth}×${innerHeight} · Pixel-Faktor ${devicePixelRatio}<br>Fenster (Windows): ${JSON.stringify(py.win)} · Faktor ${py.scale}<br>Monitore: ${JSON.stringify(py.mons)}<br>Hauptmonitor: ${JSON.stringify(py.span)}<br>Aufteilung: ${JSON.stringify(SPAN)}<br>Innen-Fenster: ${JSON.stringify(py.kids)}<br>Letzte Klicks:<br>${DCLK.map(esc).join('<br>')}${py.err?'<br>Fehler: '+esc(py.err):''}`}
+function diagToggle(){if(DIAG){DIAG.remove();DIAG=null;$$('.dtest').forEach(x=>x.remove());return}
+  DIAG=document.createElement('div');DIAG.style.cssText='position:fixed;left:calc(var(--mL,0px) + 12px);bottom:12px;z-index:9999;max-width:880px;padding:12px 14px;border-radius:12px;background:rgba(0,0,0,.85);color:#fff;font:12px/1.5 var(--fm);white-space:normal;word-break:break-all';document.body.appendChild(DIAG);
+  let n=0;['--mL','--oL'].forEach((v,i)=>{const t=document.createElement('button');t.className='btn pri dtest';t.style.cssText=`position:fixed;z-index:9999;top:calc(var(--mT,0px) + 120px);left:calc(var(${v},0px) + 40%)`;t.textContent=(i?'Monitor 2':'Studio')+' – Test-Klick 0';t.onclick=()=>{n++;t.textContent=(i?'Monitor 2':'Studio')+' – Test-Klick '+n};document.body.appendChild(t)});
+  diagDraw();const iv=setInterval(()=>{if(!DIAG)return clearInterval(iv);diagDraw()},700)}
+document.addEventListener('keydown',e=>{if(e.ctrlKey&&e.altKey&&(e.key==='d'||e.key==='D')){e.preventDefault();diagToggle()}});
 window.monSpanTest=g=>{SPAN=g;document.body.classList.add('span');spanVars();spanNodes(true);$('#p2cover').classList.add('off')};
 window.monSet=a=>{MONS=a};window.popGone=popGone;window.popReady=popReady;window.popAct=popAct;
 window.flyIn=flyIn;window.flyOut=flyOut;window.m2Play=m2Play;window.m2Arrive=m2Arrive;window.m2Bye=m2Bye;window.m2Info=m2Info;window.m2Ready=m2Ready;window.dualToggle=dualToggle;window.dualInfo=dualInfo;window.applyTheme=applyTheme;window.realAdd=(...a)=>realAdd(...a);

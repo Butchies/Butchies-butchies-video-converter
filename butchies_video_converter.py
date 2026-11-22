@@ -10,7 +10,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 APP_NAME = 'Butchies Video Converter'
-VERSION = '2.0.3'
+VERSION = '2.0.4'
 FROZEN = getattr(sys, 'frozen', False)
 BASE = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent))
 UI = BASE / 'ui'
@@ -2638,6 +2638,11 @@ class Dual:
             f.saved = f.saved or f._rect()
             f.span = main
             f._place(x, y, x2 - x, y2 - y)
+            # kleiner Ruck: zwingt WebView2, seine Fläche (Zeichnen + Mausklicks) wirklich auf die neue Größe zu setzen
+            time.sleep(0.06)
+            f._place(x, y, x2 - x - 1, y2 - y)
+            time.sleep(0.06)
+            f._place(x, y, x2 - x, y2 - y)
             sc = f._scale() or 1
             rel = lambda r: [round((r[0] - x) / sc), round((r[1] - y) / sc), round(r[2] / sc), round(r[3] / sc)]
             return {'main': rel(a), 'other': rel(b), 'side': 'l' if b[0] < a[0] else 'r'}
@@ -2956,6 +2961,28 @@ def native_window(url):
             except Exception as ex:  # noqa: BLE001
                 print('Hintergrund:', ex, flush=True)
                 return False
+
+        def diag(self):
+            try:
+                ctypes = __import__('ctypes')
+                from ctypes import wintypes
+                u = ctypes.windll.user32
+                h = frame.handle()
+                kids = []
+                proc = ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
+
+                def cb(c, lp):
+                    r = wintypes.RECT()
+                    u.GetWindowRect(c, ctypes.byref(r))
+                    buf = ctypes.create_unicode_buffer(64)
+                    u.GetClassNameW(c, buf, 64)
+                    kids.append([buf.value, r.left, r.top, r.right - r.left, r.bottom - r.top])
+                    return True
+                u.EnumChildWindows(h, proc(cb), 0)
+                return {'win': frame._rect(), 'span': list(getattr(frame, 'span', None) or []), 'mons': dual.mons(),
+                        'scale': frame._scale(), 'kids': kids[:8], 'bg': dual.bg}
+            except Exception as ex:  # noqa: BLE001
+                return {'err': str(ex)}
 
         def monitors(self):
             try:
