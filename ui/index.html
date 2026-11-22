@@ -1583,7 +1583,7 @@ function qDetails(q,a){
   const tr=q.tracks||{audio:[],subs:[],chapters:0},kb=q.dur?Math.round(q.size*8/1000/q.dur):0;
   const vc={h264:'H.264',hevc:'H.265',av1:'AV1',vp9:'VP9',mpeg2video:'MPEG-2',mpeg4:'MPEG-4/XviD',vc1:'VC-1'}[q.vcodec]||q.vcodec||'?';
   const r=PROBE[pkey(q,a)],sv=a.est&&q.size?Math.round((1-a.est/(q.size/1048576))*100):0;
-  const enc=q.slot&&REAL?`${wIcon(q.slot)} ${wName(q.slot)}`:($('#sEnc').selectedOptions[0]||{}).textContent||'';
+  const enc=q.slot&&REAL?`${wIcon(q.slot)} ${wName(q.slot)}${doing(q)}`:($('#sEnc').selectedOptions[0]||{}).textContent||'';
   let pr;
   if(probeRun&&probeRun.key===pkey(q,a))pr='<span class="hint" style="margin:0">misst gerade …</span>';
   else if(r&&!r.err){const [lb,c]=vmLabel(r.vmaf);pr=`<b style="color:${c}">${r.method==='ssim'?'Qualität':'VMAF'} ${r.vmaf.toFixed(1).replace('.',',')}</b> · ${lb} · Probe-Größe ${fmtMB(r.size)}`}
@@ -1733,12 +1733,12 @@ function pgSync(){if(!$('#progDlg').open)return;
   $('#pgPct').textContent=Math.floor(pct)+' %';pgSeg(pct);
   $('#pgFile').textContent=q?(q.path||q.name):($('#monFile').textContent||'');
   const pass=j&&j.pass&&q.a&&q.a.job&&q.a.job.passes.length>1?`Durchgang ${j.pass}/2 · `:'';
-  $('#pgPhase').textContent=RUN.pause?'⏸ Pausiert':q?pass+(q.slot&&REAL?`${wIcon(q.slot)} ${wName(q.slot)}`:'Video wird umgewandelt …'):'Wartet …';
+  $('#pgPhase').textContent=RUN.pause?'⏸ Pausiert':q?pass+(q.slot&&REAL?`${wIcon(q.slot)} ${wName(q.slot)}${doing(q)}`:'Video wird umgewandelt …'):'Wartet …';
   $('#pgQt').textContent=`Warteschlange: ${Math.min(doneN+1,Math.max(tot,1))} von ${Math.max(tot,1)}`;$('#pgQb').style.width=allP+'%';$('#pgQp').textContent=Math.floor(allP)+' %';
   const a=q&&q.a;$('#pgFmt').textContent=a?`${a.outW}×${a.outH} · ${q.fps?Math.round(q.fps*100)/100+' fps':''} · ${S.fam==='h264'?'H.264':'H.265'}`:'–';
   $('#pgTime').textContent=j&&q.dur?`${fmtT(j.t||0)} / ${fmtT(q.dur)}`:q&&q.dur?`${fmtT(q.dur*pct/100)} / ${fmtT(q.dur)}`:'–';
   $('#pgSpeed').textContent=$('#mSpd').textContent;$('#pgEta').textContent=$('#mEta').textContent;
-  const runs=PGX&&PGX.runs||[];$('#pgPar').innerHTML=runs.length>1?runs.map(({q,j})=>`<div>${wIcon(q.slot)} <b>${esc(wName(q.slot))}</b> · ${esc(q.name)} · ${Math.floor(j.pct)} %</div>`).join(''):'';
+  const runs=PGX&&PGX.runs||[];$('#pgPar').innerHTML=runs.length>1?runs.map(({q,j})=>`<div>${wIcon(q.slot)} <b>${esc(wName(q.slot))}</b>${doing(q)} · ${esc(q.name)} · ${Math.floor(j.pct)} %</div>`).join(''):'';
   $('#pgPause').textContent=RUN.pause?'▶ Weiter':'⏸ Pause'}
 function pgEnd(kind){clearInterval(PGT);PGX=null;$('#pgOpen').hidden=true;const d=$('#progDlg');if(!d.open)return;
   const done=kind==='done',n=Q.filter(q=>q.state==='done').length;
@@ -2472,7 +2472,7 @@ async function realRun(pl,s,startMsg){
     }
     const mine=Q.filter(q=>q.jid&&byId[q.jid]);
     const all=mine.length?mine.reduce((s,q)=>s+q.prog,0)/mine.length*100:0;setSeg(all);
-    $('#monRun').innerHTML=runs.length>1?runs.map(({q,j})=>`<div>${wIcon(q.slot)} <b>${esc(wName(q.slot))}</b> · ${esc(q.name)} · ${Math.floor(j.pct)} % · ${Math.round(j.fps)} fps</div>`).join(''):'';
+    $('#monRun').innerHTML=runs.length>=1?runs.map(({q,j})=>`<div>${wIcon(q.slot)} <b>${esc(wName(q.slot))}</b>${doing(q)} · ${esc(q.name)} · ${Math.floor(j.pct)} % · ${Math.round(j.fps)} fps</div>`).join(''):'';
     PGX={running,runs,all};
     if(running){const {q,j}=running,a=q.run||q.a;$('#monFile').title=q.name;$('#monFile').textContent=q.name+(j.pass&&(q.run||q.a).job.passes.length>1?` · Durchgang ${j.pass}/2`:'');
       $('#mPct').textContent=Math.floor(j.pct)+' %';$('#mSpd').textContent=`${Math.round(j.fps)} fps · ${String(j.speed.toFixed(2)).replace('.',',')}×`;
@@ -2500,6 +2500,8 @@ function learnJob(q,j){
 }
 /* Gleicher Codec wie das Ziel? (z. B. H.265 -> H.265) */
 const SAME_MIN=20;
+/* Was macht der Arbeiter gerade? (neben dem Namen anzeigen) */
+function doing(q){const a=q&&(q.run||null);if(!a)return '';return a.snd?' · 🎙️ nur Ton aufbereiten (Bild wird kopiert)':' · 🎞️ wandelt um'}
 function sameCodec(f,s){const c=(f.vcodec||'').toLowerCase();if(s.yt)return null;
   if(s.fam==='h265'&&/hevc|h265/.test(c))return 'H.265';if(s.fam==='h264'&&/h264|avc/.test(c))return 'H.264';return null}
 /* Vor dem Start: KI prüft Dateien mit gleichem Codec – umwandeln, nur Ton oder überspringen */
@@ -2623,7 +2625,7 @@ const vcName=q=>({h264:'H.264',hevc:'H.265',av1:'AV1',vp9:'VP9',mpeg2video:'MPEG
 function detHTML(q){
   const a=q.a||analyze(q,settings());const tr=q.tracks||{audio:[],subs:[],chapters:0},kb=q.dur?Math.round(q.size*8/1000/q.dur):0;
   const [lb,c]=label(a.score),r=PROBE[pkey(q,a)],sv=a.est&&q.size?Math.round((1-a.est/(q.size/1048576))*100):0,i=Q.indexOf(q);
-  const enc=q.slot&&REAL?`${wIcon(q.slot)} ${wName(q.slot)}`:($('#sEnc').selectedOptions[0]||{}).textContent||'';
+  const enc=q.slot&&REAL?`${wIcon(q.slot)} ${wName(q.slot)}${doing(q)}`:($('#sEnc').selectedOptions[0]||{}).textContent||'';
   const stt=q.state==='run'?`⏳ läuft · ${Math.floor((q.prog||0)*100)} %`:q.state==='queued'?'🕒 wartet in der Warteschlange':q.state==='done'?'✓ fertig':q.state==='err'?'⚠ Fehler':'bereit';
   let pr;
   if(probeRun&&probeRun.key===pkey(q,a))pr='<p>⏳ misst gerade …</p>';
@@ -2677,7 +2679,7 @@ function qdRender(){const d=$('#queueDlg');if(!d||!d.open)return;
   $('#qdList').innerHTML=Q.map((q,i)=>{const a=q.a||{};const [lb,c]=label(a.score||0);const mv=q.state==='wait'&&!RUN.on;
     return `<div class="qdr ${q.state}"><span class="st">${ico[q.state]||'▫️'}</span><div class="nm" title="${esc(q.path||q.name)}">${esc(q.name)}</div><span class="sc" style="color:${c}">${a.score||'–'} · ${lb}</span>
      <div class="bt"><button data-qup="${i}" ${mv&&i>0?'':'disabled'} title="Nach oben">↑</button><button data-qdn="${i}" ${mv&&i<Q.length-1?'':'disabled'} title="Nach unten">↓</button><button data-qinfo="${q.id}" title="Details">ⓘ</button><button data-qx="${q.id}" title="Aus der Liste nehmen">✕</button></div>
-     <div class="mt">${q.w?q.w+'×'+q.h:'?'} · ${q.dur?fmtT(q.dur):'?'} · ${fmtMB(q.size/1048576)} → ~${fmtMB(a.est||0)}${q.state==='run'&&q.slot&&REAL?' · '+wIcon(q.slot)+' '+esc(wName(q.slot)):''}</div>
+     <div class="mt">${q.w?q.w+'×'+q.h:'?'} · ${q.dur?fmtT(q.dur):'?'} · ${fmtMB(q.size/1048576)} → ~${fmtMB(a.est||0)}${q.state==='run'&&q.slot&&REAL?' · '+wIcon(q.slot)+' '+esc(wName(q.slot))+doing(q):''}</div>
      <span class="sc" style="color:var(--muted);font-weight:600">${q.state==='run'?Math.floor((q.prog||0)*100)+' %':q.state==='done'?'fertig':q.state==='queued'?'wartet':''}</span>
      ${q.state==='run'||q.state==='done'?`<div class="pb2"><i style="width:${(q.prog||0)*100}%"></i></div>`:''}</div>`}).join('');
   const mv=(i,dd)=>{const j=i+dd;if(j<0||j>=Q.length)return;[Q[i],Q[j]]=[Q[j],Q[i]];QDSIG='';renderQ();update()};
