@@ -35,6 +35,9 @@ FFmpeg mit allen Codecs ist dabei (inklusive VMAF-Messung und HDR). WebView2 wir
 **Neu in 1.1.3**
 - Das Programm **merkt sich jetzt alles** bis zum nächsten Start: Design, Start-Animation an/aus, Auto/Manuell-Schalter, eigene Einstellungen (Codec, Zielgröße, Zeitplan …) und eigene Vorlagen. Bisher ging das beim Neustart verloren
 
+**Neu in 2.0.9**
+- 🩺 **Systemprüfung**: Statistik → „Protokoll erstellen“ (oder **Strg + Alt + S**) sammelt Windows, Prozessor, Arbeitsspeicher, Grafikkarten mit Treiber und Hz, Monitore und an welcher Karte sie hängen, WebView2, Encoder, Hardware-Test, gemessene Hänger und die letzten Meldungen in eine Textdatei auf dem **Desktop** – zum Schicken für die Fehlersuche
+
 **Neu in 2.0.8**
 - 🖥🖥 2 Monitore an **zwei verschiedenen Grafikkarten** (z. B. Laptop-Bildschirm an der Radeon 760M, Monitor an der RX 7600M XT): Windows musste jedes Bild des Fensters von einer Karte zur anderen kopieren – dadurch hing die eine Seite immer wieder ein paar Sekunden. Das Programm erkennt das jetzt selbst und zeichnet seine Oberfläche in diesem Fall ohne Grafikkarten-Beschleunigung (beim Einschalten von „2 Monitore“ startet es dafür einmal neu). Das Umwandeln nutzt weiterhin voll die Grafikkarten
 - 🔧 Strg + Alt + D zeigt jetzt auch, welche Grafikkarte welchen Monitor ansteuert

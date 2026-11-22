@@ -10,7 +10,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 APP_NAME = 'Butchies Video Converter'
-VERSION = '2.0.8'
+VERSION = '2.0.9'
 FROZEN = getattr(sys, 'frozen', False)
 BASE = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent))
 UI = BASE / 'ui'
@@ -2041,6 +2041,14 @@ class Handler(BaseHTTPRequestHandler):
             if path == '/api/abshot':
                 e = fpath(d.get('id', ''))
                 return self.send_json(200, {'task': start_task(task_abshot, e, list(d.get('vargs') or []), fnum(d.get('frac'), .5))})
+            if path == '/api/syscheck':
+                r = syscheck(d.get('client') or {})
+                if r['path'] and os.name == 'nt':
+                    try:
+                        subprocess.Popen(['explorer', '/select,', r['path']])
+                    except Exception:  # noqa: BLE001
+                        pass
+                return self.send_json(200, r)
             if path == '/api/scan':
                 rec = d.get('recursive', True) is not False
                 if d.get('cached'):
@@ -2542,6 +2550,79 @@ def mixed_gpus():
         return len({a[4] for a in monitor_adapters()}) > 1
     except Exception:  # noqa: BLE001
         return False
+
+
+def syscheck(client):
+    """Systemprüfung: alles, was für die Fehlersuche wichtig ist, als Textprotokoll (Desktop)."""
+    import platform
+    L = []
+    add = L.append
+    add('=== Butchies Video Converter AI – Systemprotokoll ===')
+    add('Erstellt: %s · Version %s' % (time.strftime('%d.%m.%Y %H:%M:%S'), VERSION))
+    add('Windows: %s %s (%s)' % (platform.system(), platform.version(), platform.machine()))
+    if os.name == 'nt':
+        ps = ("$o=[ordered]@{};"
+              "$o.cpu=(Get-CimInstance Win32_Processor|Select -First 1).Name;"
+              "$o.ram=[math]::Round((Get-CimInstance Win32_ComputerSystem).TotalPhysicalMemory/1GB,1);"
+              "$o.gpus=@(Get-CimInstance Win32_VideoController|%{ $_.Name+' | Treiber '+$_.DriverVersion+' | '+$_.CurrentHorizontalResolution+'x'+$_.CurrentVerticalResolution+' @ '+$_.CurrentRefreshRate+' Hz' });"
+              "$k='HKLM:\\SOFTWARE\\WOW6432Node\\Microsoft\\EdgeUpdate\\Clients\\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}';"
+              "$o.webview2=(Get-ItemProperty $k -EA SilentlyContinue).pv;"
+              "$o.os=(Get-CimInstance Win32_OperatingSystem).Caption+' '+(Get-CimInstance Win32_OperatingSystem).BuildNumber;"
+              "$o|ConvertTo-Json -Compress")
+        try:
+            r = run(['powershell', '-NoProfile', '-Command', ps], timeout=40)
+            info = json.loads(r.stdout.decode('utf-8', 'replace').strip() or '{}')
+            add('System: %s' % info.get('os'))
+            add('Prozessor: %s · Arbeitsspeicher: %s GB' % (info.get('cpu'), info.get('ram')))
+            add('WebView2: %s' % info.get('webview2'))
+            g = info.get('gpus') or []
+            for x in (g if isinstance(g, list) else [g]):
+                add('Grafikkarte: %s' % x)
+        except Exception as ex:  # noqa: BLE001
+            add('System-Abfrage fehlgeschlagen: %s' % ex)
+    add('')
+    add('--- Monitore (Position, Größe, angeschlossen an) ---')
+    try:
+        for m in monitor_adapters():
+            add('  %s,%s  %sx%s  →  %s' % m)
+        add('Monitore an verschiedenen Grafikkarten: %s' % ('JA' if mixed_gpus() else 'nein'))
+    except Exception as ex:  # noqa: BLE001
+        add('  Fehler: %s' % ex)
+    add('Oberfläche ohne Grafikkarte gezeichnet: %s' % ('ja' if SOFT[0] else 'nein'))
+    add('WebView2-Zusatz: %s' % os.environ.get('WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS', '-'))
+    c = load_config()
+    add('2 Monitore eingeschaltet: %s · Richtung: %s' % (bool(c.get('dual')), c.get('dualdir') or 'auto'))
+    add('')
+    add('--- Encoder / Arbeiter ---')
+    add('FFmpeg: %s' % FFMPEG)
+    add('Encoder: %s' % ', '.join(k for k, v in HW.items() if v))
+    try:
+        add('Erkannte Grafik: %s' % '; '.join('%s (%s)' % (g.get('name'), g.get('kind')) for g in GPU))
+        add('Arbeiter: %s' % '; '.join('%s=%s%s' % (w.get('slot'), w.get('name'), '' if w.get('ok') else ' (aus)') for w in WORKERS))
+    except Exception:  # noqa: BLE001
+        pass
+    if c.get('bench'):
+        add('Hardware-Test: %s' % json.dumps(c.get('bench'), ensure_ascii=False)[:600])
+    add('')
+    add('--- Anzeige im Programm (vom Fenster gemessen) ---')
+    for k, v in (client or {}).items():
+        if k != 'log':
+            add('%s: %s' % (k, json.dumps(v, ensure_ascii=False) if not isinstance(v, str) else v))
+    add('')
+    add('--- Letzte Meldungen im Programm ---')
+    for x in (client or {}).get('log') or []:
+        add('  ' + str(x))
+    text = '\n'.join(L)
+    out = None
+    for d in (Path(os.environ.get('USERPROFILE', str(Path.home()))) / 'Desktop', Path.home() / 'OneDrive' / 'Desktop', Path.home() / 'Desktop', HOME):
+        try:
+            if d.is_dir():
+                out = d / ('Butchies-Systemprotokoll_%s.txt' % time.strftime('%Y-%m-%d_%H-%M'))
+                out.write_text(text, encoding='utf-8')
+                break
+        except OSError:
+            out = None
+    return {'text': text, 'path': str(out) if out else ''}
 
 
 SOFT = [False]     # Zeichnen ohne Grafikkarte (für 2 Monitore an verschiedenen Grafikkarten)

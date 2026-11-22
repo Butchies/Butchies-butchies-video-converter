@@ -3097,6 +3097,9 @@ function drawStats(){
     ${rows.length?`<div class="hwb">${rows.map(r=>`<span>${esc(r.n)}</span><div class="b"><i style="width:${r.v/bmx*100}%"></i></div><span>${Math.round(r.v)} fps</span>`).join('')}</div>
     <p class="hint" style="margin:10px 0 0">1080p-Testbild, gleiche Einstellungen wie beim Umwandeln. Am schnellsten: <b>${esc(best.n)}</b>. Die KI verteilt die Filme mit diesen echten Werten.</p>`:'<p class="hint" style="margin:0">Misst, wie schnell Prozessor und Grafikkarten bei dir wirklich sind. Danach stimmen Restzeit und Verteilung von Anfang an.</p>'}
     <div class="hint" id="stBenchP" style="margin:8px 0 0" hidden></div></div>
+  <div class="stsec real-only"><h3>🩺 Systemprüfung<span class="sp"></span><button class="btn sm pri" id="stSys">Protokoll erstellen</button></h3>
+    <p class="hint" style="margin:0">Sammelt alles für die Fehlersuche (Windows, Grafikkarten, Monitore, Anzeige, Encoder, letzte Meldungen) in eine Textdatei auf deinem <b>Desktop</b>. Die Datei einfach an Claude schicken. Tipp: vorher die Situation herstellen, in der etwas hängt (z. B. 2 Monitore in der „falschen“ Richtung) und ca. 30 s normal klicken.</p>
+    <div class="hint" id="stSysP" style="margin:8px 0 0"></div></div>
   <div class="stsec"><h3>🧠 Die KI lernt mit<span class="sp"></span><button class="btn sm" id="stLearnReset">Gelerntes zurücksetzen</button></h3>
     <div class="kpi"><div><small>Filme gelernt</small><b>${LEARN.n||0}</b></div><div><small>Restzeit-Genauigkeit</small><b>${LEARN.eta!=null?'± '+Math.round(LEARN.eta*100)+' %':'–'}</b></div>
     <div><small>Note-Korrektur</small><b>${LEARN.qn>=2?(LEARN.qOff>=0?'+':'')+LEARN.qOff.toFixed(1).replace('.',','):'–'}</b><small>${LEARN.qn||0} Messungen</small></div><div><small>Qualitätsstufen gemerkt</small><b>${Object.keys(LEARN.crf||{}).length}</b></div></div>
@@ -3104,6 +3107,7 @@ function drawStats(){
   $('#stReset').onclick=()=>ask('🗑 Statistik löschen?','<p>Die Spar-Statistik wird auf null gesetzt. Gelerntes und Hardware-Test bleiben.</p>',[{t:'Abbrechen'},{t:'Löschen',cls:'pri',fn:async()=>{if(REAL)await api('/api/stats-reset',{}).catch(()=>{});STD.stats=[];drawStats()}}]);
   $('#stLearnReset').onclick=()=>ask('Gelerntes zurücksetzen?','<p>Die KI fängt wieder bei den Standardwerten an (Hardware-Test bleibt).</p>',[{t:'Abbrechen'},{t:'Zurücksetzen',cls:'pri',fn:()=>{LEARN={spd:{},sn:{},n:0,eta:null,qOff:0,qn:0,crf:{}};benchLearn(STD.bench);saveLearn();drawStats();update()}}]);
   const bb=$('#stBench');if(bb)bb.onclick=()=>runBench(false);
+  const sy=$('#stSys');if(sy)sy.onclick=sysCheck;
 }
 let BENCHING=false;
 async function runBench(quiet){
@@ -3537,6 +3541,16 @@ function diagToggle(){if(DIAG){DIAG.remove();DIAG=null;$$('.dtest').forEach(x=>x
   let n=0;['--mL','--oL'].forEach((v,i)=>{const t=document.createElement('button');t.className='btn pri dtest';t.style.cssText=`position:fixed;z-index:9999;top:calc(var(--mT,0px) + 120px);left:calc(var(${v},0px) + 40%)`;t.textContent=(i?'Monitor 2':'Studio')+' – Test-Klick 0';t.onclick=()=>{n++;t.textContent=(i?'Monitor 2':'Studio')+' – Test-Klick '+n};document.body.appendChild(t)});
   diagDraw();const iv=setInterval(()=>{if(!DIAG)return clearInterval(iv);diagDraw()},700)}
 document.addEventListener('keydown',e=>{if(e.ctrlKey&&e.altKey&&(e.key==='d'||e.key==='D')){e.preventDefault();diagToggle()}});
+
+/* ---------- Systemprüfung: Protokoll für die Fehlersuche ---------- */
+async function sysCheck(){const p=$('#stSysP');if(p)p.textContent='⏳ Prüfe System … (ca. 10 s)';
+  const client={Fenster:`${innerWidth}×${innerHeight} · Pixel-Faktor ${devicePixelRatio}`,'2 Monitore aktiv':isSpan(),'Studio-Seite':KV.get('bvc-spanswap')==='1'?'getauscht':'normal',
+    Aufteilung:SPAN,'Bild-Lücken (ms, Uhrzeit)':DGAP,'Lange Aufgaben (ms, Uhrzeit)':DLT,'Letzte Klicks':DCLK,Design:document.body.dataset.theme,
+    'Dateien in Warteschlange':Q.length,'Ordner A':SRC.A||'-','Ordner B':SRC.B||'-','Dateien A/B':`${RAW.A.length} / ${RAW.B.length}`,
+    log:[...$$('#log > div')].slice(-40).map(d=>d.textContent)};
+  try{const r=await api('/api/syscheck',{client});if(p)p.innerHTML=r.path?`✅ Gespeichert: <b>${esc(r.path)}</b> – der Ordner wurde geöffnet. Datei einfach an Claude schicken.`:'⚠️ Konnte nicht speichern.';
+    toast('🩺 Systemprotokoll auf dem Desktop gespeichert.')}catch(e){if(p)p.textContent='Fehler: '+e.message}}
+document.addEventListener('keydown',e=>{if(e.ctrlKey&&e.altKey&&(e.key==='s'||e.key==='S')&&REAL){e.preventDefault();sysCheck()}});
 window.monSpanTest=g=>{SPAN=g;document.body.classList.add('span');spanVars();spanNodes(true);$('#p2cover').classList.add('off')};
 window.monSet=a=>{MONS=a};window.popGone=popGone;window.popReady=popReady;window.popAct=popAct;
 window.flyIn=flyIn;window.flyOut=flyOut;window.m2Play=m2Play;window.m2Arrive=m2Arrive;window.m2Bye=m2Bye;window.m2Info=m2Info;window.m2Ready=m2Ready;window.dualToggle=dualToggle;window.dualInfo=dualInfo;window.applyTheme=applyTheme;window.realAdd=(...a)=>realAdd(...a);
