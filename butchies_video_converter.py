@@ -10,7 +10,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 APP_NAME = 'Butchies Video Converter'
-VERSION = '1.9.2'
+VERSION = '1.9.3'
 FROZEN = getattr(sys, 'frozen', False)
 BASE = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent))
 UI = BASE / 'ui'
@@ -2599,6 +2599,9 @@ class Dual:
 
     def span_set(self, on):
         f = self.frame
+        ev = getattr(f, 'fit_done', None)
+        if ev is not None:
+            ev.wait(4)                # sonst schiebt das Start-Einpassen das Fenster wieder auf einen Monitor zurück
         if on:
             mons = self.mons()
             if len(mons) < 2:
@@ -2860,14 +2863,19 @@ def native_window(url):
         taskbar_loop(frame)
     threading.Thread(target=start_taskbar, daemon=True).start()
 
+    frame.fit_done = threading.Event()
+
     def fit():
         time.sleep(0.4)
         try:
-            if not frame.is_max():
-                frame.toggle_max()
-            frame.restore_state()
+            if not getattr(frame, 'span', None):
+                if not frame.is_max():
+                    frame.toggle_max()
+                frame.restore_state()
         except Exception:  # noqa: BLE001
             pass
+        finally:
+            frame.fit_done.set()      # erst danach darf die Zwei-Monitor-Ansicht das Fenster aufziehen
     if os.name == 'nt':
         win.events.shown += lambda *a: threading.Thread(target=fit, daemon=True).start()
     try:

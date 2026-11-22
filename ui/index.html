@@ -536,11 +536,11 @@ body.span .top{position:fixed;left:var(--mL);top:var(--mT);width:var(--mW);box-s
 body.span .wrap{position:fixed;left:var(--mL);top:calc(var(--mT) + var(--hH,70px));width:var(--mW);height:calc(var(--mH) - var(--hH,70px));overflow:auto;box-sizing:border-box;max-width:none;margin:0}
 body.span>.splash,body.span #goodbye{inset:auto;left:var(--mL);top:var(--mT);width:var(--mW);height:var(--mH)}
 body.span .toast{left:calc(var(--mL) + var(--mW) / 2)}
-body.span #goodbye.on2{left:var(--oL);top:var(--oT);width:var(--oW);height:var(--oH)}
+body.span #goodbye{will-change:opacity}body.span #goodbye.on2{left:var(--oL);top:var(--oT);width:var(--oW);height:var(--oH)}
 #p2black{display:none}body.span #p2black.on{display:block;position:fixed;left:var(--oL);top:var(--oT);width:var(--oW);height:var(--oH);background:#000;z-index:400}
 body.span .modal{inset:auto;left:var(--mL);top:var(--mT);width:var(--mW);height:var(--mH)}
 #pane2{display:none}
-body.span #pane2{display:flex;flex-direction:column;position:fixed;left:var(--oL);top:var(--oT);width:var(--oW);height:var(--oH);contain:paint;z-index:30;background:radial-gradient(60% 60% at 50% 30%,var(--bg2),var(--bg));border-left:1px solid var(--line)}
+body.span #pane2{will-change:transform;transform:translateZ(0);display:flex;flex-direction:column;position:fixed;left:var(--oL);top:var(--oT);width:var(--oW);height:var(--oH);contain:paint;z-index:30;background:radial-gradient(60% 60% at 50% 30%,var(--bg2),var(--bg));border-left:1px solid var(--line)}
 #pane2 .p2head{display:flex;align-items:center;gap:10px;padding:12px 20px;border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--bg) 65%,transparent)}
 #pane2 .p2head b{font:800 18px var(--fh)}
 #p2body{flex:1;overflow:auto;padding:16px 20px}
@@ -2840,7 +2840,7 @@ $('#qdAdd').onclick=()=>{if(REAL)pickAdd('files');else $('#iFiles').click()};
 $('#qdSort').onclick=()=>{const w=Q.filter(q=>q.state==='wait'),o=Q.filter(q=>q.state!=='wait');w.sort((x,y)=>((y.size/1048576)-(y.a?y.a.est:0))-((x.size/1048576)-(x.a?x.a.est:0)));Q=[...o,...w];QDSIG='';renderQ();update();toast('Wartende Filme nach Ersparnis sortiert – die größten Platzgewinne zuerst.')};
 
 /* ---------- Player nur bei Bedarf ---------- */
-function playerMini(on){const c=$('#stageCard');if(!c)return;c.classList.toggle('mini',!!on);KV.set('bvc-pmini',on?'1':'0');
+function playerMini(on){const c=$('#stageCard');if(!c)return;if(document.body.classList.contains('span'))stagePlace(on?'p2':($('#mAb').hidden?'p2':'main'));c.classList.toggle('mini',!!on);KV.set('bvc-pmini',on?'1':'0');
   const t=$('#pMiniTxt');if(t)t.textContent=P&&P.item?`zuletzt: ${P.item.name}`:'klappt von selbst auf, wenn du ▶ drückst, ein Video hineinziehst oder Vorher/Nachher öffnest'}
 $('#pMini').onclick=e=>{if(e.target.closest('#pMiniAb'))return;playerMini(false)};
 $('#pMiniAb').onclick=e=>{e.stopPropagation();playerMini(false);setMode('ab')};
