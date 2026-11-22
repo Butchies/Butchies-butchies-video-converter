@@ -546,6 +546,8 @@ body.span #pane2{will-change:transform;transform:translateZ(0);display:flex;flex
 #p2body{flex:1;overflow:auto;padding:16px 20px}
 #p2body #v-cmp{display:block}#p2body #stageCard{margin-bottom:14px}#p2body #stageCard:not(.mini) #plWrap{max-width:calc(58vh * 16 / 9);margin:0 auto}
 #p2body #pMiniAb,#p2body #stMode [data-m=ab]{display:none!important}
+.abhead{display:flex;align-items:center;gap:10px;cursor:pointer;margin-bottom:12px}.abhead .pi{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;color:#fff;background:linear-gradient(110deg,var(--a),var(--b))}
+.abhead small{color:var(--muted);font-size:12px}#abCard.mini #abBody{display:none}#abCard.mini .abhead{margin:0}#abCard{margin-bottom:14px}
 #p2cover{position:absolute;inset:0;background:#000;z-index:200;transition:opacity .25s}#p2cover.off{opacity:0;pointer-events:none}
 body.span dialog[open]{margin:0;position:fixed;left:calc(var(--mL) + var(--mW) / 2);top:calc(var(--mT) + var(--mH) / 2);transform:translate(-50%,-50%);max-height:calc(var(--mH) - 40px);animation:none}
 body.span dialog.on2[open]{left:calc(var(--oL) + var(--oW) / 2);top:calc(var(--oT) + var(--oH) / 2);max-height:calc(var(--oH) - 40px)}
@@ -2841,7 +2843,7 @@ $('#qdAdd').onclick=()=>{if(REAL)pickAdd('files');else $('#iFiles').click()};
 $('#qdSort').onclick=()=>{const w=Q.filter(q=>q.state==='wait'),o=Q.filter(q=>q.state!=='wait');w.sort((x,y)=>((y.size/1048576)-(y.a?y.a.est:0))-((x.size/1048576)-(x.a?x.a.est:0)));Q=[...o,...w];QDSIG='';renderQ();update();toast('Wartende Filme nach Ersparnis sortiert – die größten Platzgewinne zuerst.')};
 
 /* ---------- Player nur bei Bedarf ---------- */
-function playerMini(on){const c=$('#stageCard');if(!c)return;if(document.body.classList.contains('span'))stagePlace(on?'p2':($('#mAb').hidden?'p2':'main'));c.classList.toggle('mini',!!on);KV.set('bvc-pmini',on?'1':'0');
+function playerMini(on){const c=$('#stageCard');if(!c)return;if(document.body.classList.contains('span'))stagePlace('p2');c.classList.toggle('mini',!!on);KV.set('bvc-pmini',on?'1':'0');
   const t=$('#pMiniTxt');if(t)t.textContent=P&&P.item?`zuletzt: ${P.item.name}`:'klappt von selbst auf, wenn du ▶ drückst, ein Video hineinziehst oder Vorher/Nachher öffnest'}
 $('#pMini').onclick=e=>{if(e.target.closest('#pMiniAb'))return;playerMini(false)};
 $('#pMiniAb').onclick=e=>{e.stopPropagation();playerMini(false);setMode('ab')};
@@ -3437,9 +3439,20 @@ function spanVars(){if(!SPAN)return;const sw=KV.get('bvc-spanswap')==='1',m=sw?S
   [['m',m],['o',o]].forEach(([k,r])=>{b.setProperty('--'+k+'L',r[0]+'px');b.setProperty('--'+k+'T',r[1]+'px');b.setProperty('--'+k+'W',r[2]+'px');b.setProperty('--'+k+'H',r[3]+'px')});
   DINFO.side=o[0]<m[0]?'l':'r';requestAnimationFrame(()=>b.setProperty('--hH',$('.top').offsetHeight+'px'))}
 function stagePlace(where){const st=$('#stageCard');if(!isSpan()){if(st.parentNode!==HOME_STAGE.p)HOME_STAGE.p.insertBefore(st,HOME_STAGE.n);return}
-  if(where==='p2'){if(st.parentNode!==$('#p2body'))$('#p2body').insertBefore(st,$('#p2body').firstChild)}else if(st.parentNode!==HOME_STAGE.p)HOME_STAGE.p.insertBefore(st,HOME_STAGE.n)}
-function spanNodes(on){const c=$('#v-cmp');if(on){_showTab('conv');$('#p2body').appendChild(c);stagePlace('p2');try{_setMode('play');playerMini(true)}catch(e){}}
-  else{HOME_CMP.p.insertBefore(c,HOME_CMP.n);c.classList.remove('on');stagePlace('main')}dualUi2()}
+  if(st.parentNode!==$('#p2body'))$('#p2body').insertBefore(st,$('#p2body').firstChild)}
+/* Bei 2 Monitoren getrennt: Player (Monitor 2) und Vorher/Nachher als eigene Karte im Studio */
+const AB_HOME={p:$('#mAb').parentNode,n:$('#mAb').nextSibling};
+function abSplit(on){let c=$('#abCard');
+  if(on){if(!c){c=document.createElement('div');c.className='card';c.id='abCard';c.innerHTML='<div class="abhead"><span class="pi">◧</span><b>Vorher / Nachher</b><small id="abHint">klappt nach ca. 10 s ohne Maus von selbst zu</small><span style="flex:1"></span><button class="btn sm" id="abFold">▴</button></div><div id="abBody"></div>';
+      c.querySelector('.abhead').onclick=e=>{abFold(!c.classList.contains('mini'))}}
+    HOME_STAGE.p.insertBefore(c,HOME_STAGE.n);$('#abBody').appendChild($('#mAb'));$('#mAb').hidden=false;abFold(false);try{fillAbFile();if(!AB.before)demoBefore();else applyAb()}catch(e){}}
+  else{AB_HOME.p.insertBefore($('#mAb'),AB_HOME.n);if(c)c.remove()}}
+function abFold(mini){const c=$('#abCard');if(!c)return;c.classList.toggle('mini',!!mini);$('#abFold').textContent=mini?'▾ Aufklappen':'▴';ABLAST=Date.now();if(!mini)requestAnimationFrame(()=>{try{applyAb()}catch(e){}})}
+var ABLAST=Date.now();
+setInterval(()=>{const c=$('#abCard');if(!c||c.classList.contains('mini'))return;if(c.matches(':hover')||AB.drag||AB.pan||document.fullscreenElement){ABLAST=Date.now();return}if(Date.now()-ABLAST>10000)abFold(true)},1000);
+document.addEventListener('pointermove',e=>{const c=$('#abCard');if(c&&c.contains(e.target))ABLAST=Date.now()},{passive:true});
+function spanNodes(on){const c=$('#v-cmp');if(on){_showTab('conv');$('#p2body').appendChild(c);abSplit(true);stagePlace('p2');try{_setMode('play');$('#mAb').hidden=false;playerMini(true)}catch(e){}}
+  else{HOME_CMP.p.insertBefore(c,HOME_CMP.n);c.classList.remove('on');stagePlace('main');abSplit(false)}dualUi2()}
 function dualUi2(){const on=isSpan();$('#dualBtn').hidden=!(DINFO.n>1||on);$('#dualLbl').textContent=on?'1 Monitor':'2 Monitore';$('#dualBtn').firstChild.textContent=on?'🖥':'🖥🖥'}
 async function spanGo(){const w=wapi();document.documentElement.classList.add('spanpre');const sp=$('#splash');if(sp){sp.style.width=innerWidth+'px';sp.style.height=innerHeight+'px';sp.style.inset='0 auto auto 0'}
   const g=await w.span_set(true).catch(()=>null);if(!g){document.documentElement.classList.remove('spanpre');if(sp){sp.style.width=sp.style.height=sp.style.inset=''}return false}
@@ -3463,7 +3476,7 @@ const spanSwap=()=>{KV.set('bvc-spanswap',KV.get('bvc-spanswap')==='1'?'0':'1');
 {const wm=$('#winMon').onclick;$('#winMon').onclick=e=>{if(isSpan())return spanSwap();return wm&&wm(e)}}
 addEventListener('resize',()=>{if(isSpan())spanVars()});
 /* Player/Vorher-Nachher: Player auf Monitor 2, Vorher/Nachher bleibt im Studio */
-{const sm=setMode;setMode=function(m){if(isSpan())stagePlace(m==='ab'?'main':'p2');return sm(m)};
+{const sm=setMode;setMode=function(m){if(isSpan()){stagePlace('p2');if(m==='ab'){const r=sm('ab');$('#mPlay').hidden=false;$('#mAb').hidden=false;$('#plName').hidden=false;abFold(false);return r}const r=sm(m);$('#mAb').hidden=false;$('#mPlay').hidden=false;return r}return sm(m)};
  const oi=openInPlayer;openInPlayer=function(q){if(isSpan()){stagePlace('p2');try{playerMini(false)}catch(e){}return _oip(q)}return oi(q)};
  const st=showTab;showTab=function(v){if(isSpan()){if(v==='play')return setMode('play');if(v==='cmp'){$('#p2body').scrollTop=0;return}if(v==='ab')return setMode('ab')}return st(v)}}
 /* Fenster (Dialoge): kleine Knöpfe „Haupt / Monitor 2“ – innerhalb des Programms verschieben */
