@@ -35,7 +35,11 @@ FFmpeg mit allen Codecs ist dabei (inklusive VMAF-Messung und HDR). WebView2 wir
 **Neu in 1.1.3**
 - Das Programm **merkt sich jetzt alles** bis zum nächsten Start: Design, Start-Animation an/aus, Auto/Manuell-Schalter, eigene Einstellungen (Codec, Zielgröße, Zeitplan …) und eigene Vorlagen. Bisher ging das beim Neustart verloren
 
-**Neu in 1.5.9 – Final (stabile Version) – Fehlersuche Tempo & Ruhezustand**
+**Neu in 1.6.0 – Final (stabile Version)**
+- 🧹 **Aufgeräumt**: Im KI-Autopilot steht nur noch „Ausgabe & Zeitplan“ – alles andere macht die KI. Wer selbst etwas festlegen will: neuer Knopf **⚙ Einstellungen** (Vorlagen, Zielgröße, Grafikkarten, Auslastung, Codec, Qualität, Auflösung, Ton & Untertitel …). Was dort auf „Manuell“ steht, gilt dauerhaft
+- 🎙️ **Ton aufbereiten ist ein eigenes Werkzeug** (Knopf „🎙️ Ton“ neben „Umwandlung starten“) – beim normalen Umwandeln wird der Ton nie mehr gemessen oder bearbeitet
+
+**Neu in 1.5.9 – Fehlersuche Tempo & Ruhezustand**
 - 🚀 **Grafikkarten wieder schnell**: Grafikkarten-Jobs werden nicht mehr im Auslastungs-Takt angehalten und laufen mit normaler Priorität; die Windows-Energiesparbremse („Effizienzmodus“) wird für FFmpeg abgeschaltet
 - 🐢 Hintergrund-Prüfung „läuft ein anderer Player?“ startete bei Abwesenheit alle 15 s PowerShell und kostete Rechenzeit – jetzt höchstens alle 2 Minuten
 - 🎙️ Lautstärke-Messung bei langen Filmen nur noch an 12 Stellen (liest ca. 1/10 der Datei statt den ganzen Film – wichtig beim NAS)

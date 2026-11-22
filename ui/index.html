@@ -72,6 +72,10 @@ button{cursor:pointer}
 .hwb{display:grid;grid-template-columns:minmax(150px,auto) 1fr 80px;gap:7px 12px;align-items:center;font-size:13px}
 .hwb .b{height:11px;border-radius:9px;background:var(--inset);overflow:hidden}.hwb .b i{display:block;height:100%;background:linear-gradient(90deg,var(--a),var(--b))}
 .hold{color:var(--warn);font-weight:700}
+.sdbody{overflow:auto;max-height:70vh;padding-right:4px;display:grid;gap:10px}
+#setDlg .dlg{width:min(760px,94vw)}#sndDlg .dlg{width:min(620px,94vw)}
+#snBody .adrawer{display:block!important;max-height:none!important;opacity:1!important;grid-template-rows:1fr!important}#snBody .ahead .am{display:none}
+.kionly{margin:10px 0 0;padding:10px 12px;border-radius:12px;background:var(--panel);font-size:13px;color:var(--muted);display:flex;gap:10px;align-items:center}.kionly span{flex:1}
 .tour-dim{position:fixed;inset:0;z-index:300;background:rgba(10,5,20,.55);backdrop-filter:blur(2px)}
 .tour-hole{position:fixed;z-index:301;border-radius:18px;box-shadow:0 0 0 4px var(--a),0 0 0 9999px rgba(10,5,20,.6);pointer-events:none;transition:all .25s}
 .tour-card{position:fixed;z-index:302;width:420px;max-width:calc(100vw - 20px);padding:20px 22px;border-radius:20px;background:linear-gradient(160deg,var(--bg2),var(--bg));border:1px solid var(--line);box-shadow:0 30px 80px rgba(0,0,0,.45);color:var(--text)}
@@ -698,7 +702,7 @@ dialog[open]{animation:dlg .3s ease}
         <div class="f"><label>Jeder Film gleich laut</label><select id="sLoud"><option value="off">Aus</option><option value="tv" selected>Normal (wie Fernsehen)</option><option value="loud">Lauter</option></select></div>
         <div class="f full"><label class="chk"><input type="checkbox" id="sNight"> <span>🌙 Nachtmodus: leise Stellen lauter, Explosionen leiser</span></label></div>
         <div class="f full"><div class="hint" style="margin:0">Bei 5.1/7.1 wird der <b>Center-Kanal</b> (dort sind die Stimmen) lauter, bei Stereo die Sprach-Frequenzen. Die Lautstärke wird nach dem Fernseh-Standard (EBU R128) angeglichen. Im Player kannst du mit <b>🎙️</b> zwischen Original und aufbereitet umschalten.</div></div>
-        <div class="f full real-only"><button type="button" class="btn sm" id="sndOnly">🎙️ Nur Ton überarbeiten (Bild bleibt 1:1)</button><div class="hint" style="margin:6px 0 0">Für schon umgewandelte Filme: Bild und Untertitel werden nur kopiert, nur die Tonspuren werden neu gemacht – dauert pro Film etwa 1–3 Minuten. Es entsteht eine neue Datei „… (Ton)“ im Ausgabeordner.</div></div>
+        <div class="f full real-only"><button type="button" class="btn sm" id="sndOnly">🎙️ Ton der Filme in der Liste aufbereiten</button><div class="hint" style="margin:6px 0 0">Für schon umgewandelte Filme: Bild und Untertitel werden nur kopiert, nur die Tonspuren werden neu gemacht – dauert pro Film etwa 1–3 Minuten. Es entsteht eine neue Datei „… (Ton)“ im Ausgabeordner.</div></div>
         </div></div></div>
       </div>
       <div class="arow" data-sec="out">
@@ -799,7 +803,7 @@ dialog[open]{animation:dlg .3s ease}
         <button class="btn pri" id="bStart" disabled>▶ Umwandlung starten</button>
         <button class="btn" id="bPause" disabled>⏸ Pause</button>
         <button class="btn" id="bStop" disabled>⏹ Stopp</button>
-        <button class="btn sm" id="bClear" style="margin-left:auto">Liste leeren</button>
+        <button class="btn sm real-only" id="bSnd" style="margin-left:auto" title="Ton der Filme in der Liste aufbereiten – eigenes Werkzeug, getrennt vom Umwandeln">🎙️ Ton</button><button class="btn sm" id="bClear">Liste leeren</button>
       </div>
     </div>
   </div>
@@ -917,6 +921,15 @@ dialog[open]{animation:dlg .3s ease}
 <dialog id="statDlg" class="qdlg" aria-labelledby="stTitle"><div class="dlg">
   <div class="dlg-head"><h2 id="stTitle">📊 Statistik &amp; KI</h2><button type="button" class="x" id="stClose" aria-label="Schließen"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
   <div id="stBody" class="stbody"></div>
+</div></dialog>
+<dialog id="setDlg" class="qdlg" aria-labelledby="sdTitle"><div class="dlg">
+  <div class="dlg-head"><h2 id="sdTitle">⚙ Einstellungen</h2><button type="button" class="x" id="sdClose" aria-label="Schließen"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <p class="hint" style="margin:0 0 10px">Auf <b>Auto</b> entscheidet die KI. Stellst du einen Bereich auf <b>Manuell</b>, gilt ab dann immer genau deine Einstellung – sie wird gespeichert.</p>
+  <div id="sdBody" class="sdbody"></div>
+</div></dialog>
+<dialog id="sndDlg" class="qdlg" aria-labelledby="snTitle"><div class="dlg">
+  <div class="dlg-head"><h2 id="snTitle">🎙️ Ton aufbereiten</h2><button type="button" class="x" id="snClose" aria-label="Schließen"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <div id="snBody"></div>
 </div></dialog>
 <dialog id="grpDlg" class="qdlg" aria-labelledby="grTitle"><div class="dlg">
   <div class="dlg-head"><h2 id="grTitle">🏷️ Gruppen-Namen ersetzen</h2><button type="button" class="x" id="grClose" aria-label="Schließen"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
@@ -1072,7 +1085,9 @@ function settings(){
     out:{dir:$('#oDir').value.trim(),name:$('#oName').value,grp:$('#oGrp').value,start:$('#oStart').value,after:$('#oAfter').value,push:$('#oPush').checked}};
 }
 /* Ton-Aufbereiter: Auto = Stimmen leicht + gleiche Lautstärke */
-function sndCfg(){let au=false;try{au=AUTO.snd}catch(e){}if(au)return {voice:'light',loud:'tv',night:false};
+/* Ton-Aufbereiter ist ein eigenes Werkzeug: beim normalen Umwandeln NIE aktiv */
+function sndCfg(){return null}
+function sndTool(){
   const c={voice:$('#sVoice').value,loud:$('#sLoud').value,night:$('#sNight').checked};return c.voice==='off'&&c.loud==='off'&&!c.night?null:c}
 const sndTxt=c=>c?[c.voice!=='off'?'Stimmen '+(c.voice==='light'?'leicht':'stark'):'',c.loud!=='off'?(c.loud==='tv'?'gleich laut':'gleich laut (lauter)'):'',c.night?'Nachtmodus':''].filter(Boolean).join(' · '):'aus – Ton bleibt original';
 const sndArg=c=>c?`${c.voice},${c.loud},${c.night?1:0}`:'';
@@ -1286,7 +1301,7 @@ function updSums(){
   if(REAL&&INFO&&INFO.workers){const sl=parSlots();set('par',sl.map(x=>wName(x)).join(' + ')+(sl.length>1?' – parallel':''));try{renderPar()}catch(e){}}
   {const pt=typeof planTxt==='function'?planTxt():'';set('load',(LOAD>=100?'volle Leistung':`höchstens ${LOAD} %`+(AUTO.load?' (Standard)':''))+(pt?' · '+pt:''))}try{renderLoad()}catch(e){}
   set('codec',`${s.fam==='h265'?'H.265':'H.264'} · ${encS} ${s.pre} · ${s.profName.split(' (')[0]} · ${s.cont.toUpperCase()}`);
-  set('snd',sndTxt(s.snd));
+  set('snd',sndTxt(sndTool())+' · eigenes Werkzeug (🎙️ Ton)');
   set('quality',S.mode==='vmaf'?`Ziel-Qualität ${s.vm} (VMAF) – KI testet vorher`:S.mode==='size'?`Zielgröße treffen${s.twoPass?' · 2-Pass':''}`:S.mode==='crf'?`Qualität CRF ${s.crf}`:`Feste Bitrate ${s.cbr} kbit/s`);
   set('res',(s.maxH?`max. ${s.maxH}p`:'Original')+(s.auto?', skaliert bei Bedarf':'')+(s.fps?` · ${s.fps} fps`:''));
   set('content',d?(AUTO.content?`${CNAME[d.content]}`:`Tune ${s.tune}`):'erkennt Zeichentrick & Filmkorn');
@@ -2410,7 +2425,7 @@ async function realStart0(opts){
   if(!todo.length){log('ok',opts.snd?'Keine Datei in der Liste.':'Alles schon fertig.');return}
   const s=settings();
   if(opts.snd){
-    const c=s.snd||{voice:'light',loud:'tv',night:false};
+    const c=sndTool()||{voice:'light',loud:'tv',night:false};
     RUN.on=true;RUN.pause=false;$('#bStart').disabled=true;$('#bPause').disabled=false;$('#bStop').disabled=false;anaFold(true);pgShow();
     const sl=sndSlot(parSlots()),plan=todo.map(q=>({q,slot:sl,a:sndJob(q,c)}));
     return realRun({plan,slots:[sl],single:0,par:0},s,`🎙️ Nur Ton überarbeiten (${sndTxt(c)}) · ${todo.length} Datei(en)`);
@@ -2872,10 +2887,26 @@ $('#oShow').onclick=()=>api('/api/show',{path:$('#oDir').value}).catch(e=>toast(
 $('#oDir').addEventListener('change',()=>{if(REAL&&!AUTO.out)api('/api/config',{outdir:$('#oDir').value}).then(x=>{if(INFO)INFO.outdir=x.outdir}).catch(()=>{})});
 $('#oTopic').addEventListener('change',()=>{if(REAL)api('/api/config',{ntfy:$('#oTopic').value}).catch(()=>{})});
 /* Eigene (manuelle) Einstellungen merken und beim nächsten Start wiederherstellen */
+/* ---------- Aufgeräumt: im KI-Autopilot nur „Ausgabe“, alles andere unter ⚙ Einstellungen ---------- */
+(function(){
+  const card=$('#setCard'),body=$('#sdBody'),rows=card.querySelector('.arows');
+  const head=document.createElement('div');head.className='sdtop';
+  [...card.children].filter(x=>x!==rows&&x.id!=='apHead'&&x.id!=='apMini').forEach(x=>head.appendChild(x));
+  body.appendChild(head);
+  const sd=document.createElement('div');sd.className='arows';body.appendChild(sd);
+  [...rows.querySelectorAll(':scope>.arow')].forEach(r=>{const k=r.dataset.sec;if(k==='out')return;if(k==='snd'){$('#snBody').appendChild(r);return}sd.appendChild(r)});
+  const ki=document.createElement('div');ki.className='kionly';ki.innerHTML='<span>🧠 Alles andere – Größe, Codec, Grafikkarten, Ton … – entscheidet die KI bzw. gilt deine Einstellung.</span><button class="btn sm" id="setOpen">⚙ Einstellungen</button>';
+  card.appendChild(ki);
+  const ab=$('#allAuto');if(ab)ab.closest('.sub')&&ab.closest('.sub').remove();
+})();
+$('#setOpen').onclick=()=>{const d=$('#setDlg');try{d.showModal()}catch(e){d.setAttribute('open','')}};
+$('#sdClose').onclick=()=>$('#setDlg').close();
+$('#snClose').onclick=()=>$('#sndDlg').close();
+$('#bSnd').onclick=()=>{const d=$('#sndDlg');try{d.showModal()}catch(e){d.setAttribute('open','')}};
 /* ---------- Player: Ton Original ↔ aufbereitet ---------- */
 $('#pSnd').onclick=()=>{
   if(!REAL||!P.item||!P.item.fid)return toast('Erst ein Video im Player öffnen.');
-  const c=settings().snd||{voice:'light',loud:'tv',night:false},t=pCur(),pl=!vid.paused;
+  const c=sndTool()||{voice:'light',loud:'tv',night:false},t=pCur(),pl=!vid.paused;
   P.snd=P.snd?'':sndArg(c);$('#pSnd').textContent=P.snd?'🎙️ Aufbereitet':'🎙️ Original';$('#pSnd').classList.toggle('pri',!!P.snd);
   if(P.snd||!P.item.direct){P.mode='stream';P.off=t;vid.src=streamUrl(t)}
   else{P.mode='video';P.off=0;vid.src=`/api/file?id=${P.item.fid}`;vid.addEventListener('loadedmetadata',()=>{vid.currentTime=t},{once:true})}
@@ -2885,7 +2916,7 @@ $('#pSnd').onclick=()=>{
 $('#sndOnly').onclick=()=>{
   if(RUN.on)return toast('Es läuft gerade schon etwas – erst fertig werden lassen oder stoppen.');
   const n=Q.filter(q=>!['run','queued'].includes(q.state)&&!(q.bad&&!q.force)).length;if(!n)return toast('Zuerst die schon umgewandelten Filme in die Liste ziehen.');
-  const c=settings().snd||{voice:'light',loud:'tv',night:false};
+  const c=sndTool()||{voice:'light',loud:'tv',night:false};
   ask('🎙️ Nur Ton überarbeiten?',`<p>${n} Datei(en) in der Liste. Das Bild bleibt 1:1 (wird nur kopiert), nur die Tonspuren werden neu gemacht: <b style="color:var(--text)">${sndTxt(c)}</b>.</p><p style="margin-top:6px">Es entsteht je eine neue Datei „… (Ton)“ im Ausgabeordner – das Original bleibt unverändert.</p>`,
     [{t:'Abbrechen'},{t:'🎙️ Ton überarbeiten',cls:'pri',fn:()=>realStart({snd:true})}]);
 };
@@ -2978,7 +3009,7 @@ function grpDraw(){
 /* ---------- Kurzanleitung beim ersten Start ---------- */
 const TOUR=[
   {t:'👋 Willkommen im Butchies Video Converter AI',b:'<p>In 6 kurzen Schritten zeige ich dir die wichtigsten Stellen. Dauert eine Minute.</p><ul><li>🎬 Filme hineinziehen</li><li>🧠 KI-Autopilot – alles auf <b>Auto</b> lassen oder selbst einstellen</li><li>▶ Umwandeln &amp; Fortschritt</li><li>🗂️ Ordner-Abgleich, 📊 Statistik, 🎨 Design</li></ul>',go:'Los geht’s →'},
-  {s:'#setCard',t:'🧠 KI-Autopilot – deine Optionen',b:'<p>Jede Zeile ist eine Option. <b>Auto</b> = die KI entscheidet (empfohlen). <b>Manuell</b> = du stellst selbst ein, die Zeile klappt auf.</p><ul><li>⚡ Prozessor &amp; Grafikkarten – wer umwandelt</li><li>🌡️ PC-Auslastung &amp; Nacht-Planer</li><li>🎯 Qualität: Zielgröße oder Ziel-Qualität</li><li>🎙️ Ton-Aufbereiter · 📁 Ausgabe &amp; Dateiname</li></ul>'},
+  {s:'#setCard',t:'🧠 KI-Autopilot',b:'<p>Hier stellst du nur die <b>Ausgabe</b> ein: Ordner und Dateiname. Alles andere entscheidet die KI.</p><p>Willst du selbst etwas festlegen (Grafikkarte, Größe, Codec, Ton …), öffne <b>⚙ Einstellungen</b> und stelle den Bereich auf <b>Manuell</b> – deine Einstellung wird gespeichert.</p>'},
   {s:'#drop',t:'🎬 Filme hineinziehen',b:'<p>Ziehe Videos oder ganze Ordner hier hinein – oder nutze „Dateien wählen“. Die KI prüft jeden Film sofort und zeigt rechts in der <b>KI-Analyse</b>, wie groß und wie gut er wird.</p>'},
   {s:'#bStart',t:'▶ Umwandeln starten',b:'<p>Hier geht’s los. Im <b>KI-Monitor</b> siehst du Fortschritt, Restzeit und Geschwindigkeit, über <b>Warteschlange</b> oben alle Filme.</p><p>Tipp: Unter „PC-Auslastung“ kannst du festlegen, dass nur umgewandelt wird, wenn du den PC nicht benutzt.</p>'},
   {s:'.tab[data-v=cmp]',t:'🗂️ Ordner-Abgleich',b:'<p>Vergleicht zwei Ordner (z. B. Downloads ↔ NAS), findet doppelte Filme und benennt deine umgewandelten Filme in „Butchies-Groove“ um.</p>'},
