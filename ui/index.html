@@ -3132,7 +3132,7 @@ async function dualToggle(){const w=wapi();if(!w||!w.dual_set)return;
     KV.set('bvc-dual','1');await w.dual_set(true);DINFO.on=true;dualMain(true);const ready=newReady();await w.dual_prepare();await ready;
     const d=dDir();dStreak(d);dFlash();await dwait(350);await w.dual_show();DOPEN=true;w.send('m2',`m2Arrive('${opp(d)}')`);
     SRC.A=SRC.B='';toast('🖥🖥 Ordner-Abgleich + Player laufen jetzt auf dem anderen Bildschirm.')}
-  else{const d=dDir();if(DOPEN){w.send('m2',`m2Bye('${d}',1)`);await dwait(RED()?400:1900)}await w.dual_hide();DOPEN=false;
+  else{const d=dDir();if(DOPEN){w.send('m2',`m2Bye('${opp(d)}',1)`);await dwait(RED()?400:1900)}await w.dual_hide();DOPEN=false;
     KV.set('bvc-dual','0');await w.dual_set(false);DINFO.on=false;dStreak(opp(d));dFlash();dualMain(false);
     const m=sessM2();if(m)for(const x of ['A','B'])if(m[x])realScan(x,m[x]);toast('🖥 Alles wieder in einem Fenster.')}}
 $('#dualBtn').onclick=()=>{if(M2){const w=wapi();if(w)w.send('main','dualToggle()')}else dualToggle()};
@@ -3144,7 +3144,7 @@ $('#dualDir').onchange=e=>{const w=wapi();DINFO.dir=e.target.value;if(w&&w.dual_
  $('#quitBtn').onclick=async()=>{const w=wapi();
   if(M2){if(w)w.send('main',"document.getElementById('quitBtn').click()");return}
   const g=$('#goodbye');g.classList.remove('late');
-  if(DOPEN&&w){const d=dDir();g.dataset.from=d;w.send('m2',`m2Bye('${d}')`);await dwait(RED()?500:3100);await w.dual_hide();DOPEN=false;g.classList.add('late');
+  if(DOPEN&&w){const d=dDir();g.dataset.from=d;w.send('m2',`m2Bye('${opp(d)}')`);await dwait(RED()?500:3100);await w.dual_hide();DOPEN=false;g.classList.add('late');
     const lg=g.querySelector('.g-logo');setTimeout(()=>flyIn(lg,d),60)}
   return quit0()}}
 /* Player gehört bei 2 Monitoren auf den anderen Bildschirm */
