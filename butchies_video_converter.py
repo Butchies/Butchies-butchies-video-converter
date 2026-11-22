@@ -10,7 +10,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 APP_NAME = 'Butchies Video Converter'
-VERSION = '1.5.8'
+VERSION = '1.5.9'
 FROZEN = getattr(sys, 'frozen', False)
 BASE = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent))
 UI = BASE / 'ui'
@@ -499,11 +499,28 @@ def snd_filter(ch='2.0', voice='off', loud='off', night=False, gain=None):
 SND_RE = re.compile(r'\{SND:([0-9.]{3}):(off|light|strong):(off|tv|loud):([01])(?::(\d+))?\}')
 
 
-def snd_measure(src, idx, ch, voice, night):
+def snd_measure(src, idx, ch, voice, night, dur=0):
+    """Bei langen Filmen nur 12 verteilte Stücke à 40 s messen (liest ca. 1/10 der Datei – wichtig fürs NAS),
+    sonst die ganze Spur. Ergebnis als Energie-Mittel (wie LUFS)."""
+    if dur and dur > 1200:
+        vals = []
+        for k in range(12):
+            t = dur * (k + 0.5) / 12 - 20
+            v = snd_measure_part(src, idx, ch, voice, night, max(0, t), 40)
+            if v is not None and v > -70:
+                vals.append(v)
+        if vals:
+            import math
+            return 10 * math.log10(sum(10 ** (v / 10) for v in vals) / len(vals))
+    return snd_measure_part(src, idx, ch, voice, night)
+
+
+def snd_measure_part(src, idx, ch, voice, night, t=None, length=None):
     """Lautheit (LUFS) einer Tonspur messen – nach Stimme/Nachtmodus, wie sie später klingt. Schnell (ca. 1 Min. für 2 h)."""
     pre = snd_filter(ch, voice, 'off', night)
     pre = '' if pre == 'anull' else pre.replace(',alimiter=limit=0.95:level=false', '') + ','
-    r = run([FFMPEG, '-hide_banner', '-nostats', '-i', str(src), '-map', '0:a:%d' % idx, '-vn', '-sn', '-dn', '-af',
+    cut = ['-ss', '%.2f' % t, '-t', '%.2f' % length] if t is not None else []
+    r = run([FFMPEG, '-hide_banner', '-nostats'] + cut + ['-i', str(src), '-map', '0:a:%d' % idx, '-vn', '-sn', '-dn', '-af',
              pre + 'ebur128=framelog=quiet', '-f', 'null', '-'], timeout=3600)
     m = re.findall(r'I:\s+(-?[\d.]+) LUFS', r.stderr.decode('utf-8', 'replace'))
     return float(m[-1]) if m else None
@@ -521,7 +538,7 @@ def snd_prepare(j):
                 return gains
             j['phase'] = 'Messe Lautstärke …'
             try:
-                lufs = snd_measure(j['src'], int(m.group(5)), m.group(1), m.group(2), m.group(4) == '1')
+                lufs = snd_measure(j['src'], int(m.group(5)), m.group(1), m.group(2), m.group(4) == '1', j.get('dur') or 0)
             except Exception:  # noqa: BLE001
                 lufs = None
             if lufs is not None and lufs > -70:
@@ -600,8 +617,10 @@ def load_pct():
     return v if v in LOAD_STEPS else 90
 
 
-def apply_limit(p, pct=None):
-    """Niedrigere Priorität für FFmpeg, damit der PC beim Umwandeln bedienbar bleibt (alle Kerne bleiben nutzbar)."""
+def apply_limit(p, pct=None, slot='cpu'):
+    """Prozessor-Jobs: etwas niedrigere Priorität, damit der PC bedienbar bleibt. Grafikkarten-Jobs: normale Priorität.
+    Immer: Windows-Energiesparbremse (EcoQoS/„Effizienzmodus“) für FFmpeg ausschalten – die drosselt Hintergrund-
+    Programme ohne Fenster sonst stark (Ursache für sehr langsame Umwandlungen)."""
     if os.name != 'nt' or p is None or p.poll() is not None:
         return
     try:
@@ -609,7 +628,12 @@ def apply_limit(p, pct=None):
         k = ctypes.windll.kernel32
         h = k.OpenProcess(0x0200 | 0x0400, False, p.pid)
         if h:
-            k.SetPriorityClass(h, 0x4000)       # BELOW_NORMAL
+            k.SetPriorityClass(h, 0x4000 if slot == 'cpu' else 0x20)       # BELOW_NORMAL bzw. NORMAL
+
+            class PPT(ctypes.Structure):
+                _fields_ = [('Version', ctypes.c_ulong), ('ControlMask', ctypes.c_ulong), ('StateMask', ctypes.c_ulong)]
+            st = PPT(1, 0x1 | 0x4, 0)            # EXECUTION_SPEED + IGNORE_TIMER_RESOLUTION: Drosselung AUS
+            k.SetProcessInformation(h, 4, ctypes.byref(st), ctypes.sizeof(st))     # ProcessPowerThrottling
             k.CloseHandle(h)
     except Exception:  # noqa: BLE001
         pass
@@ -673,8 +697,11 @@ def throttle_loop():
                     if not j.get('thr'):
                         suspend(j['proc'], True)
                         j['thr'] = True
-                else:
-                    free.append(j)
+                elif j.get('slot', 'cpu') == 'cpu':
+                    free.append(j)            # Auslastungs-Takt nur für Prozessor-Jobs – Grafikkarten nie anhalten
+                elif j.get('thr') and not j.get('paused'):
+                    suspend(j['proc'], False)
+                    j['thr'] = False
             if pct >= 100 or not free:
                 for j in free:
                     if j.get('thr'):
@@ -701,6 +728,7 @@ def run_job(j):
     folder.mkdir(parents=True, exist_ok=True)
     final = unique_path(folder, j['outname'])
     tmp = folder / ('%s.teil%s' % (final.stem, final.suffix))
+    j['tmp'] = str(tmp)
     work = STAGE / ('job-' + j['id'])
     work.mkdir(parents=True, exist_ok=True)
     j['state'], j['started'] = 'läuft', time.time()
@@ -719,7 +747,7 @@ def run_job(j):
         cmd = [exe, '-hide_banner', '-nostdin', '-y', '-progress', 'pipe:1', '-nostats'] + fill_args(args, j['src'], str(tmp), gains)
         p = popen(cmd, cwd=str(work))
         j['proc'] = p
-        apply_limit(p)
+        apply_limit(p, slot=j.get('slot', 'cpu'))
         errbuf = []
         threading.Thread(target=lambda: errbuf.extend(p.stderr.read().decode('utf-8', 'replace').splitlines()[-40:]), daemon=True).start()
         cur = {}
@@ -869,19 +897,74 @@ def display_wanted():
 
 
 def media_playing():
-    """Läuft gerade Ton/Video in einem anderen Programm? (Windows-Medienwiedergabe, z. B. YouTube im Browser)"""
+    """Läuft gerade Ton/Video in einem anderen Programm? (Windows-Medienwiedergabe, z. B. YouTube im Browser)
+    Ergebnis 2 Minuten zwischenspeichern – PowerShell zu starten kostet Rechenzeit."""
+    if time.time() - MEDIA_CACHE['t'] < 120:
+        return MEDIA_CACHE['v']
+    MEDIA_CACHE['t'] = time.time()
+    MEDIA_CACHE['v'] = False
     try:
         r = run(['powershell', '-NoProfile', '-NonInteractive', '-Command',
                  '[Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager,Windows.Media.Control,ContentType=WindowsRuntime]|Out-Null;'
                  '$m=[Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager]::RequestAsync();'
                  'while($m.Status -eq 0){Start-Sleep -m 50};'
                  '$x=$m.GetResults().GetSessions()|?{$_.GetPlaybackInfo().PlaybackStatus -eq 4};if($x){1}else{0}'], timeout=15)
-        return r.stdout.strip().endswith(b'1')
+        MEDIA_CACHE['v'] = r.stdout.strip().endswith(b'1')
+        return MEDIA_CACHE['v']
     except Exception:  # noqa: BLE001
         return False
 
 
+AOAC = [False]
+PREQ = {'h': None}
+
+
+def modern_standby():
+    """Moderner Standby (S0, viele Mini-PCs/Laptops): Bildschirm aus = PC geht in Standby. Dort schalten wir Monitore NICHT aus."""
+    if os.name != 'nt':
+        return False
+    try:
+        import ctypes
+        buf = (ctypes.c_ubyte * 76)()
+        if ctypes.windll.powrprof.GetPwrCapabilities(ctypes.byref(buf)):
+            return bool(buf[19])                         # SYSTEM_POWER_CAPABILITIES.AoAc
+    except Exception:  # noqa: BLE001
+        pass
+    return False
+
+
+def power_request(on):
+    """Zusätzlich zu SetThreadExecutionState: echte Power-Requests (System + Ausführung) – die beachtet Windows auch
+    beim modernen Standby. Sieht man mit „powercfg /requests“."""
+    if os.name != 'nt':
+        return
+    try:
+        import ctypes
+        k = ctypes.windll.kernel32
+        k.PowerCreateRequest.restype = ctypes.c_void_p
+        if on and not PREQ['h']:
+            class RC(ctypes.Structure):
+                _fields_ = [('Version', ctypes.c_ulong), ('Flags', ctypes.c_ulong), ('Reason', ctypes.c_wchar_p)]
+            rc = RC(0, 1, 'Butchies Video Converter AI wandelt Videos um')      # POWER_REQUEST_CONTEXT_SIMPLE_STRING
+            h = k.PowerCreateRequest(ctypes.byref(rc))
+            if h and h != ctypes.c_void_p(-1).value:
+                for t in (1, 3):                                                 # SystemRequired, ExecutionRequired
+                    k.PowerSetRequest(ctypes.c_void_p(h), t)
+                PREQ['h'] = h
+        elif not on and PREQ['h']:
+            for t in (1, 3):
+                k.PowerClearRequest(ctypes.c_void_p(PREQ['h']), t)
+            k.CloseHandle(ctypes.c_void_p(PREQ['h']))
+            PREQ['h'] = None
+    except Exception:  # noqa: BLE001
+        pass
+
+
+MEDIA_CACHE = {'t': 0, 'v': False}
+
+
 def awake_loop():
+    AOAC[0] = modern_standby()
     """Solange umgewandelt wird: kein Ruhezustand. Monitore nach X Minuten ohne Eingabe aus
     (Einstellung 'monoff' in Minuten, 0 = nie). Die Aktion 'Danach' kommt erst am Ende der Liste (UI)."""
     while True:
@@ -889,13 +972,15 @@ def awake_loop():
             b = busy()
             if os.name == 'nt':
                 import ctypes
-                want = 0x80000001 if b else 0x80000000      # ES_CONTINUOUS | ES_SYSTEM_REQUIRED
+                want = 0x80000041 if b else 0x80000000      # ES_CONTINUOUS | ES_SYSTEM_REQUIRED | ES_AWAYMODE_REQUIRED
                 if want != AWAKE['state']:
-                    ctypes.windll.kernel32.SetThreadExecutionState(want)
+                    if not ctypes.windll.kernel32.SetThreadExecutionState(want) and b:
+                        ctypes.windll.kernel32.SetThreadExecutionState(0x80000001)
                     AWAKE['state'] = want
+                    power_request(b)
                 mins = load_config().get('monoff', 5)
                 idle = idle_seconds()
-                if b and mins and idle >= mins * 60 and AWAKE['off_at'] < time.time() - idle and not display_wanted():
+                if b and mins and idle >= mins * 60 and AWAKE['off_at'] < time.time() - idle and not AOAC[0] and not display_wanted():
                     # SC_MONITORPOWER = 2 -> Monitore aus (gehen bei Mausbewegung wieder an)
                     ctypes.windll.user32.PostMessageW(0xFFFF, 0x0112, 0xF170, 2)
                     AWAKE['off_at'] = time.time()
@@ -1180,7 +1265,16 @@ def file_in_progress(path, name, st):
     Teil-Endung, vor weniger als 2 Minuten geändert oder unter Windows von einem anderen Programm gesperrt."""
     age = time.time() - st.st_mtime
     low = name.lower()
-    if low.endswith(PARTIAL_EXT) or '.teil.' in low:
+    if '.teil.' in low:
+        # eigene Zwischendatei beim Umwandeln: nie ein fertiger Film. Liegengebliebene Reste (> 12 h, z. B. nach
+        # Ruhezustand/Absturz) werden weggeräumt, sofern gerade kein Job daran schreibt.
+        if age > 43200 and not any(str(j.get('tmp', '')) == str(path) for j in JOBS.values()):
+            try:
+                os.remove(path)
+            except OSError:
+                pass
+        return True
+    if low.endswith(PARTIAL_EXT):
         return age < 7200                     # alte, liegengebliebene Teil-Dateien zählen wieder (als auffällig)
     if age < 120:
         return True
@@ -2582,6 +2676,21 @@ def selftest():
         check('Umbenennen rückgängig', u['undone'] == 2 and (gd / 'Mein.Film.2020.German.1080p.WEB.x265-WAYNE.mkv').exists(), u)
     except Exception as ex:  # noqa: BLE001
         check('Gruppen-Namen umbenennen', False, ex)
+    try:
+        td = work / 'teil'
+        td.mkdir(exist_ok=True)
+        shutil.copy(s51, td / 'Film.2020.x265-Butchies-Groove.teil.mkv')
+        shutil.copy(s51, td / 'Film.2020.x265-Butchies-Groove.mkv')
+        for f in td.iterdir():
+            os.utime(f, (time.time() - 9000, time.time() - 9000))
+        names = [x['name'] for x in scan(str(td))]
+        check('Zwischendateien (.teil) nie als Film', names == ['Film.2020.x265-Butchies-Groove.mkv'], names)
+    except Exception as ex:  # noqa: BLE001
+        check('Zwischendateien (.teil) nie als Film', False, ex)
+    AOAC[0] = modern_standby()
+    power_request(True)
+    power_request(False)
+    check('Ruhezustand-Sperre (Power-Request)', PREQ['h'] is None, 'moderner Standby: %s' % AOAC[0])
     ps = plan_state()
     check('Nacht-Planer', ps[0] in LOAD_STEPS, ps)
     d = disks()
