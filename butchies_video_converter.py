@@ -10,7 +10,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 APP_NAME = 'Butchies Video Converter'
-VERSION = '2.1.1'
+VERSION = '2.2.0'
 FROZEN = getattr(sys, 'frozen', False)
 BASE = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent))
 UI = BASE / 'ui'
@@ -1951,7 +1951,7 @@ class Handler(BaseHTTPRequestHandler):
                 conf = load_config()
                 return self.send_json(200, {'version': VERSION, 'ffmpeg': bool(FFMPEG and FFPROBE), 'hw': HW, 'filters': FILTERS, 'gpus': GPU, 'workers': WORKERS, 'cores': os.cpu_count() or 4,
                                             'disks': disks(), 'outdir': outdir(), 'config': conf, 'native': NATIVE[0],
-                                            'groups': GROUPS, 'grptag': GROUP_TAG, 'outdir_default': str(default_outdir())})
+                                            'groups': GROUPS, 'grptag': GROUP_TAG, 'outdir_default': str(default_outdir()), 'setup': conf.get('setup')})
             if path == '/api/stats':
                 return self.send_json(200, {'stats': stats_load(), 'bench': load_config().get('bench'), 'plan': plan_conf()})
             if path == '/api/jobs':
@@ -2552,7 +2552,7 @@ def mixed_gpus():
         return False
 
 
-def syscheck(client):
+def syscheck(client, folder=None):
     """Systemprüfung: alles, was für die Fehlersuche wichtig ist, als Textprotokoll (Desktop)."""
     import platform
     L = []
@@ -2614,8 +2614,11 @@ def syscheck(client):
         add('  ' + str(x))
     text = '\n'.join(L)
     out = None
-    for d in (Path(os.environ.get('USERPROFILE', str(Path.home()))) / 'Desktop', Path.home() / 'OneDrive' / 'Desktop', Path.home() / 'Desktop', HOME):
+    dirs = [folder] if folder else [Path(os.environ.get('USERPROFILE', str(Path.home()))) / 'Desktop', Path.home() / 'OneDrive' / 'Desktop', Path.home() / 'Desktop', HOME]
+    for d in dirs:
         try:
+            if folder:
+                d.mkdir(parents=True, exist_ok=True)
             if d.is_dir():
                 out = d / ('Butchies-Systemprotokoll_%s.txt' % time.strftime('%Y-%m-%d_%H-%M'))
                 out.write_text(text, encoding='utf-8')
@@ -2623,6 +2626,63 @@ def syscheck(client):
         except OSError:
             out = None
     return {'text': text, 'path': str(out) if out else ''}
+
+
+def ram_gb():
+    try:
+        import ctypes
+
+        class MS(ctypes.Structure):
+            _fields_ = [('dwLength', ctypes.c_ulong), ('dwMemoryLoad', ctypes.c_ulong), ('ullTotalPhys', ctypes.c_ulonglong),
+                        ('ullAvailPhys', ctypes.c_ulonglong), ('a', ctypes.c_ulonglong), ('b', ctypes.c_ulonglong), ('c', ctypes.c_ulonglong),
+                        ('d', ctypes.c_ulonglong), ('e', ctypes.c_ulonglong)]
+        m = MS()
+        m.dwLength = ctypes.sizeof(MS)
+        ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(m))
+        return round(m.ullTotalPhys / 1024 ** 3, 1)
+    except Exception:  # noqa: BLE001
+        return 0
+
+
+def auto_setup():
+    """KI-Einrichtung: nach jeder neuen Installation/Version einmal das System prüfen und passend einstellen."""
+    try:
+        HW_DONE.wait(60)
+        c = load_config()
+        if c.get('setupver') == VERSION:
+            return
+        notes, upd = [], {}
+        mons = monitor_adapters()
+        mixed = len({m[4] for m in mons}) > 1
+        if len(mons) > 1:
+            notes.append('%d Monitore erkannt (%s).' % (len(mons), ' + '.join(sorted({m[4] for m in mons}))))
+        if mixed:
+            upd['dualsoft'] = True
+            notes.append('Monitore hängen an verschiedenen Grafikkarten → bei „2 Monitore“ wird die Oberfläche ohne Grafikkarte gezeichnet (kein Hängen).')
+        ok = [w for w in WORKERS if w.get('ok')]
+        if ok:
+            notes.append('Umwandeln mit: %s.' % ', '.join(w.get('name') for w in ok))
+        hw = [k for k in ('hevc_amf', 'hevc_nvenc', 'hevc_qsv') if HW.get(k)]
+        if hw:
+            notes.append('H.265 über die Grafikkarte verfügbar (%s) – viel schneller als über den Prozessor.' % ', '.join(hw))
+        r = ram_gb()
+        if r:
+            notes.append('Arbeitsspeicher: %s GB%s' % (r, ' – genug für mehrere Filme gleichzeitig.' if r >= 12 else ' – eher knapp, die KI wandelt vorsichtiger um.'))
+        if not c.get('bench'):
+            notes.append('Hardware-Test startet gleich von selbst (ca. 1 Min.) – danach verteilt die KI die Filme nach echten Messwerten.')
+        else:
+            notes.append('Hardware-Test vom letzten Mal übernommen.')
+        try:
+            pr = syscheck({}, folder=HOME / 'protokolle')
+            notes.append('Systemprotokoll gespeichert.')
+            upd['setupprot'] = pr.get('path', '')
+        except Exception:  # noqa: BLE001
+            pass
+        upd['setup'] = {'ver': VERSION, 'at': int(time.time()), 'notes': notes, 'mixed': mixed, 'ram': r, 'mons': len(mons)}
+        upd['setupver'] = VERSION
+        update_config(**upd)
+    except Exception as ex:  # noqa: BLE001
+        print('KI-Einrichtung:', ex, flush=True)
 
 
 SOFT = [False]     # Zeichnen ohne Grafikkarte (für 2 Monitore an verschiedenen Grafikkarten)
@@ -3034,7 +3094,7 @@ def native_window(url):
     # (Studio auf dem zweiten Monitor) und malt die andere Seite erst nach einem Fensterwechsel neu.
     flags = '--disable-features=CalculateNativeWinOcclusion --disable-backgrounding-occluded-windows --disable-renderer-backgrounding --disable-background-timer-throttling'
     # 2 Monitore an verschiedenen Grafikkarten: ohne Grafikkarten-Beschleunigung zeichnen -> keine Kopier-Hänger zwischen den Karten
-    if load_config().get('dual') and load_config().get('dualsoft', True) and mixed_gpus():
+    if load_config().get('dual') and load_config().get('dualsoft', True) is not False and mixed_gpus():
         flags += ' --disable-gpu --disable-gpu-compositing'
         SOFT[0] = True
     # immer frisch setzen – beim Neustart erbt das neue Programm sonst die alten Schalter (ohne --disable-gpu)
@@ -3464,6 +3524,7 @@ def main():
         sys.exit(0 if ok else 1)
     HOME.mkdir(parents=True, exist_ok=True)
     threading.Thread(target=hw_check, daemon=True).start()
+    threading.Thread(target=auto_setup, daemon=True).start()
     for slot in ('cpu', 'gpu1', 'gpu2'):
         threading.Thread(target=worker, args=(slot,), daemon=True).start()
     threading.Thread(target=awake_loop, daemon=True).start()

@@ -2985,6 +2985,7 @@ async function realInit(){
   markEnc();applyAuto();update();
   if(M2)await m2Restore();else await restoreSession();
   if(!M2)tourAuto();
+  if(!M2&&!POP)setTimeout(setupShow,6000);
   $('#codecTbl').innerHTML='<table><thead><tr><th>Format</th><th>Wiedergabe</th></tr></thead><tbody>'+CODECS.map(([n])=>`<tr><td>${n}</td><td style="color:var(--ok)">✓ ${/MKV|AVI|HEVC|MPEG-2|AC-3|DTS|High 10/.test(n)?'live über ffmpeg':'direkt'}</td></tr>`).join('')+'</tbody></table>';
 }
 function markEnc(){if(!INFO)return;[...$('#sEnc').options].forEach(o=>{const ok=INFO.hw[o.value]!==false;o.disabled=!ok;if(!ok&&!/nicht verfügbar/.test(o.text))o.text+=' – nicht verfügbar'});
@@ -3552,6 +3553,17 @@ async function sysCheck(){const p=$('#stSysP');if(p)p.textContent='⏳ Prüfe Sy
   try{const r=await api('/api/syscheck',{client});if(p)p.innerHTML=r.path?`✅ Gespeichert: <b>${esc(r.path)}</b> – der Ordner wurde geöffnet. Datei einfach an Claude schicken.`:'⚠️ Konnte nicht speichern.';
     toast('🩺 Systemprotokoll auf dem Desktop gespeichert.')}catch(e){if(p)p.textContent='Fehler: '+e.message}}
 document.addEventListener('keydown',e=>{if(e.ctrlKey&&e.altKey&&(e.key==='s'||e.key==='S')&&REAL){e.preventDefault();sysCheck()}});
+
+/* ---------- KI-Einrichtung nach neuer Installation ---------- */
+async function setupShow(){let st=INFO&&INFO.setup;if(!st||st.ver!==INFO.version){try{const i=await api('/api/info');st=i.setup;if(INFO)INFO.setup=st}catch(e){}}
+  if(!st||st.ver!==(INFO&&INFO.version)){setTimeout(setupShow,8000);return}
+  if(KV.get('bvc-setupseen')===st.ver)return;KV.set('bvc-setupseen',st.ver);
+  /* Arbeiter vorschlagen, wenn noch nie selbst ausgewählt: sehr langsame (z. B. Prozessor neben 2 Grafikkarten) bleiben aus */
+  const b=INFO.config&&INFO.config.bench;let parNote='';
+  if(b&&b.res&&!KV.get('bvc-par')){const f=Object.entries(b.res).map(([k,r])=>[k,r.h265||0]),best=Math.max(...f.map(x=>x[1]),1);
+    const sel=f.filter(x=>x[1]>=best*.2).map(x=>x[0]);if(sel.length){PARSEL=new Set(sel);KV.set('bvc-par',JSON.stringify(sel));try{updSums()}catch(e){}
+      parNote=`<li>Arbeiter: ${sel.map(x=>esc((b.res[x]||{}).name||x)).join(' + ')}${f.some(x=>!sel.includes(x[0]))?' (zu langsame bleiben aus)':''}</li>`}}
+  ask('🤖 KI-Einrichtung abgeschlossen',`<p>Nach der Installation von Version ${esc(st.ver)} hat die KI dein System geprüft und alles passend eingestellt:</p><ul style="margin:8px 0 0 18px;line-height:1.7">${(st.notes||[]).map(n=>`<li>${esc(n)}</li>`).join('')}${parNote}</ul><p class="hint" style="margin-top:10px">Ändern kannst du alles jederzeit unter ⚙ Einstellungen. Ein neues Protokoll gibt es mit Strg + Alt + S.</p>`,[{t:'👍 Alles klar',cls:'pri'}])}
 window.monSpanTest=g=>{SPAN=g;document.body.classList.add('span');spanVars();spanNodes(true);$('#p2cover').classList.add('off')};
 window.monSet=a=>{MONS=a};window.popGone=popGone;window.popReady=popReady;window.popAct=popAct;
 window.flyIn=flyIn;window.flyOut=flyOut;window.m2Play=m2Play;window.m2Arrive=m2Arrive;window.m2Bye=m2Bye;window.m2Info=m2Info;window.m2Ready=m2Ready;window.dualToggle=dualToggle;window.dualInfo=dualInfo;window.applyTheme=applyTheme;window.realAdd=(...a)=>realAdd(...a);
