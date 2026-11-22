@@ -35,7 +35,10 @@ FFmpeg mit allen Codecs ist dabei (inklusive VMAF-Messung und HDR). WebView2 wir
 **Neu in 1.1.3**
 - Das Programm **merkt sich jetzt alles** bis zum nächsten Start: Design, Start-Animation an/aus, Auto/Manuell-Schalter, eigene Einstellungen (Codec, Zielgröße, Zeitplan …) und eigene Vorlagen. Bisher ging das beim Neustart verloren
 
-**Neu in 1.5.1 – Final (stabile Version)**
+**Neu in 1.5.2 – Final (stabile Version)**
+- 💾 „Wer arbeitet mit?“ (Prozessor/Grafikkarten) wird jetzt gemerkt – nach dem Neustart ist genau das angehakt, was du gewählt hast
+
+**Neu in 1.5.1**
 - 🎨 **Neuer Installer im Butchies-Look** (Lila/Pink) mit neuem Programm-Symbol – gilt auch für Programm und Desktop-Verknüpfung
 - 🟣 Das Programm startet beim ersten Mal im Design **Neon Lila**
 - ❔ **Kurzanleitung beim ersten Start** (6 Schritte, jederzeit wieder über ❔ oben)

@@ -2308,8 +2308,10 @@ let PARSEL=null;
 const WK=()=>INFO&&INFO.workers?INFO.workers.filter(w=>w.ok):[];
 const wName=slot=>{const w=(INFO&&INFO.workers||[]).find(x=>x.slot===slot);if(!w)return slot;return w.kind==='cpu'?'Prozessor':w.name.replace(/\(TM\)|\(R\)|Graphics/gi,'').replace(/\s+/g,' ').trim()};
 const wIcon=slot=>slot==='cpu'?'🖥':'🎮';
+/* Auswahl „Wer arbeitet mit?“ merken (nur im Manuell-Modus wirksam) */
+function parLoad(ok){try{const v=JSON.parse(KV.get('bvc-par')||'null');if(Array.isArray(v)){const f=v.filter(x=>ok.includes(x));if(f.length)return new Set(f)}}catch(e){}return new Set(ok)}
 function parSlots(){
-  const ok=WK().map(w=>w.slot);if(!PARSEL)PARSEL=new Set(ok);
+  const ok=WK().map(w=>w.slot);if(!PARSEL)PARSEL=parLoad(ok);
   if(AUTO.par){
     if(!AUTO.codec){const k=encKind($('#sEnc').value);const r=k==='sw'?['cpu']:ok.filter(x=>x!=='cpu');return r.length?r:(ok.length?ok:['cpu'])}
     return ok;
@@ -2342,11 +2344,11 @@ function planJobs(todo){
   return {plan,single,par,slots};
 }
 function renderPar(){
-  const box=$('#parList');if(!box||!INFO)return;const all=INFO.workers||[];if(!PARSEL)PARSEL=new Set(WK().map(w=>w.slot));
+  const box=$('#parList');if(!box||!INFO)return;const all=INFO.workers||[];if(!PARSEL)PARSEL=parLoad(WK().map(w=>w.slot));
   const dis=AUTO.par?'disabled':'';
   box.innerHTML=all.map(w=>`<label class="${w.ok?'':'off'}"><input type="checkbox" data-par="${w.slot}" ${w.ok&&(AUTO.par||PARSEL.has(w.slot))?'checked':''} ${w.ok?dis:'disabled'}>${wIcon(w.slot)} ${esc(wName(w.slot))}<small>${w.kind==='cpu'?'x264 / x265 – beste Qualität':w.ok?(w.kind==='dgpu'?'eigene Grafikkarte':'Prozessor-Grafik')+' · '+(w.enc.h265.split('_')[1]||'Software').toUpperCase():'Encoder geht nicht'}</small></label>`).join('')+
     (all.length<2?'<div class="hint" style="margin:0">Keine Grafikkarte mit Video-Encoder gefunden – es arbeitet nur der Prozessor.</div>':'');
-  $$('[data-par]').forEach(c=>c.onchange=()=>{c.checked?PARSEL.add(c.dataset.par):PARSEL.delete(c.dataset.par);updSums()});
+  $$('[data-par]').forEach(c=>c.onchange=()=>{c.checked?PARSEL.add(c.dataset.par):PARSEL.delete(c.dataset.par);KV.set('bvc-par',JSON.stringify([...PARSEL]));updSums()});
   const gp=all.filter(w=>w.kind!=='cpu');
   $('#parInfo').innerHTML=gp.length>1?'Zwei Grafikkarten: Windows wird gesagt, dass FFmpeg die eigene Karte nimmt und eine zweite FFmpeg-Kopie die Prozessor-Grafik. Ein einzelner Film wird dadurch nicht schneller – mehrere Filme laufen gleichzeitig. Im Task-Manager siehst du es bei „Video Encode“.':
     gp.length?'Prozessor und Grafikkarte arbeiten gleichzeitig an verschiedenen Filmen.':'';
