@@ -1,3 +1,7 @@
+**Neu in 2.6.0**
+- Ordner-Abgleich: Rechtsklick auf einen Film öffnet ein Menü – Umbenennen, Gruppen-Tag setzen, ähnliche Filme suchen, Standbild als JPG speichern, abspielen, in den Konverter, im Explorer zeigen, löschen.
+- Neues Aufräumen-Fenster: findet doppelte Filme (die kleinere Kopie) und Untertitel/Bilder/Infos ohne passenden Film – angehakte löschen.
+
 **Neu in 2.5.0**
 - Netzwerk-Überwachung im Protokoll der Umwandlung: jede Minute, wie schnell von der NAS gelesen/geschrieben wird (+ WLAN-Stärke bzw. Kabel). Bremst die NAS die Umwandlung aus, kommt eine Warnung mit Tipp – und eine Meldung, sobald es wieder schnell ist.
 

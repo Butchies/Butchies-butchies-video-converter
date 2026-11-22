@@ -10,7 +10,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 APP_NAME = 'Butchies Video Converter'
-VERSION = '2.5.0'
+VERSION = '2.6.0'
 FROZEN = getattr(sys, 'frozen', False)
 BASE = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent))
 UI = BASE / 'ui'
@@ -2191,6 +2191,17 @@ class Handler(BaseHTTPRequestHandler):
                     except Exception as ex:  # noqa: BLE001
                         res.append({'ok': False, 'path': mv.get('from'), 'error': str(ex)})
                 return self.send_json(200, {'results': res})
+            if path == '/api/snap':
+                src = Path(str(d.get('path') or ''))
+                if not src.is_file():
+                    raise ValueError('Datei nicht gefunden')
+                info = probe(str(src)) or {}
+                dur = fnum(info.get('dur')) or 600
+                out = src.with_suffix('.jpg')
+                if out.exists() and not d.get('over'):
+                    out = src.with_name(src.stem + '-bild.jpg')
+                ok = grab(str(src), dur * fnum(d.get('at') or 0.18), out, 'scale=1920:-2', timeout=90)
+                return self.send_json(200 if ok else 500, {'ok': ok, 'path': str(out), 'error': '' if ok else 'Standbild nicht möglich'})
             if path == '/api/rename':
                 return self.send_json(200, {'results': rename_items(d.get('items', []))})
             if path == '/api/tmdb':

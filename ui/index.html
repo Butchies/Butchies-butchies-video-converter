@@ -622,6 +622,11 @@ body.m2 .cmpgrid .card{padding:14px 16px}
 .ssn-layer.ssn-light .ssn-caption{color:var(--a)}
 @media(prefers-reduced-motion:reduce){.ssn-layer canvas{opacity:.8}}
 body.twowin #bgBtn,body.m2 #bgBtn{display:none!important}
+.ctxm{position:fixed;z-index:10000;min-width:240px;max-width:360px;background:var(--bg2,#fff);color:var(--text);border:1px solid var(--line,#0002);border-radius:12px;box-shadow:0 12px 40px #0004;padding:6px;font-size:14px}
+.ctxm .ctxh{padding:6px 10px 8px;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-bottom:1px solid var(--line,#0002);margin-bottom:4px}
+.ctxm button{display:flex;gap:10px;align-items:center;width:100%;text-align:left;background:none;border:0;color:inherit;padding:7px 10px;border-radius:8px;cursor:pointer;font:inherit}
+.ctxm button:hover{background:color-mix(in srgb,var(--acc) 14%,transparent)}.ctxm hr{border:0;border-top:1px solid var(--line,#0002);margin:4px 0}
+.ctxrow{display:flex;gap:10px;align-items:center;padding:6px 4px;border-bottom:1px solid var(--line,#0001)}.clsec{margin-bottom:12px}
 </style>
 </head>
 <body data-theme="neon" data-skin="club">
@@ -1830,6 +1835,42 @@ function netWatch(runs,net){const now=Date.now(),f=n=>(n||0).toLocaleString('de-
     if(best>=1.5&&sp<best*.45&&nsrc&&j.nrd<need*.6)st.slow++;else if(sp>=best*.7)st.slow=0;
     if(st.slow>=3&&!st.warn){st.warn=true;log('bad',`⚠️ Die NAS liefert zu langsam: ${f(j.nrd)} MB/s statt ≈ ${f(need)} MB/s – die Grafikkarte wartet auf Daten (${Math.round(j.fps)} fps). Tipp: Netzwerkkabel nutzen, prüfen ob die NAS beschäftigt ist (z. B. Emby-Scan) oder Film vorher auf den PC kopieren.`)}
     if(st.warn&&st.slow===0){st.warn=false;log('ok',`✓ Netzwerk wieder schnell: ${f(j.nrd)} MB/s · ${Math.round(j.fps)} fps`)}}}
+/* 2.6.0: Rechtsklick-Menü im Ordner-Abgleich + Aufräumen-Fenster */
+function ctxClose(){const m=$('#ctxMenu');if(m)m.remove()}
+document.addEventListener('contextmenu',e=>{const c=e.target.closest('#cmpTbl .fc');if(!c)return;const b=c.querySelector('[data-mk]');const x=b&&entry(b.dataset.mk);if(!x)return;
+  e.preventDefault();ctxClose();const m=document.createElement('div');m.id='ctxMenu';m.className='ctxm';
+  const it=[['✏️','Umbenennen …',()=>ctxRename(x)],['🏷','Gruppen-Tag setzen',()=>ctxTag(x)],['🔎','Ähnliche Filme suchen',()=>ctxSimilar(x)],['🖼','Standbild als JPG speichern',()=>ctxJpg(x)],null,
+    ['▶','Abspielen',()=>playEntry(x)],['⚙','In den Konverter',()=>procEntries([x])],['📂','Im Explorer zeigen',()=>api('/api/show',{path:x.full}).catch(()=>{})],null,
+    ['🧹','Aufräumen …',()=>cleanOpen()],['🗑','Löschen',()=>askDelete([x])]];
+  m.innerHTML=`<div class="ctxh">${esc(x.name)}</div>`+it.map((t,i)=>t?`<button data-ci="${i}"><span>${t[0]}</span>${t[1]}</button>`:'<hr>').join('');
+  document.body.appendChild(m);const r=m.getBoundingClientRect();m.style.left=Math.min(e.clientX,innerWidth-r.width-8)+'px';m.style.top=Math.min(e.clientY,innerHeight-r.height-8)+'px';
+  m.onclick=ev=>{const bt=ev.target.closest('[data-ci]');if(!bt)return;ctxClose();it[+bt.dataset.ci][2]()}},true);
+addEventListener('mousedown',e=>{if(!e.target.closest('#ctxMenu'))ctxClose()},true);addEventListener('keydown',e=>{if(e.key==='Escape')ctxClose()});addEventListener('blur',ctxClose);
+const ctxStem=x=>x.name.replace(/\.[^.]+$/,''),ctxExt=x=>(x.name.match(/\.[^.]+$/)||[''])[0];
+function ctxRename(x,val){ask('✏️ Umbenennen',`<p>Neuer Name für <b style="color:var(--text)">${esc(x.name)}</b>:</p><input id="ctxNm" class="inp" style="width:100%;margin-top:8px" value="${esc(val||ctxStem(x))}"><p style="margin-top:6px;font-size:12px">Endung ${esc(ctxExt(x))} bleibt. Untertitel/Bilder mit gleichem Namen werden nicht mit umbenannt.</p>`,
+  [{t:'Abbrechen'},{t:'🏷 Mit Gruppen-Tag',fn:()=>setTimeout(()=>ctxRename(x,grpApply($('#ctxNm')?.value||ctxStem(x),'replace')),0)},{t:'Umbenennen',cls:'pri',fn:()=>{}}]);
+  const ok=[...$('#mdBtns').children].pop(),inp=$('#ctxNm');setTimeout(()=>{inp.focus();inp.select()},50);
+  const go=()=>{const v=(inp.value||'').trim().replace(/[\\/:*?"<>|]/g,'');$('#modal').classList.remove('on');if(!v||v===ctxStem(x))return;
+    if(!REAL){x.name=v+ctxExt(x);x.n=norm(x.name);autoCmp();return toast('Umbenannt (Vorschau).')}realRename([{x,nn:v+ctxExt(x)}])};
+  ok.onclick=go;inp.onkeydown=e=>{if(e.key==='Enter')go()}}
+function ctxTag(x){const nn=grpApply(ctxStem(x),'replace');if(nn===ctxStem(x))return toast('Der Name hat schon den richtigen Gruppen-Tag.');ctxRename(x,nn)}
+function ctxSimilar(x){const all=[...DIR.A,...DIR.B].filter(y=>y!==x&&VID.test(y.name)).map(y=>({y,s:sim(x,y)})).filter(o=>o.s>=.45).sort((a,b)=>b.s-a.s).slice(0,30);
+  ask(`🔎 Ähnliche Filme zu „${esc(ctxStem(x))}“`,all.length?`<div style="max-height:55vh;overflow:auto">${all.map(o=>`<div class="ctxrow"><span class="score">${Math.round(o.s*100)} %</span><div style="flex:1;min-width:0"><b style="color:var(--text)">${esc(o.y.name)}</b><div style="font-size:12px">Ordner ${o.y.side} · ${esc(o.y.path)} · ${fmtMB(o.y.size/1048576)}</div></div><button class="btn sm" data-simmk="${o.y.u}">${MK.has(o.y)?'✓ markiert':'Markieren'}</button></div>`).join('')}</div>`:'<p>Keine ähnlichen Filme gefunden.</p>',[{t:'Schließen'}]);
+  $$('[data-simmk]').forEach(b=>b.onclick=()=>{const y=entry(b.dataset.simmk);if(!y)return;MK.has(y)?MK.delete(y):MK.add(y);b.textContent=MK.has(y)?'✓ markiert':'Markieren';renderCmp()})}
+async function ctxJpg(x){if(!REAL||!x.full)return toast('Geht nur im Windows-Programm.');toast('🖼 Standbild wird erstellt …');
+  try{const r=await api('/api/snap',{path:x.full});toast('🖼 Gespeichert: '+r.path.split(/[\\/]/).pop(),'Zeigen',()=>api('/api/show',{path:r.path}))}catch(e){toast('Standbild nicht möglich: '+e.message)}}
+/* Aufräumen: doppelte Filme (kleinere Kopie), verwaiste Begleitdateien, Platz */
+function cleanOpen(){const dup=[],orphan=[];
+  if(CMP)for(const r of CMP.same){if(r.hash==='Inhalt unterschiedlich'||!r.a||!r.b)continue;dup.push(r.a.size/r.b.size>1.03?r.b:r.a)}
+  for(const sd of ['A','B']){const vids=new Set(DIR[sd].filter(y=>VID.test(y.name)).map(y=>y.path.replace(/\.[^.\/]+$/,'').toLowerCase()));
+    for(const y of DIR[sd]){if(VID.test(y.name)||!/\.(srt|sub|idx|ass|ssa|nfo|jpg|png|txt)$/i.test(y.name))continue;const st=y.path.replace(/\.[^.\/]+$/,'').toLowerCase().replace(/(-bild|-fanart|-poster|\.forced|\.[a-z]{2,3})$/,'');
+      if(![...vids].some(v=>st===v||st.startsWith(v+'.')))orphan.push(y)}}
+  const grp=(t,ic,l,why)=>`<div class="clsec"><label><input type="checkbox" data-clall="${t}" checked> <b>${ic} ${l}</b> – ${l.length?'':''}${why}</label>${l.length?l.slice(0,300).map(y=>`<label class="ctxrow"><input type="checkbox" data-cl="${t}" value="${y.u}" checked><div style="flex:1;min-width:0">${esc(y.name)}<div style="font-size:12px">Ordner ${y.side} · ${fmtMB(y.size/1048576)}</div></div></label>`).join(''):'<div style="font-size:12px;padding:4px 0">nichts gefunden ✓</div>'}</div>`;
+  const tot=[...dup,...orphan].reduce((s,y)=>s+y.size,0);
+  ask('🧹 Aufräumen',`<p>Die KI hat <b style="color:var(--text)">${dup.length+orphan.length}</b> Dateien gefunden, die du vermutlich nicht brauchst (${fmtMB(tot/1048576)}).</p><div style="max-height:55vh;overflow:auto;margin-top:8px">${grp('dup','🎬',dup,'doppelte Filme (jeweils die kleinere Kopie)')}${grp('orph','📄',orphan,'Untertitel/Bilder/Infos ohne passenden Film')}</div>${CMP?'':'<p style="margin-top:8px">Tipp: Erst Ordner A und B abgleichen, dann findet die KI auch doppelte Filme.</p>'}`,
+    [{t:'Abbrechen'},{t:'🗑 Angehakte löschen',style:'background:linear-gradient(135deg,#ef5b5b,#c2362f);color:#fff;border:0',fn:()=>{}}]);
+  $$('[data-clall]').forEach(c=>c.onchange=()=>$$(`[data-cl="${c.dataset.clall}"]`).forEach(b=>b.checked=c.checked));
+  [...$('#mdBtns').children].pop().onclick=()=>{const l=$$('[data-cl]:checked').map(b=>entry(b.value)).filter(Boolean);$('#modal').classList.remove('on');if(l.length)setTimeout(()=>askDelete(l),50);else toast('Nichts angehakt.')}}
 function log(cls,msg){const d=new Date().toLocaleTimeString('de-DE');const el=document.createElement('div');el.innerHTML=`<span class="t">${d}</span><span class="${cls}">${msg}</span>`;$('#log').appendChild(el);$('#log').scrollTop=1e9;const pl=$('#pgLog');if(pl){pl.appendChild(el.cloneNode(true));while(pl.children.length>80)pl.firstChild.remove();pl.scrollTop=1e9}}
 const cv=$('#chart'),cx=cv.getContext('2d');
 function cssv(n){return getComputedStyle(document.body).getPropertyValue(n).trim()}
