@@ -1,3 +1,6 @@
+**Neu in 2.6.4**
+- Lichtstreifen beim Monitor-Wechsel: Auf dem Ankunfts-Bildschirm kommt er höchstens ein Viertel weit herein und löst sich dann auf – er läuft nicht mehr mit dem Logo bis zur Mitte.
+
 **Neu in 2.6.3**
 - Lichtstreifen wieder dezent (heller, leicht durchsichtig), mit mehr Abstand zum Logo. Beim Umschalten auf 2 Fenster läuft kein Streifen mehr quer über den ganzen Bildschirm.
 

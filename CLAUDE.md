@@ -51,3 +51,4 @@ Nutzer schreibt Deutsch, technisch unerfahren – einfach erklären. Bei Release
 - 2.6.1: `--iz` = 1/Zoom: vh/vw und Dialog-Breiten im CSS mit `*var(--iz,1)` (Splash/Goodbye/Vollbild ausgenommen), `.wrap` max-width skaliert, `.studio .col.center{height:100%}`.
 - 2.6.2: Bei html-Zoom liefert getBoundingClientRect/innerWidth Bildschirm-px -> `zr(el)`/`ZF()` teilen durch Zoom (dStreak, Tour, ctxMenu, spanGo).
 - 2.6.3 (Nutzerwunsch Streifen): Abstand zum Logo 18 px, Farben `color-mix(…45%,#fff)` + opacity .7, KEIN dStreak ohne Logo-Ref (dualToggle).
+- 2.6.4 (Nutzerwunsch): dStreak 'in' bleibt am Rand (max. W/4 ab Kante), sobald das Logo das Viertel passiert -> `fadeNow` (auflösen).

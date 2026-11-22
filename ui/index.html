@@ -3301,8 +3301,8 @@ function dStreak(d,mode,root,hold,ref){if(RED()||ANIM.streak==='off')return;cons
     const step=now=>{const r=zr(ref);e.style.top=(r.top-R.top+r.height/2-h/2)+'px';if(d==='l'){const l=Math.max(0,r.right-R.left+18),end=x0+rad;e.style.left=px(l);e.style.width=px(end-l)}
       else{const st=x0-rad,rr=Math.min(W,r.left-R.left-18);e.style.left=px(st);e.style.width=px(rr-st)}
       if(now-t0<T*1.15+80)requestAnimationFrame(step)};e.style.width='0px';requestAnimationFrame(step)}
-  else if(mode==='in'&&ref){/* Streifen hängt hinten am Logo und geht nie hinein */const t0=performance.now();
-    const Q=W/4;const step=now=>{const r=zr(ref);e.style.top=(r.top-R.top+r.height/2-h/2)+'px';if(d==='l'){const end=r.left-R.left-18,w=Math.min(Q,end);e.style.left=px(end-w);e.style.width=px(w)}else{const l=r.right-R.left+18;e.style.left=px(l);e.style.width=px(Math.min(Q,W-l))}
+  else if(mode==='in'&&ref){/* Streifen hängt hinten am Logo und geht nie hinein */const t0=performance.now();let faded=false;const fadeNow=()=>{if(faded)return;faded=true;const f=.45*k;e.style.transformOrigin=d==='l'?'left center':'right center';e.style.transition=`opacity ${f}s ease-out, transform ${f}s ease-out`;e.style.opacity='0';e.style.transform='scaleX(.3) scaleY(.4)';setTimeout(()=>e.remove(),f*1000+100)};
+    const Q=W/4;const step=now=>{const r=zr(ref);e.style.top=(r.top-R.top+r.height/2-h/2)+'px';if(d==='l'){const end=Math.min(Q,r.left-R.left-18);e.style.left='0px';e.style.width=px(end);if(r.left-R.left-18>=Q)return fadeNow()}else{const l=Math.max(W-Q,r.right-R.left+18);e.style.left=px(l);e.style.width=px(W-l);if(r.right-R.left+18<=W-Q)return fadeNow()}
       if(now-t0<T+60)requestAnimationFrame(step)};requestAnimationFrame(step)}
   else e.animate(fr,{duration:mode==='out'?T*.45:T,easing:mode==='in'?'cubic-bezier(.2,.8,.3,1)':'cubic-bezier(.6,0,.4,1)',fill:'forwards'});
   /* auf dem Ankunfts-Bildschirm nur kurz, dann weg */
