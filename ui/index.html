@@ -1000,7 +1000,8 @@ global.Seasons={pick,info,mount};
 <script>
 (()=>{
 const TOKEN=(location.hash||'').slice(1),REAL=!!TOKEN&&/^https?:$/.test(location.protocol);
-async function api(p,b){const r=await fetch(p,b===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json','X-Studio':TOKEN},body:JSON.stringify(b)});
+let USER_ABORT=false;
+async function api(p,b){if(p==='/api/cancel')USER_ABORT=true;const r=await fetch(p,b===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json','X-Studio':TOKEN},body:JSON.stringify(b)});
   const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||('Fehler '+r.status));return j}
 /* Einstellungen merken: im Programm in der Einstellungsdatei (der Port wechselt bei jedem Start, dann wäre localStorage leer) */
 const KV={t:0,get(k){const c=window.BVC_CONF;if(c&&c.ls&&k in c.ls)return c.ls[k];try{return localStorage.getItem(k)}catch(e){return null}},
@@ -1074,9 +1075,9 @@ function sndCfg(){let au=false;try{au=AUTO.snd}catch(e){}if(au)return {voice:'li
   const c={voice:$('#sVoice').value,loud:$('#sLoud').value,night:$('#sNight').checked};return c.voice==='off'&&c.loud==='off'&&!c.night?null:c}
 const sndTxt=c=>c?[c.voice!=='off'?'Stimmen '+(c.voice==='light'?'leicht':'stark'):'',c.loud!=='off'?(c.loud==='tv'?'gleich laut':'gleich laut (lauter)'):'',c.night?'Nachtmodus':''].filter(Boolean).join(' · '):'aus – Ton bleibt original';
 const sndArg=c=>c?`${c.voice},${c.loud},${c.night?1:0}`:'';
-const sndPh=(ch,c)=>`{SND:${/^\d\.\d$/.test(ch||'')?ch:'2.0'}:${c.voice}:${c.loud}:${c.night?1:0}}`;
+const sndPh=(ch,c,src)=>`{SND:${/^\d\.\d$/.test(ch||'')?ch:'2.0'}:${c.voice}:${c.loud}:${c.night?1:0}${src!=null?':'+src:''}}`;
 function sndTrackArgs(t,i,s){const n=parseFloat(t.ch)||2,multi=n>2.1,c=s.aud==='copy'?(multi?'eac3':'aac'):s.aud==='opus'?'libopus':s.aud;
-  const r=['-c:a:'+i,c,'-b:a:'+i,trackKbps(t,s)+'k','-filter:a:'+i,sndPh(t.ch,s.snd)];if((c==='eac3'||c==='ac3')&&n>6)r.push('-ac:a:'+i,'6');return r}
+  const r=['-c:a:'+i,c,'-b:a:'+i,trackKbps(t,s)+'k','-filter:a:'+i,sndPh(t.ch,s.snd,t.ai!=null?t.ai:i)];if((c==='eac3'||c==='ac3')&&n>6)r.push('-ac:a:'+i,'6');return r}
 /* ================= KI-AUTOPILOT (Auto / Manuell) ================= */
 const AUTO_DEF={snd:true,load:true,par:true,codec:true,quality:true,res:true,content:true,hdr:true,tracks:true,out:true,probe:true,cmp:true};
 let AUTO=Object.assign({},AUTO_DEF);
@@ -2446,6 +2447,7 @@ async function vmSearch(pl,s){
   return RUN.on;
 }
 async function realRun(pl,s,startMsg){
+  USER_ABORT=false;
   const items=pl.plan.map(p=>{p.q.a=p.a;p.q.run=p.a;p.q.slot=p.slot;return {id:p.q.fid,passes:p.a.job.passes,outname:p.a.job.outname,outdir:settings().out.dir,slot:p.slot,
     kind:p.a.snd?'snd':'video',after:!!(p.a.snd&&p.slot!=='cpu'),enc:p.a.snd?'':(p.a.job.vargs[p.a.job.vargs.indexOf('-c:v')+1]||''),score:p.a.score||0}});
   if(pl.slots.length>1){log('ai','KI verteilt: '+pl.plan.map(p=>`${esc(p.q.name)} → ${wIcon(p.slot)} ${esc(wName(p.slot))}${p.slot==='cpu'?' (x265)':''}`).join(' · '));
@@ -2473,10 +2475,11 @@ async function realRun(pl,s,startMsg){
     }
     const mine=Q.filter(q=>q.jid&&byId[q.jid]);
     const all=mine.length?mine.reduce((s,q)=>s+q.prog,0)/mine.length*100:0;setSeg(all);
-    $('#monRun').innerHTML=runs.length>=1?runs.map(({q,j})=>`<div>${wIcon(q.slot)} <b>${esc(wName(q.slot))}</b>${doing(q)} · ${esc(q.name)} · ${Math.floor(j.pct)} % · ${Math.round(j.fps)} fps</div>`).join(''):'';
+    $('#monRun').innerHTML=runs.length>=1?runs.map(({q,j})=>`<div>${wIcon(q.slot)} <b>${esc(wName(q.slot))}</b>${doing(q)} · ${esc(q.name)} · ${j.phase?'🎙️ '+esc(j.phase):Math.floor(j.pct)+' % · '+Math.round(j.fps)+' fps'}</div>`).join(''):'';
     PGX={running,runs,all};
     if(running){const {q,j}=running,a=q.run||q.a;$('#monFile').title=q.name;$('#monFile').textContent=q.name+(j.pass&&(q.run||q.a).job.passes.length>1?` · Durchgang ${j.pass}/2`:'');
       $('#mPct').textContent=Math.floor(j.pct)+' %';$('#mSpd').textContent=`${Math.round(j.fps)} fps · ${String(j.speed.toFixed(2)).replace('.',',')}×`;
+      if(j.phase)$('#mSpd').textContent='🎙️ '+j.phase;
       if(j.hold)$('#mSpd').innerHTML=`<span class="hold">⏸ ${esc(j.hold)}</span>`;
       $('#mBr').textContent=j.kbps?Math.round(j.kbps).toLocaleString('de-DE')+' kbit/s':'–';$('#mEta').textContent=j.eta!=null?fmtT(j.eta):'–';
       const inPass2=a.job.passes.length<2||j.pass===2;
@@ -2503,7 +2506,8 @@ function learnJob(q,j){
 const SAME_MIN=20;
 function sndSlot(slots){slots=slots&&slots.length?slots:['cpu'];return slots.includes('cpu')?'cpu':slots[slots.length-1]}
 /* Was macht der Arbeiter gerade? (neben dem Namen anzeigen) */
-function doing(q){const a=q&&(q.run||null);if(!a)return '';return a.snd?' · 🎙️ nur Ton aufbereiten (Bild wird kopiert)':' · 🎞️ wandelt um'}
+function doing(q){const a=q&&(q.run||null);if(!a)return '';if(a.snd)return ' · 🎙️ nur Ton aufbereiten (Bild wird kopiert)';
+  const snd=a.job&&a.job.passes&&JSON.stringify(a.job.passes).includes('{SND:');return ' · 🎞️ wandelt um'+(snd&&q.slot!=='cpu'?' + 🎙️ Ton (macht der Prozessor)':snd?' + 🎙️ Ton':'')}
 function sameCodec(f,s){const c=(f.vcodec||'').toLowerCase();if(s.yt)return null;
   if(s.fam==='h265'&&/hevc|h265/.test(c))return 'H.265';if(s.fam==='h264'&&/h264|avc/.test(c))return 'H.264';return null}
 /* Vor dem Start: KI prüft Dateien mit gleichem Codec – umwandeln, nur Ton oder überspringen */
@@ -2540,6 +2544,13 @@ async function askSwap(todo){
 async function realAfterAll(){
   const so=settings().out,n=Q.filter(x=>x.state==='done').length;
   if(so.push){try{await api('/api/notify',{topic:$('#oTopic').value,msg:`${n} Video(s) fertig umgewandelt.`});log('ok','📱 Nachricht ans Handy geschickt.')}catch(e){log('bad','Handy-Nachricht fehlgeschlagen: '+esc(e.message))}}
+  if(so.after!=='none'&&USER_ABORT){
+    /* Du hast selbst Filme abgebrochen oder die Liste geleert -> du sitzt am PC: erst fragen */
+    const w=so.after==='off'?'herunterfahren':'in den Ruhezustand schicken';let ok=false;
+    await new Promise(res=>ask(`⏻ PC wirklich ${w}?`,`<p>Die Warteschlange ist zu Ende – aber du hast vorher selbst etwas abgebrochen bzw. die Liste geleert. Eingestellt ist „danach ${so.after==='off'?'herunterfahren':'Ruhezustand'}“.</p>`,
+      [{t:'Nein, PC anlassen',cls:'pri',fn:()=>res()},{t:`Ja, ${w}`,fn:()=>{ok=true;res()}}]));
+    if(!ok){log('ok',`⏻ PC bleibt an (du hast abgebrochen).`);return}
+  }
   if(so.after!=='none'){try{await api('/api/power',{action:so.after});log('ai',`${so.after==='off'?'PC fährt':'PC geht'} in 60 Sekunden ${so.after==='off'?'herunter':'in den Ruhezustand'}.`);
     toast(`${so.after==='off'?'PC fährt':'PC geht'} in 60 s ${so.after==='off'?'herunter':'in den Ruhezustand'}.`,'Abbrechen',()=>api('/api/power',{action:'cancel'}).then(()=>log('ok','Herunterfahren abgebrochen.')))}catch(e){}}
 }

@@ -10,7 +10,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 APP_NAME = 'Butchies Video Converter'
-VERSION = '1.5.4'
+VERSION = '1.5.5'
 FROZEN = getattr(sys, 'frozen', False)
 BASE = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent))
 UI = BASE / 'ui'
@@ -371,7 +371,7 @@ def probe(path):
         if s.get('codec_type') == 'audio':
             ch = layout(s)
             fb = 192 if fnum(ch) <= 2.1 else 640
-            audio.append({'lang': lang2(tags.get('language')), 'codec': (s.get('profile') if s.get('codec_name') == 'dts' and s.get('profile') else
+            audio.append({'ai': len(audio), 'lang': lang2(tags.get('language')), 'codec': (s.get('profile') if s.get('codec_name') == 'dts' and s.get('profile') else
                                                                     s.get('codec_name') or '?').upper().replace('_', ' '),
                           'ch': ch, 'kbps': stream_kbps(s, fb), 'comment': bool(re.search(r'comment|kommentar', title)) or bool(disp.get('comment')),
                           'title': tags.get('title') or ''})
@@ -466,7 +466,10 @@ SND_VOICE = {'light': (1.41, 3), 'strong': (2.0, 5)}      # Center-Verstärkung 
 SND_LOUD = {'tv': 'I=-23:TP=-2:LRA=14', 'loud': 'I=-18:TP=-1.5:LRA=11'}
 
 
-def snd_filter(ch='2.0', voice='off', loud='off', night=False):
+SND_TARGET = {'tv': (-23.0, 0.79), 'loud': (-18.0, 0.84)}   # Ziel-Lautheit LUFS, Spitzen-Grenze (≈ -2 / -1,5 dB)
+
+
+def snd_filter(ch='2.0', voice='off', loud='off', night=False, gain=None):
     """FFmpeg-Tonfilter. Stimme: bei 5.1/7.1 wird der Center-Kanal (Dialoge) lauter, bei Stereo die Sprach-Frequenzen.
     Nachtmodus: leise Stellen lauter, laute leiser. Lautstärke: EBU R128 (loudnorm) – jeder Film klingt gleich laut."""
     ch = str(ch)
@@ -481,7 +484,11 @@ def snd_filter(ch='2.0', voice='off', loud='off', night=False):
             f.append('highpass=f=70,equalizer=f=250:t=q:w=1:g=-2,equalizer=f=2600:t=q:w=1.2:g=%d' % db)
     if night:
         f.append('acompressor=threshold=-28dB:ratio=3:attack=15:release=250:makeup=2')
-    if loud in SND_LOUD:
+    if loud in SND_LOUD and gain is not None:
+        # schnell: vorher gemessen -> nur fest lauter/leiser + Spitzen-Begrenzer (statt dem langsamen loudnorm)
+        f.append('volume=%.2fdB' % max(-30.0, min(30.0, gain)))
+        f.append('alimiter=limit=%.2f:level=false' % SND_TARGET[loud][1])
+    elif loud in SND_LOUD:
         f.append('loudnorm=%s' % SND_LOUD[loud])
         f.append('aresample=48000')
     elif f:
@@ -489,16 +496,47 @@ def snd_filter(ch='2.0', voice='off', loud='off', night=False):
     return ','.join(f) or 'anull'
 
 
-SND_RE = re.compile(r'\{SND:([0-9.]{3}):(off|light|strong):(off|tv|loud):([01])\}')
+SND_RE = re.compile(r'\{SND:([0-9.]{3}):(off|light|strong):(off|tv|loud):([01])(?::(\d+))?\}')
 
 
-def fill_args(args, src, out):
+def snd_measure(src, idx, ch, voice, night):
+    """Lautheit (LUFS) einer Tonspur messen – nach Stimme/Nachtmodus, wie sie später klingt. Schnell (ca. 1 Min. für 2 h)."""
+    pre = snd_filter(ch, voice, 'off', night)
+    pre = '' if pre == 'anull' else pre.replace(',alimiter=limit=0.95:level=false', '') + ','
+    r = run([FFMPEG, '-hide_banner', '-nostats', '-i', str(src), '-map', '0:a:%d' % idx, '-vn', '-sn', '-dn', '-af',
+             pre + 'ebur128=framelog=quiet', '-f', 'null', '-'], timeout=3600)
+    m = re.findall(r'I:\s+(-?[\d.]+) LUFS', r.stderr.decode('utf-8', 'replace'))
+    return float(m[-1]) if m else None
+
+
+def snd_prepare(j):
+    """Vor dem Umwandeln: alle Tonspuren mit „gleich laut“ einmal messen -> feste Verstärkung je Spur."""
+    gains = {}
+    for args in j['passes']:
+        for a in args:
+            m = SND_RE.fullmatch(str(a))
+            if not m or m.group(3) == 'off' or m.group(5) is None or m.group(0) in gains:
+                continue
+            if j.get('cancel'):
+                return gains
+            j['phase'] = 'Messe Lautstärke …'
+            try:
+                lufs = snd_measure(j['src'], int(m.group(5)), m.group(1), m.group(2), m.group(4) == '1')
+            except Exception:  # noqa: BLE001
+                lufs = None
+            if lufs is not None and lufs > -70:
+                gains[m.group(0)] = SND_TARGET[m.group(3)][0] - lufs
+    j['phase'] = ''
+    return gains
+
+
+def fill_args(args, src, out, gains=None):
     res = []
     for a in args:
         a = str(a)
         m = SND_RE.fullmatch(a)
         if m:
-            res.append(snd_filter(m.group(1), m.group(2), m.group(3), m.group(4) == '1'))
+            res.append(snd_filter(m.group(1), m.group(2), m.group(3), m.group(4) == '1', (gains or {}).get(a)))
             continue
         if a == '{IN}':
             a = src
@@ -525,7 +563,7 @@ def new_job(item):
     j = {'id': jid, 'slot': slot, 'fid': e['id'], 'src': e['path'], 'name': e['name'], 'folder': str(folder), 'outname': name, 'passes': passes,
          'dur': e.get('dur') or 0, 'state': 'wartet', 'pct': 0.0, 'fps': 0, 'speed': 0, 'kbps': 0, 'size': 0, 'eta': None,
          'error': '', 'out': '', 'proc': None, 'paused': False, 'cancel': False, 'started': 0, 'pass': 0,
-         'held': 0.0, 'hold': '', 'frames': 0, 'kind': str(item.get('kind') or 'video')[:10], 'enc': str(item.get('enc') or '')[:20],
+         'held': 0.0, 'hold': '', 'phase': '', 'frames': 0, 'kind': str(item.get('kind') or 'video')[:10], 'enc': str(item.get('enc') or '')[:20],
          'score': fnum(item.get('score')), 'ssize': e.get('size') or 0, 'after': bool(item.get('after'))}
     with QLOCK:
         JOBS[jid] = j
@@ -671,10 +709,14 @@ def run_job(j):
         return
     n = len(j['passes'])
     log = []
+    gains = snd_prepare(j)
+    if j['cancel']:
+        j['state'] = 'abgebrochen'
+        return
     for i, args in enumerate(j['passes']):
         j['pass'] = i + 1
         exe = FFMPEG_IGPU[0] if j.get('slot') == 'gpu2' and FFMPEG_IGPU[0] else FFMPEG
-        cmd = [exe, '-hide_banner', '-nostdin', '-y', '-progress', 'pipe:1', '-nostats'] + fill_args(args, j['src'], str(tmp))
+        cmd = [exe, '-hide_banner', '-nostdin', '-y', '-progress', 'pipe:1', '-nostats'] + fill_args(args, j['src'], str(tmp), gains)
         p = popen(cmd, cwd=str(work))
         j['proc'] = p
         apply_limit(p)
@@ -2492,6 +2534,13 @@ def selftest():
             run_job(tj)
             ok_ = tj['state'] == 'fertig' and probe(tj['out'])['tracks']['audio'][0]['ch'] == ch
             check('Ton-Aufbereiter %s · Stimme %s · Lautstärke %s' % (ch, voice, loud), ok_, tj.get('error', '')[-300:])
+    try:
+        jm = {'passes': [['-i', '{IN}', '-map', '0:a:0', '-c:a', 'eac3', '-filter:a:0', '{SND:5.1:light:tv:0:0}', '{OUT}']], 'src': str(s51), 'cancel': False}
+        gm = snd_prepare(jm)
+        ok_ = bool(gm) and 'volume=' in fill_args(jm['passes'][0], str(s51), 'x.mka', gm)[7]
+        check('Lautstärke schnell messen (statt loudnorm)', ok_, gm)
+    except Exception as ex:  # noqa: BLE001
+        check('Lautstärke schnell messen (statt loudnorm)', False, ex)
     check('Statistik gespeichert', len(stats_load()) > 0, len(stats_load()))
     tid = secrets.token_hex(4)
     TASKS[tid] = {'state': 'läuft'}

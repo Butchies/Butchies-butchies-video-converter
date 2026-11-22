@@ -35,7 +35,12 @@ FFmpeg mit allen Codecs ist dabei (inklusive VMAF-Messung und HDR). WebView2 wir
 **Neu in 1.1.3**
 - Das Programm **merkt sich jetzt alles** bis zum nächsten Start: Design, Start-Animation an/aus, Auto/Manuell-Schalter, eigene Einstellungen (Codec, Zielgröße, Zeitplan …) und eigene Vorlagen. Bisher ging das beim Neustart verloren
 
-**Neu in 1.5.4 – Final (stabile Version)**
+**Neu in 1.5.5 – Final (stabile Version)**
+- ⚡ **„Jeder Film gleich laut“ etwa 10× schneller**: Die KI misst die Lautstärke vorher einmal kurz (ca. 1 Min. bei 2 h Film) und stellt dann nur noch fest lauter/leiser – das Umwandeln wird nicht mehr vom Ton ausgebremst, Ergebnis genau auf Fernseh-Lautstärke
+- 🏷️ Anzeige „🎞️ wandelt um + 🎙️ Ton (macht der Prozessor)“, wenn beim Umwandeln auch der Ton bearbeitet wird
+- ⏻ Hast du selbst Filme abgebrochen, fragt das Programm am Ende erst, bevor es den PC herunterfährt oder in den Ruhezustand schickt
+
+**Neu in 1.5.4**
 - 🐢➡️ Ist der Prozessor nicht ausgewählt, werden „nur Ton aufbereiten“-Aufgaben erst **nach** allen Umwandlungen gemacht – einzeln hintereinander, nicht mehr gleichzeitig. Der PC wird dadurch nicht mehr ausgebremst.
 
 **Neu in 1.5.3**

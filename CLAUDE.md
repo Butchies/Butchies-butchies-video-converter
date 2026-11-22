@@ -24,3 +24,4 @@ Nutzer schreibt Deutsch, technisch unerfahren – einfach erklären. Bei Release
 - 1.5.2: Arbeiter-Auswahl `PARSEL` in KV `bvc-par` (`parLoad`).
 - 1.5.3: `doing(q)` hinter Arbeiter-Namen (Liste, Monitor `#monRun` auch bei 1 Job, Fortschrittsfenster).
 - 1.5.4: Ton-Jobs ohne ausgewählten Prozessor: `sndSlot` + Job-Feld `after` -> `worker` startet sie erst, wenn keine normalen Jobs mehr warten/laufen.
+- 1.5.5: Lautheit schnell: Platzhalter `{SND:…:src}` (Quell-Spur `ai` aus probe), `snd_prepare`/`snd_measure` (ebur128) vor den Durchgängen -> `volume`+`alimiter` statt `loudnorm` (`SND_TARGET`), Job-Feld `phase`. `doing()` zeigt „+ Ton (Prozessor)“. `USER_ABORT` (bei /api/cancel) -> `realAfterAll` fragt vor Herunterfahren/Ruhezustand.
