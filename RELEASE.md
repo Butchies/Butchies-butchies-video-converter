@@ -35,7 +35,10 @@ FFmpeg mit allen Codecs ist dabei (inklusive VMAF-Messung und HDR). WebView2 wir
 **Neu in 1.1.3**
 - Das Programm **merkt sich jetzt alles** bis zum nächsten Start: Design, Start-Animation an/aus, Auto/Manuell-Schalter, eigene Einstellungen (Codec, Zielgröße, Zeitplan …) und eigene Vorlagen. Bisher ging das beim Neustart verloren
 
-**Neu in 1.5.7 – Final (stabile Version)**
+**Neu in 1.5.8 – Final (stabile Version)**
+- 🎨 Neues Design **„Hell Blau“** – wie „Hell“, nur in Blau-Weiß (passend zu Installer und Symbol)
+
+**Neu in 1.5.7**
 - 🟦 Kamera-Symbol in Blau-Weiß (gleiche Form wie bisher, passend zum Kino-Installer) – Installer, Programm, Verknüpfung
 
 **Neu in 1.5.6**
