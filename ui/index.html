@@ -510,7 +510,9 @@ dialog[open]{animation:dlg .3s ease}
 .dstreak.rt{background:linear-gradient(270deg,transparent,#fff,var(--b),var(--a))}
 .goodbye.late :is(.g-kicker,.g-title,.g-tag,.g-hint,.g-actions){animation-delay:1s}
 body.dual .tab[data-v=cmp],body.dual #stMode [data-m=play],body.dual #pMiniAb{display:none!important}
-body.m2 .tabs,body.m2 #queueBtn,body.m2 #statBtn,body.m2 #helpBtn,body.m2 #themeBtn,body.m2 #v-conv,body.m2 #stMode,body.m2 #pMini,body.m2 #mAb,body.m2 #pShot,body.m2 #pClose,body.m2 #winMon{display:none!important}
+body.m2 .tabs,body.m2 #queueBtn,body.m2 #statBtn,body.m2 #helpBtn,body.m2 #themeBtn,body.m2 #v-conv,body.m2 #stMode,body.m2 #pMiniAb,body.m2 #mAb,body.m2 #pShot,body.m2 #winMon{display:none!important}
+body.m2 #stageCard{margin-bottom:14px}body.m2 #stageCard:not(.mini) #plWrap{max-width:calc(58vh * 16 / 9);margin:0 auto}
+.grpdb{padding:8px 12px;border-radius:10px;margin-bottom:8px;font-size:13px;background:color-mix(in srgb,var(--a) 9%,transparent);border:1px solid color-mix(in srgb,var(--a) 25%,transparent)}
 body.m2 #v-cmp{display:block}
 .m2low{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:14px;margin-top:14px;align-items:start}
 .m2low>.card{margin-top:0!important}.m2low #stageCard{position:sticky;top:8px}
@@ -727,7 +729,7 @@ body.m2 .cmpgrid .card{padding:14px 16px}
           <div class="am"><button data-a="auto" class="on">Auto</button><button data-a="man">Manuell</button></div></div>
         <div class="adrawer"><div class="adin"><div class="form">
         <div class="f full"><label>Ausgabeordner</label><div class="row" style="flex-wrap:nowrap"><input type="text" id="oDir" value="Videos\Butchies Converter"><button type="button" class="btn sm real-only" id="oPick" title="Ordner wählen">📁</button><button type="button" class="btn sm real-only" id="oShow" title="Ordner öffnen">↗</button></div></div>
-        <div class="f full"><label>Dateiname</label><select id="oName"><option value="db">Titel (Jahr) – aus der Filmdatenbank</option><option value="orig">Original + Codec + Auflösung</option><option value="same">Wie das Original</option></select></div>
+        <div class="f full"><label>Dateiname</label><select id="oName"><option value="same" selected>Wie das Original (Codec + Gruppen-Name angepasst)</option><option value="orig">Original + Codec + Auflösung</option><option value="db">Titel (Jahr) – aus der Filmdatenbank</option></select></div>
         <div class="f full"><label>Steht ein Codec im Namen (z. B. x264)?</label><select id="oSwap"><option value="ask">Vorher fragen, ob er angepasst werden soll</option><option value="yes">Immer anpassen (x264 → x265, Original-Name bleibt)</option><option value="no">Nie anpassen</option></select></div>
         <div class="f full"><label>Gruppen-Name am Ende (z. B. „-WAYNE“)</label><select id="oGrp"><option value="replace">Durch „Butchies-Groove“ ersetzen</option><option value="keep">Behalten</option><option value="remove">Ganz entfernen</option></select>
           <div id="grpPrev" class="grpprev"></div></div>
@@ -1255,10 +1257,12 @@ function grpOf(stem){
   const g=m[1],pre=stem.slice(0,m.index),lo=g.toLowerCase();
   if(GRP_DB.has(lo)||GRP_EXTRA.some(x=>x.toLowerCase()===lo))return g;
   const last=pre.split(/[\s._\[\]()]/).pop()||'';
-  if(GRP_BEFORE.test(last)){if(!GRP_EXTRA.includes(g)&&GRP_EXTRA.length<3000){GRP_EXTRA.push(g);KV.set('bvc-grp',JSON.stringify(GRP_EXTRA))}return g}
+  if(GRP_BEFORE.test(last)||SCENE_RX.test(pre)){if(!GRP_EXTRA.includes(g)&&GRP_EXTRA.length<3000){GRP_EXTRA.push(g);KV.set('bvc-grp',JSON.stringify(GRP_EXTRA))}return g}
   return null;
 }
-function grpApply(stem,mode){if(!mode||mode==='keep')return stem;const g=grpOf(stem);if(!g)return stem;const b=stem.slice(0,-(g.length+1));return mode==='remove'?b:b+'-'+GRP_TAG}
+const SCENE_RX=/(^|[\s._\-\[(])(2160p|1440p|1080p|720p|576p|480p|x26[45]|h\.?26[45]|hevc|web-?dl|webrip|bluray|bdrip|dvdrip|hdtv)(?=$|[\s._\-\])])/i;
+function grpApply(stem,mode){if(!mode||mode==='keep')return stem;const g=grpOf(stem);
+  if(!g)return mode==='replace'&&SCENE_RX.test(stem)&&!stem.toLowerCase().endsWith('-'+GRP_TAG.toLowerCase())?stem+'-'+GRP_TAG:stem;const b=stem.slice(0,-(g.length+1));return mode==='remove'?b:b+'-'+GRP_TAG}
 /* Vorschau alt -> neu mit Markierung */
 function nameDiff(oldN,newN){
   if(oldN===newN)return `${esc(oldN)} <small>– bleibt so</small>`;
@@ -2915,7 +2919,7 @@ addEventListener('resize',()=>{const w=window.pywebview&&window.pywebview.api;if
 addEventListener('keydown',e=>{if(e.key==='F11'){e.preventDefault();toggleFull()}else if(e.key==='Escape'&&document.body.classList.contains('full'))toggleFull()});
 $('#oPick').onclick=async()=>{try{const r=await api('/api/pick',{kind:'folder',start:$('#oDir').value});if(r.paths[0]){$('#oDir').value=r.paths[0];api('/api/config',{outdir:r.paths[0]}).then(x=>{if(INFO)INFO.outdir=x.outdir});update()}}catch(e){toast(e.message)}};
 $('#oShow').onclick=()=>api('/api/show',{path:$('#oDir').value}).catch(e=>toast(e.message));
-function outReset(){$('#oDir').value=REAL&&INFO?(INFO.outdir_default||INFO.outdir):'Videos\\Butchies Converter';setSel('#oName','db');setSel('#oSwap','ask');setSel('#oGrp','replace');
+function outReset(){$('#oDir').value=REAL&&INFO?(INFO.outdir_default||INFO.outdir):'Videos\\Butchies Converter';setSel('#oName','same');setSel('#oSwap','ask');setSel('#oGrp','replace');
   $('#oDir').dispatchEvent(new Event('change'));['#oName','#oSwap','#oGrp'].forEach(id=>$(id).dispatchEvent(new Event('change')));try{saveSet()}catch(e){}update();toast('↺ Ausgabe auf Original zurückgesetzt.')}
 $('#oDir').addEventListener('change',()=>{if(REAL)api('/api/config',{outdir:$('#oDir').value}).then(x=>{if(INFO)INFO.outdir=x.outdir}).catch(()=>{})});
 $('#oTopic').addEventListener('change',()=>{if(REAL)api('/api/config',{ntfy:$('#oTopic').value}).catch(()=>{})});
@@ -3039,7 +3043,8 @@ function grpDraw(){
   const it=GRS.items,mine=it.filter(x=>x.mine);
   const row=x=>{const i=it.indexOf(x);return `<label class="grpi ${x.mine?'':'no'}"><input type="checkbox" data-gi="${i}" ${x.mine?'checked':''}><div class="nmv" style="background:transparent;border:0;padding:0">${nameDiff(x.name,x.new)}</div>
     <div class="w">${x.mine?'✅ von dir umgewandelt ('+esc(x.why)+')':'nicht von dir – bleibt, außer du hakst es an'} · ${esc(x.path.split('/').slice(0,-1).join('/'))}</div></label>`};
-  $('#grBody').innerHTML=`<p class="hint" style="margin:0">${GRS.total} Dateien geprüft · <b>${it.length}</b> mit fremdem Gruppen-Namen · davon <b style="color:var(--ok)">${mine.length} von dir umgewandelt</b>. Nur angehakte Filme werden umbenannt – Untertitel/NFO mit gleichem Namen gleich mit. Rückgängig ist möglich.</p>
+  $('#grBody').innerHTML=`<div class="grpdb">🗃️ <b>Datenbank:</b> ${(GRS.db||GRS.total).toLocaleString('de-DE')} Dateien gemerkt · ${GRS.first?'<b>zum ersten Mal eingelesen</b>':`<b style="color:var(--ok)">${GRS.newfiles||0} neu</b> seit dem letzten Mal`} · ${GRS.checked||0} neu geprüft, Rest aus der Datenbank (schnell)</div>
+    <p class="hint" style="margin:0">${GRS.total} Dateien · <b>${it.length}</b> mit fremdem Gruppen-Namen · davon <b style="color:var(--ok)">${mine.length} von dir umgewandelt</b>. Filme ohne Gruppen-Namen bekommen „-${GRP_TAG}“ angehängt. Nur angehakte Filme werden umbenannt – Untertitel/NFO mit gleichem Namen gleich mit. Rückgängig ist möglich.</p>
     ${it.length?`<div class="grplist">${[...mine,...it.filter(x=>!x.mine)].map(row).join('')}</div>`:'<p class="hint">Nichts gefunden – alles schon sauber. ✨</p>'}
     <div class="dlg-actions" style="margin-top:12px"><button class="btn sm" id="grUndo">↶ Letztes Umbenennen rückgängig</button><span style="flex:1"></span><button class="btn pri" id="grGo" ${it.length?'':'disabled'}>✏️ Angehakte umbenennen</button></div>`;
   $$('[data-gi]').forEach(c=>c.onchange=()=>c.closest('.grpi').classList.toggle('no',!c.checked));
@@ -3087,6 +3092,7 @@ function loadSet(){let v;try{v=JSON.parse(KV.get('bvc-set')||'null')}catch(e){}i
   SETIDS.forEach(id=>{const e=$(id);if(!e||!(id in v)||id==='#sEnc')return;if(e.type==='checkbox')e.checked=!!v[id];else if(e.tagName==='SELECT'){if([...e.options].some(o=>o.value==v[id]))e.value=v[id]}else e.value=v[id]});
   try{applyUp(false)}catch(e){}}
 loadSet();
+if(!KV.get('bvc-namefix')){KV.set('bvc-namefix','1');if($('#oName').value==='db'){$('#oName').value='same';$('#oName').dispatchEvent(new Event('change'));setTimeout(saveSet,0)}}
 SETIDS.forEach(id=>{const e=$(id);if(e)e.addEventListener('change',()=>setTimeout(saveSet,0))});
 $$('#sFam button,#sMode button,.am button').forEach(b=>b.addEventListener('click',()=>setTimeout(saveSet,0)));
 
@@ -3158,7 +3164,7 @@ applyTheme=function(id){_applyTheme(id);const w=wapi();if(!M2&&DOPEN&&w)w.send('
 async function playEntry(x){if(!REAL||!x.full)return;try{const r=await api('/api/add',{paths:[x.full]});const e=r.files[0];if(!e)return toast('Datei nicht lesbar.');
   let q=Q.find(y=>y.fid===e.id)||PL.find(y=>y.fid===e.id);if(!q){q=eToQ(e);PL.push(q)}openInPlayer(q);showTab('play')}catch(err){toast(err.message)}}
 /* ---------- Fenster 2 (Monitor 2) ---------- */
-function m2Play(js){const o=JSON.parse(js);let q=PL.find(y=>y.fid===o.fid);if(!q){q=Object.assign({id:++uid},o);PL.push(q)}_oip(q)}
+function m2Play(js){try{playerMini(false)}catch(e){}const o=JSON.parse(js);let q=PL.find(y=>y.fid===o.fid);if(!q){q=Object.assign({id:++uid},o);PL.push(q)}_oip(q)}
 async function m2Arrive(d){const sp=$('#splash');DINFO.on=true;dualUi();
   if(!sp){dFlash();return}sp.classList.remove('m2wait');const lg=sp.querySelector('.sp-logo');await flyIn(lg,d);spUnhold(sp);await dwait(RED()?500:2600);splashLeave()}
 async function m2Bye(d,quick){try{pPause()}catch(e){}const g=$('#goodbye');g.hidden=false;g.classList.remove('closing','done','late');$('#gBack').hidden=true;
@@ -3170,8 +3176,8 @@ async function m2Restore(){const m=sessM2();let o={};try{o=JSON.parse(KV.get('bv
   $('#protA').checked=!!s.protA;$('#protB').checked=s.protB!==false;RESTORING=false;for(const x of ['A','B'])if(s[x])await realScan(x,s[x]);saveSession()}
 if(M2){document.body.classList.add('m2');document.title='Butchies Video Converter AI – Ordner-Abgleich';
   $('.brand b').innerHTML='Ordner-Abgleich <span class="ai-mark">· Monitor 2</span>';$('.brand small').textContent='Ordner A ↔ B · KI-Suche · Player';
-  const cmp=$('#bCmp').closest('.card'),low=document.createElement('div');low.className='m2low';cmp.parentNode.insertBefore(low,cmp);low.appendChild(cmp);low.appendChild($('#stageCard'));
-  $('#stageCard').classList.remove('mini');_setMode('play');_showTab('cmp');dualUi();
+  const sc=$('#stageCard');$('#v-cmp').insertBefore(sc,$('#v-cmp').firstChild);_setMode('play');_showTab('cmp');dualUi();
+  $('#pMiniTxt').textContent='klappt von selbst auf, wenn du ▶ bei einem Film drückst – oben „▴“ klappt wieder zu';playerMini(true);
   /* Einstellungen der Abgleich-Regeln getrennt merken, damit Fenster 2 nichts vom Studio überschreibt */
   saveSet=function(){const v={};['#cTh','#cVid','#cImg','#cDb','#cSub','#pUp'].forEach(id=>{const e=$(id);if(e)v[id]=e.type==='checkbox'?e.checked:e.value});KV.set('bvc-m2set',JSON.stringify(v))};
   try{const v=JSON.parse(KV.get('bvc-m2set')||'null');if(v)Object.keys(v).forEach(id=>{const e=$(id);if(!e)return;if(e.type==='checkbox')e.checked=!!v[id];else e.value=v[id]})}catch(e){}

@@ -10,7 +10,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 APP_NAME = 'Butchies Video Converter'
-VERSION = '1.7.1'
+VERSION = '1.7.2'
 FROZEN = getattr(sys, 'frozen', False)
 BASE = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent))
 UI = BASE / 'ui'
@@ -1395,13 +1395,23 @@ def grp_of(stem, extra=()):
     if g.lower() in GRP_LOW or g.lower() in {str(x).lower() for x in extra}:
         return g
     last = re.split(r'[\s._\[\]()]', pre)[-1] if pre else ''
-    return g if GRP_BEFORE.match(last) else None
+    if GRP_BEFORE.match(last) or SCENE_RX.search(pre):
+        return g
+    return None
+
+
+SCENE_RX = re.compile(r'(^|[\s._\-\[(])(2160p|1440p|1080p|720p|576p|480p|x26[45]|h\.?26[45]|hevc|web-?dl|webrip|bluray|bdrip|dvdrip|hdtv)(?=$|[\s._\-\])])', re.I)
+
+
+def scene_like(stem):
+    return bool(SCENE_RX.search(stem)) and not stem.lower().endswith('-' + GROUP_TAG.lower())
 
 
 def grp_new(stem, mode='replace', tag=GROUP_TAG, extra=()):
     g = grp_of(stem, extra)
     if not g:
-        return stem
+        # kein Gruppen-Name, aber typischer Film-Name (1080p, x265 …): eigenen Namen anhängen
+        return stem + '-' + tag if mode == 'replace' and scene_like(stem) else stem
     base = stem[:-(len(g) + 1)]
     return base if mode == 'remove' else base + '-' + tag
 
@@ -1459,6 +1469,8 @@ def task_grpscan(tid, folder, mode, tag, extra):
     (gemerkt: Größe + Fingerabdruck der ersten 1 MB, oder unsichtbarer Vermerk in der Datei)."""
     T = TASKS[tid]
     files = scan(folder, T=T)
+    db = grpdb_load()
+    seen_new = 0
     by_size = {}
     for x in own_load():
         by_size.setdefault(x.get('s'), []).append(x)
@@ -1468,13 +1480,25 @@ def task_grpscan(tid, folder, mode, tag, extra):
         if ext.lower() not in VIDEXT:
             continue
         g = grp_of(stem, extra)
-        if g:
-            cands.append((f, stem, ext, g))
+        if g or (mode == 'replace' and scene_like(stem)):
+            cands.append((f, stem, ext, g or ''))
     res = []
     for i, (f, stem, ext, g) in enumerate(cands):
         check_abort(T)
         T['pct'], T['phase'] = 50 + round(i / max(1, len(cands)) * 50), 'Prüfe ' + f['name']
         mine, why = False, ''
+        key = f['full']
+        try:
+            mt = int(os.stat(key).st_mtime)
+        except OSError:
+            mt = 0
+        old = db.get(key)
+        if old and old.get('s') == f['size'] and old.get('m') == mt and 'mine' in old:
+            mine, why = old['mine'], old.get('why', '')
+            res.append({'full': f['full'], 'path': f['path'], 'name': f['name'], 'size': f['size'], 'group': g,
+                        'new': grp_new(stem, mode, tag, extra) + ext, 'mine': mine, 'why': why})
+            continue
+        seen_new += 1
         if f['size'] in by_size:
             try:
                 hh = head_hash(f['full'])
@@ -1484,10 +1508,43 @@ def task_grpscan(tid, folder, mode, tag, extra):
                 pass
         if not mine and has_stamp(f['full']):
             mine, why = True, 'Vermerk in der Datei'
+        db[key] = {'s': f['size'], 'm': mt, 'mine': mine, 'why': why}
         res.append({'full': f['full'], 'path': f['path'], 'name': f['name'], 'size': f['size'], 'group': g,
                     'new': grp_new(stem, mode, tag, extra) + ext, 'mine': mine, 'why': why})
-    T['result'] = {'root': str(folder), 'items': res, 'total': len(files)}
+    # alle Dateien des Ordners in der Datenbank merken (auch ohne Gruppen-Namen) -> „neu seit dem letzten Mal“
+    pre = str(folder)
+    before = sum(1 for k in db if k.startswith(pre))
+    for f in files:
+        if f['full'] not in db:
+            db[f['full']] = {'s': f['size']}
+    live = {f['full'] for f in files}
+    for k in [k for k in db if k.startswith(pre) and k not in live]:
+        del db[k]
+    grpdb_save(db)
+    T['result'] = {'root': str(folder), 'items': res, 'total': len(files), 'db': sum(1 for k in db if k.startswith(pre)),
+                   'newfiles': max(0, sum(1 for k in db if k.startswith(pre)) - before) if before else 0, 'checked': seen_new, 'first': not before}
     T['pct'], T['state'] = 100, 'fertig'
+
+
+GRPDB_FILE = HOME / 'grpdb.json'
+
+
+def grpdb_load():
+    try:
+        d = json.loads(GRPDB_FILE.read_text(encoding='utf-8'))
+        return d if isinstance(d, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
+def grpdb_save(d):
+    try:
+        HOME.mkdir(parents=True, exist_ok=True)
+        tmp = GRPDB_FILE.with_suffix('.tmp')
+        tmp.write_text(json.dumps(d, ensure_ascii=False), encoding='utf-8')
+        os.replace(tmp, GRPDB_FILE)
+    except OSError:
+        pass
 
 
 UNDO_FILE = HOME / 'rename_undo.json'

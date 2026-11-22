@@ -35,6 +35,11 @@ FFmpeg mit allen Codecs ist dabei (inklusive VMAF-Messung und HDR). WebView2 wir
 **Neu in 1.1.3**
 - Das Programm **merkt sich jetzt alles** bis zum nächsten Start: Design, Start-Animation an/aus, Auto/Manuell-Schalter, eigene Einstellungen (Codec, Zielgröße, Zeitplan …) und eigene Vorlagen. Bisher ging das beim Neustart verloren
 
+**Neu in 1.7.2**
+- 🏷️ Dateiname: Standard ist jetzt „Wie das Original“ – Codec wird angepasst, der Gruppen-Name durch „Butchies-Groove“ ersetzt, **auch wenn der Film schon H.265 ist**. Hat ein Film keinen Gruppen-Namen, wird „-Butchies-Groove“ angehängt. Unbekannte Gruppen werden jetzt auch erkannt
+- 🗃️ Gruppen-Namen ersetzen: liest den Ordner nur **einmal** richtig ein und merkt sich alles in einer Datenbank. Danach geht es schnell, und es steht da, wie viele Dateien gemerkt sind und wie viele neu dazugekommen sind
+- 🖥 Monitor 2: Player oben und zugeklappt – unten mehr Platz für die Liste. Klappt beim Abspielen von selbst auf
+
 **Neu in 1.7.1**
 - Beenden mit 2 Monitoren: Das Logo springt jetzt in die richtige Richtung zurück zum Hauptmonitor
 
