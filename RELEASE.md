@@ -35,6 +35,10 @@ FFmpeg mit allen Codecs ist dabei (inklusive VMAF-Messung und HDR). WebView2 wir
 **Neu in 1.1.3**
 - Das Programm **merkt sich jetzt alles** bis zum nächsten Start: Design, Start-Animation an/aus, Auto/Manuell-Schalter, eigene Einstellungen (Codec, Zielgröße, Zeitplan …) und eigene Vorlagen. Bisher ging das beim Neustart verloren
 
+**Neu in 2.3.0**
+- 🎮 2 Monitore an verschiedenen Grafikkarten: Die Oberfläche wird jetzt **fest auf der Prozessor-Grafik (Radeon 760M)** gezeichnet – mit Grafikkarten-Beschleunigung, also wieder **flüssige Start-/Beenden-Animation**, und die externe Grafikkarte springt dafür nicht mehr an. Sie bleibt fürs Umwandeln frei
+- Im Design-Fenster wählbar: „Prozessor-Grafik – flüssig“ (Standard) oder „Ohne Grafikkarte – ganz sicher“ (die bisherige Lösung), falls es bei dir doch hakt
+
 **Neu in 2.2.0: KI-Einrichtung**
 - 🤖 Nach jeder neuen Installation/Version prüft die KI beim ersten Start einmal das System (Monitore und an welcher Grafikkarte sie hängen, Grafikkarten, Encoder, Arbeitsspeicher, Hardware-Test) und stellt alles passend ein – z. B. „ohne Grafikkarte zeichnen“ bei Monitoren an verschiedenen Karten und die schnellsten Arbeiter fürs Umwandeln. Danach zeigt sie kurz, was sie eingestellt hat
 - Das Systemprotokoll dazu wird automatisch im Programmordner gespeichert

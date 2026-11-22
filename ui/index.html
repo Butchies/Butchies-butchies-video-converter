@@ -1028,6 +1028,7 @@ body.m2 .cmpgrid .card{padding:14px 16px}
     <label>Lichtstreifen<select id="anStreak"><option value="off">Aus</option><option value="thin">Dünn</option><option value="thick">Dick</option></select></label>
     <label>Farbe<select id="anColor"><option value="theme">Design-Farben</option><option value="white">Weiß</option><option value="rainbow">Regenbogen</option></select></label>
    </div>
+   <label style="display:flex;gap:10px;align-items:center;margin-top:10px;font-size:13px;font-weight:700;color:var(--muted)">🎮 Zeichnen bei 2 Monitoren an verschiedenen Grafikkarten:<select id="dualGpu" style="width:auto"><option value="igpu">Prozessor-Grafik (760M) – flüssig · Standard</option><option value="soft">Ohne Grafikkarte – ganz sicher, Animation weniger flüssig</option></select></label>
    <div class="dprev" id="anPrev"><div class="pm" id="pmA"><i class="pl"></i><small>Monitor 1</small></div><div class="pm" id="pmB"><i class="pl"></i><small>Hauptmonitor</small></div></div>
    <div class="row" style="gap:8px;margin-top:8px"><button type="button" class="btn sm pri" id="anPlay">▶ Vorschau Start</button><button type="button" class="btn sm" id="anPlayB">▶ Vorschau Beenden</button><button type="button" class="btn sm" id="anReset">↺ Standard</button><small style="color:var(--muted)">Wird sofort gespeichert.</small></div>
   </div>
@@ -3481,7 +3482,7 @@ async function spanBoot(){const w=wapi();if(!w||!w.span_set||M2||POP)return;DINF
 async function spanToggle(){const w=wapi();if(!w||!w.span_set)return;
   if(!isSpan()){if(DINFO.n<2)return toast('Nur ein Bildschirm gefunden.');KV.set('bvc-dual','1');await w.dual_set(true);DINFO.on=true;
     DINFO=await w.dual_info().catch(()=>DINFO);
-    if(DINFO.mixed&&!DINFO.soft&&w.restart){toast('🖥🖥 Deine Monitore hängen an zwei verschiedenen Grafikkarten – das Programm startet einmal neu, damit beide Seiten flüssig laufen.');await dwait(2500);w.restart();return}
+    if(DINFO.mixed&&!DINFO.soft&&!DINFO.igpu&&w.restart){toast('🖥🖥 Deine Monitore hängen an zwei verschiedenen Grafikkarten – das Programm startet einmal neu, damit beide Seiten flüssig laufen.');await dwait(2500);w.restart();return}
     if(!(await spanGo()))return;
     const d=dDir();dFlash();await dwait(150);const c=$('#p2cover');c.classList.add('off');dFlash($('#pane2'));dStreak(opp(d),'in',$('#pane2'));toast('🖥🖥 Ordner-Abgleich + Player jetzt auf dem anderen Bildschirm.')}
   else{const c=$('#p2cover');dFlash($('#pane2'));c.classList.remove('off');await dwait(350);KV.set('bvc-dual','0');await w.dual_set(false);await w.span_set(false);
@@ -3564,6 +3565,11 @@ async function setupShow(){let st=INFO&&INFO.setup;if(!st||st.ver!==INFO.version
     const sel=f.filter(x=>x[1]>=best*.2).map(x=>x[0]);if(sel.length){PARSEL=new Set(sel);KV.set('bvc-par',JSON.stringify(sel));try{updSums()}catch(e){}
       parNote=`<li>Arbeiter: ${sel.map(x=>esc((b.res[x]||{}).name||x)).join(' + ')}${f.some(x=>!sel.includes(x[0]))?' (zu langsame bleiben aus)':''}</li>`}}
   ask('🤖 KI-Einrichtung abgeschlossen',`<p>Nach der Installation von Version ${esc(st.ver)} hat die KI dein System geprüft und alles passend eingestellt:</p><ul style="margin:8px 0 0 18px;line-height:1.7">${(st.notes||[]).map(n=>`<li>${esc(n)}</li>`).join('')}${parNote}</ul><p class="hint" style="margin-top:10px">Ändern kannst du alles jederzeit unter ⚙ Einstellungen. Ein neues Protokoll gibt es mit Strg + Alt + S.</p>`,[{t:'👍 Alles klar',cls:'pri'}])}
+
+/* Zeichen-Modus bei 2 Monitoren an verschiedenen Grafikkarten */
+addEventListener('pywebviewready',async()=>{const w=wapi();if(!w||!w.dual_info||M2||POP)return;const i=await w.dual_info().catch(()=>null);if(i&&$('#dualGpu'))$('#dualGpu').value=i.gpumode||'igpu'});
+$('#dualGpu').onchange=async e=>{const w=wapi();if(!w||!w.gpu_mode)return;await w.gpu_mode(e.target.value);
+  if(isSpan())ask('Neu starten?','<p>Der neue Zeichen-Modus wirkt nach einem Neustart des Programms.</p>',[{t:'Später'},{t:'🔄 Jetzt neu starten',cls:'pri',fn:()=>w.restart()}]);else toast('Wird beim nächsten Einschalten von „2 Monitore“ benutzt.')};
 window.monSpanTest=g=>{SPAN=g;document.body.classList.add('span');spanVars();spanNodes(true);$('#p2cover').classList.add('off')};
 window.monSet=a=>{MONS=a};window.popGone=popGone;window.popReady=popReady;window.popAct=popAct;
 window.flyIn=flyIn;window.flyOut=flyOut;window.m2Play=m2Play;window.m2Arrive=m2Arrive;window.m2Bye=m2Bye;window.m2Info=m2Info;window.m2Ready=m2Ready;window.dualToggle=dualToggle;window.dualInfo=dualInfo;window.applyTheme=applyTheme;window.realAdd=(...a)=>realAdd(...a);

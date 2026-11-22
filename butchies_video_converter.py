@@ -10,7 +10,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 APP_NAME = 'Butchies Video Converter'
-VERSION = '2.2.0'
+VERSION = '2.3.0'
 FROZEN = getattr(sys, 'frozen', False)
 BASE = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent))
 UI = BASE / 'ui'
@@ -271,6 +271,47 @@ def prepare_gpu_exes():
         set_gpu_pref(dst, 1)
     except OSError:
         FFMPEG_IGPU[0] = None
+
+
+def webview_exes():
+    """Pfade von msedgewebview2.exe (WebView2-Laufzeit, zeichnet die Oberfläche)."""
+    out = []
+    if os.name != 'nt':
+        return out
+    import winreg
+    key = r'SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}'
+    for root, k in ((winreg.HKEY_LOCAL_MACHINE, key), (winreg.HKEY_CURRENT_USER, key.replace('WOW6432Node\\', ''))):
+        try:
+            with winreg.OpenKey(root, k) as h:
+                loc = winreg.QueryValueEx(h, 'location')[0]
+                pv = winreg.QueryValueEx(h, 'pv')[0]
+            exe = Path(loc) / pv / 'msedgewebview2.exe'
+            if exe.is_file():
+                out.append(str(exe))
+        except OSError:
+            pass
+    for base in (Path(os.environ.get('ProgramFiles(x86)', r'C:\Program Files (x86)')) / 'Microsoft' / 'EdgeWebView' / 'Application',):
+        try:
+            for exe in base.glob('*/msedgewebview2.exe'):
+                if str(exe) not in out:
+                    out.append(str(exe))
+        except OSError:
+            pass
+    return out
+
+
+def webview_on_igpu(on):
+    """Windows-Grafikeinstellung: Oberfläche auf der Prozessor-Grafik (760M) zeichnen (1 = Energiesparen) bzw. zurück auf Standard."""
+    for exe in webview_exes():
+        try:
+            if on:
+                set_gpu_pref(exe, 1)
+            else:
+                import winreg
+                with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r'Software\Microsoft\DirectX\UserGpuPreferences', 0, winreg.KEY_SET_VALUE) as h:
+                    winreg.DeleteValue(h, exe)
+        except OSError:
+            pass
 
 
 def enc_works(exe, enc):
@@ -2588,7 +2629,8 @@ def syscheck(client, folder=None):
         add('Monitore an verschiedenen Grafikkarten: %s' % ('JA' if mixed_gpus() else 'nein'))
     except Exception as ex:  # noqa: BLE001
         add('  Fehler: %s' % ex)
-    add('Oberfläche ohne Grafikkarte gezeichnet: %s' % ('ja' if SOFT[0] else 'nein'))
+    add('Oberfläche ohne Grafikkarte gezeichnet: %s · fest auf Prozessor-Grafik: %s · Modus: %s' % ('ja' if SOFT[0] else 'nein', 'ja' if IGPU_UI[0] else 'nein', load_config().get('dualgpu') or 'igpu'))
+    add('WebView2-Programm: %s' % '; '.join(webview_exes()))
     add('WebView2-Zusatz: %s' % os.environ.get('WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS', '-'))
     c = load_config()
     add('2 Monitore eingeschaltet: %s · Richtung: %s' % (bool(c.get('dual')), c.get('dualdir') or 'auto'))
@@ -2658,7 +2700,7 @@ def auto_setup():
             notes.append('%d Monitore erkannt (%s).' % (len(mons), ' + '.join(sorted({m[4] for m in mons}))))
         if mixed:
             upd['dualsoft'] = True
-            notes.append('Monitore hängen an verschiedenen Grafikkarten → bei „2 Monitore“ wird die Oberfläche ohne Grafikkarte gezeichnet (kein Hängen).')
+            notes.append('Monitore hängen an verschiedenen Grafikkarten → bei „2 Monitore“ zeichnet die Oberfläche fest auf der Prozessor-Grafik (Radeon 760M), damit nichts hängt und Animationen flüssig bleiben.')
         ok = [w for w in WORKERS if w.get('ok')]
         if ok:
             notes.append('Umwandeln mit: %s.' % ', '.join(w.get('name') for w in ok))
@@ -2685,7 +2727,8 @@ def auto_setup():
         print('KI-Einrichtung:', ex, flush=True)
 
 
-SOFT = [False]     # Zeichnen ohne Grafikkarte (für 2 Monitore an verschiedenen Grafikkarten)
+SOFT = [False]     # Zeichnen ohne Grafikkarte
+IGPU_UI = [False]  # Oberfläche fest auf der Prozessor-Grafik (für 2 Monitore an verschiedenen Grafikkarten)
 
 
 class Dual:
@@ -2715,7 +2758,7 @@ class Dual:
         if cur and ex:
             side = 'l' if ex[0] + ex[2] / 2 < cur[0] + cur[2] / 2 else 'r'
         return {'n': len(self.mons()), 'on': bool(c.get('dual')), 'side': side, 'dir': c.get('dualdir') or 'auto', 'open': bool(WIN2[0]),
-                'mixed': mixed_gpus(), 'soft': SOFT[0]}
+                'mixed': mixed_gpus(), 'soft': SOFT[0], 'igpu': IGPU_UI[0], 'gpumode': c.get('dualgpu') or 'igpu'}
 
     def prepare(self):
         """Fenster 2 unsichtbar vorbereiten (lädt im Hintergrund), damit es beim Flash sofort da ist."""
@@ -3094,9 +3137,18 @@ def native_window(url):
     # (Studio auf dem zweiten Monitor) und malt die andere Seite erst nach einem Fensterwechsel neu.
     flags = '--disable-features=CalculateNativeWinOcclusion --disable-backgrounding-occluded-windows --disable-renderer-backgrounding --disable-background-timer-throttling'
     # 2 Monitore an verschiedenen Grafikkarten: ohne Grafikkarten-Beschleunigung zeichnen -> keine Kopier-Hänger zwischen den Karten
-    if load_config().get('dual') and load_config().get('dualsoft', True) is not False and mixed_gpus():
-        flags += ' --disable-gpu --disable-gpu-compositing'
-        SOFT[0] = True
+    cfg = load_config()
+    mode = cfg.get('dualgpu') or 'igpu'
+    if cfg.get('dual') and mixed_gpus():
+        if mode == 'soft':                     # ganz ohne Grafikkarte (sicher, Animationen weniger flüssig)
+            flags += ' --disable-gpu --disable-gpu-compositing'
+            SOFT[0] = True
+            webview_on_igpu(False)
+        else:                                  # Standard: alles auf der Prozessor-Grafik (Haupt-Grafik) zeichnen – flüssig
+            webview_on_igpu(True)
+            IGPU_UI[0] = True
+    else:
+        webview_on_igpu(False)
     # immer frisch setzen – beim Neustart erbt das neue Programm sonst die alten Schalter (ohne --disable-gpu)
     os.environ['WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS'] = flags
 
@@ -3185,6 +3237,10 @@ def native_window(url):
                         'scale': frame._scale(), 'kids': kids[:8], 'bg': dual.bg}
             except Exception as ex:  # noqa: BLE001
                 return {'err': str(ex)}
+
+        def gpu_mode(self, m):
+            update_config(dualgpu='soft' if m == 'soft' else 'igpu')
+            return True
 
         def restart(self):
             """Programm neu starten (z. B. damit die Zwei-Monitor-Anzeige ohne Grafikkarten-Kopie läuft)."""
