@@ -501,6 +501,20 @@ dialog[open]{animation:dlg .3s ease}
 @keyframes sprise{from{opacity:0;transform:translateY(18px)}}
 @keyframes sppop{from{opacity:0;transform:scale(.6)}}
 @media (prefers-reduced-motion:reduce){.splash *,.viz-prev i{animation:none!important}}
+/* ---------- Zwei-Monitor-Ansicht ---------- */
+.splash.hold{cursor:default}.splash.hold :is(.sp-kicker,.sp-title,.sp-tag,.sp-skip){visibility:hidden}
+.splash.m2wait .sp-center,.splash.m2wait .sp-orbs{opacity:0}
+.dflash{position:fixed;inset:0;background:#fff;z-index:400;pointer-events:none;animation:dflash .6s ease-out forwards}
+@keyframes dflash{0%{opacity:0}15%{opacity:.95}100%{opacity:0}}
+.dstreak{position:fixed;top:50%;height:6px;margin-top:-3px;z-index:399;pointer-events:none;border-radius:6px;background:linear-gradient(90deg,transparent,#fff,var(--b),var(--a));box-shadow:0 0 30px var(--b)}
+.dstreak.rt{background:linear-gradient(270deg,transparent,#fff,var(--b),var(--a))}
+.goodbye.late :is(.g-kicker,.g-title,.g-tag,.g-hint,.g-actions){animation-delay:1s}
+body.dual .tab[data-v=cmp],body.dual #stMode [data-m=play],body.dual #pMiniAb{display:none!important}
+body.m2 .tabs,body.m2 #queueBtn,body.m2 #statBtn,body.m2 #helpBtn,body.m2 #themeBtn,body.m2 #v-conv,body.m2 #stMode,body.m2 #pMini,body.m2 #mAb,body.m2 #pShot,body.m2 #pClose,body.m2 #winMon{display:none!important}
+body.m2 #v-cmp{display:block}
+.m2low{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:14px;margin-top:14px;align-items:start}
+.m2low>.card{margin-top:0!important}.m2low #stageCard{position:sticky;top:8px}
+body.m2 .cmpgrid .card{padding:14px 16px}
 /* ---------- Auf Wiedersehen (Butchies-Webseite) ---------- */
 .goodbye{position:fixed;inset:0;z-index:160;display:grid;place-items:center;text-align:center;padding:24px;overflow:hidden;background:radial-gradient(60% 60% at 50% 45%,var(--bg2),var(--bg));opacity:0;transition:opacity .6s ease}
 .goodbye.show{opacity:1}
@@ -582,6 +596,8 @@ dialog[open]{animation:dlg .3s ease}
  <div class="top-actions">
   <button type="button" class="btn ghost" id="queueBtn" title="Warteschlange öffnen"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg><span class="lbl">Warteschlange</span><span class="qbadge" id="qBadge" hidden>0</span></button>
   <button type="button" class="btn ghost" id="statBtn" title="Spar-Statistik, Hardware-Test und was die KI gelernt hat"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span class="lbl">Statistik</span></button>
+  <button type="button" class="btn ghost" id="swapBtn" hidden title="Monitore tauschen: Studio und Ordner-Abgleich wechseln den Bildschirm">⇄<span class="lbl">Monitore tauschen</span></button>
+  <button type="button" class="btn ghost" id="dualBtn" hidden title="Zwei-Monitor-Ansicht: Ordner-Abgleich + Player auf dem anderen Bildschirm">🖥🖥<span class="lbl" id="dualLbl">2 Monitore</span></button>
   <button type="button" class="btn ghost" id="helpBtn" title="Kurzanleitung">❔</button>
   <button type="button" class="btn ghost" id="themeBtn"><span class="theme-dot" aria-hidden="true"></span><span class="lbl">Design</span></button>
   <button type="button" class="btn ghost quit" id="quitBtn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v9M6.3 6.3a8 8 0 1 0 11.4 0"/></svg><span class="lbl">Beenden</span></button>
@@ -942,6 +958,7 @@ dialog[open]{animation:dlg .3s ease}
   <p class="hint" style="margin:0">Die Designs der Butchies-Webseite – mit Farben und Schriften, wie im Encode Studio.</p>
   <div class="themes" id="themeGrid"></div>
   <label class="check"><input type="checkbox" id="introCheck" checked> Start-Animation beim Öffnen zeigen</label>
+  <label class="check" id="dualDirRow" hidden>↔ Animation bei 2 Monitoren:&nbsp;<select id="dualDir" style="width:auto"><option value="auto">Automatisch (wie die Monitore stehen)</option><option value="l">nach links</option><option value="r">nach rechts</option></select></label>
   <label class="check"><input type="checkbox" id="ssnCheck" checked> 🍂 Jahreszeit beim Starten und Beenden zeigen <small style="opacity:.7">(je 2 Wochen ab 1. März, Juni, September, Dezember)</small></label>
   <div class="dlg-actions"><button type="button" class="btn pri" id="thOk">Fertig</button></div>
  </div>
@@ -1020,7 +1037,8 @@ async function api(p,b){if(p==='/api/cancel')USER_ABORT=true;const r=await fetch
   const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||('Fehler '+r.status));return j}
 /* Einstellungen merken: im Programm in der Einstellungsdatei (der Port wechselt bei jedem Start, dann wäre localStorage leer) */
 const KV={t:0,get(k){const c=window.BVC_CONF;if(c&&c.ls&&k in c.ls)return c.ls[k];try{return localStorage.getItem(k)}catch(e){return null}},
-  set(k,v){try{localStorage.setItem(k,v)}catch(e){}const c=window.BVC_CONF;if(REAL&&c){c.ls=c.ls||{};c.ls[k]=v;clearTimeout(KV.t);KV.t=setTimeout(()=>api('/api/config',{ls:c.ls}).catch(()=>{}),250)}}};
+  p:{},set(k,v){try{localStorage.setItem(k,v)}catch(e){}const c=window.BVC_CONF;if(REAL&&c){c.ls=c.ls||{};c.ls[k]=v;KV.p[k]=v;clearTimeout(KV.t);KV.t=setTimeout(()=>{const p=KV.p;KV.p={};api('/api/config',{lsset:p}).catch(()=>{})},250)}}};
+const M2=new URLSearchParams(location.search).has('m2');
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const VID=/\.(mp4|m4v|mkv|mov|avi|ts|m2ts|mts|wmv|webm|flv|mpg|mpeg|vob|3gp|divx|ogv)$/i;
 const fmtMB=mb=>mb>=1024?(mb/1024).toFixed(2).replace('.',',')+' GB':Math.round(mb).toLocaleString('de-DE')+' MB';
@@ -1978,7 +1996,7 @@ const ST={same:['✓ Gleich','var(--ok)'],similar:['≈ Ähnlich','var(--warn)']
 function fileCell(x){
   if(!x)return '<span style="color:var(--mut)">–</span>';
   return `<div class="fc"><input type="checkbox" data-mk="${x.u}" ${MK.has(x)?'checked':''} title="Markieren"><div style="flex:1;min-width:0">${esc(x.name)}${CS().db&&dbTitle(x.name)?`<br><span class="dbtag">🎬 ${esc(dbTitle(x.name))}</span>`:''}${prot(x.side)?' <span class="shield" title="geschützt">🛡</span>':''}<div class="p">${esc(x.path)} · ${fmtMB(x.size/1048576)}${x.queued?' · <span style="color:var(--acc)">⚙ in Warteschlange</span>':''}</div></div>
-    <button class="ico" data-proc="${x.u}" title="Verarbeiten (in den Konverter)">⚙</button><button class="ico" data-del="${x.u}" title="Löschen">🗑</button></div>`;
+    <button class="ico real-only" data-play2="${x.u}" title="Im Player abspielen">▶</button><button class="ico" data-proc="${x.u}" title="Verarbeiten (in den Konverter)">⚙</button><button class="ico" data-del="${x.u}" title="Löschen">🗑</button></div>`;
 }
 const entry=u=>DIR.A.find(x=>x.u==u)||DIR.B.find(x=>x.u==u);
 function renderCmp(){
@@ -1997,6 +2015,7 @@ function renderCmp(){
   $$('[data-mk]').forEach(c=>c.onchange=()=>{const x=entry(c.dataset.mk);if(!x)return;c.checked?MK.add(x):MK.delete(x);renderCmp()});
   $$('[data-del]').forEach(b=>b.onclick=()=>{const x=entry(b.dataset.del);if(x)askDelete([x])});
   $$('[data-proc]').forEach(b=>b.onclick=()=>{const x=entry(b.dataset.proc);if(x)procEntries([x])});
+  $$('[data-play2]').forEach(b=>b.onclick=()=>{const x=entry(b.dataset.play2);if(x)playEntry(x)});
 }
 function updMk(){try{renderBil()}catch(e){}const n=MK.size,sz=[...MK].reduce((s,x)=>s+x.size,0);$('#mkInfo').textContent=n?`${n} markiert · ${fmtMB(sz/1048576)}`:'';$('#bDelMk').disabled=!n;$('#bProcMk').disabled=!n;
   $('#trashInfo').innerHTML=TRASH.length?`🗑 Papierkorb: ${TRASH.length} Datei(en) · ${fmtMB(TRASH.reduce((s,x)=>s+x.size,0)/1048576)} <button class="btn sm" id="bRestore">Alle wiederherstellen</button>`:'';
@@ -2169,7 +2188,11 @@ $('#splash').addEventListener('click',splashLeave);
 let SSN=null;const ssnOn=()=>store('bvc-seasons')!=='0';
 /* Jahreszeit nur in den ersten 2 Wochen nach dem Wechsel (1. März, 1. Juni, 1. September, 1. Dezember) */
 const ssnKey=(d=new Date())=>[3,6,9,12].includes(d.getMonth()+1)&&d.getDate()<=14?Seasons.pick(d):null;
-if(store('bvc-intro')==='0'){$('#splash').remove()}else{try{const k=ssnKey();if(ssnOn()&&k)SSN=Seasons.mount($('#splash'),k,'start')}catch(e){}setTimeout(splashLeave,matchMedia('(prefers-reduced-motion: reduce)').matches?600:3400)}
+const DUALWANT=()=>REAL&&KV.get('bvc-dual')==='1';
+if(M2){const sp=$('#splash');if(store('bvc-intro')==='0')sp.remove();else{sp.classList.add('hold','m2wait');sp.removeEventListener('click',splashLeave)}}
+else if(store('bvc-intro')==='0'){$('#splash').remove()}else{try{const k=ssnKey();if(ssnOn()&&k)SSN=Seasons.mount($('#splash'),k,'start')}catch(e){}
+  if(DUALWANT()){$('#splash').classList.add('hold');setTimeout(()=>{const sp=$('#splash');if(sp&&sp.classList.contains('hold')&&!DSTART){spUnhold(sp);setTimeout(splashLeave,2400)}},4500)}
+  else setTimeout(splashLeave,matchMedia('(prefers-reduced-motion: reduce)').matches?600:3400)}
 $('#quitBtn').onclick=async()=>{
   const done=Q.filter(q=>q.state==='done').length;
   $('#gHint').textContent=done===1?'Dein umgewandeltes Video ist fertig.':done>1?`Deine ${done} umgewandelten Videos sind fertig.`:'Bis zum nächsten Film.';
@@ -2749,7 +2772,7 @@ apFold(KV.get('bvc-apmini')==='1');
 
 /* Taskleiste (nur minimiert): kurzer Status + Fortschrittsbalken am Programm-Symbol */
 let STLAST='';
-setInterval(()=>{if(!REAL||!INFO)return;let st={title:'',pct:null,state:'none'};
+setInterval(()=>{if(!REAL||!INFO||M2)return;let st={title:'',pct:null,state:'none'};
   try{
     if(RUN.on){const all=parseFloat($('#pAllT').textContent)||0,f=parseFloat($('#mPct').textContent)||0,q=Q.find(x=>x.state==='run');
       const done=Q.filter(x=>x.state==='done').length,tot=Q.filter(x=>['done','run','queued'].includes(x.state)).length;
@@ -2821,7 +2844,10 @@ async function realTmdb(){
 var RESTORING=true;   // bis die alte Sitzung geladen ist, nichts überschreiben
 function saveSession(){
   const ss={q:Q.filter(q=>q.fid&&q.path).map(q=>({p:q.path,done:q.state==='done',out:q.out||'',swap:!!q.swap})),sel:(selQ()||{}).path||'',
-    A:SRC.A,B:SRC.B,protA:$('#protA').checked,protB:$('#protB').checked,tab:$('#v-cmp').classList.contains('on')?'cmp':'conv'};
+    A:SRC.A,B:SRC.B,protA:$('#protA').checked,protB:$('#protB').checked,tab:$('#v-cmp').classList.contains('on')?'cmp':'conv',t:Date.now()};
+  if(M2){KV.set('bvc-m2s',JSON.stringify({A:SRC.A,B:SRC.B,protA:ss.protA,protB:ss.protB,t:ss.t}));return}
+  if(document.body.classList.contains('dual')||DFOLD){let o={};try{o=JSON.parse(KV.get('bvc-session')||'{}')||{}}catch(e){}const m=sessM2()||{};
+    ss.A=m.A||o.A;ss.B=m.B||o.B;ss.protA=m.protA!=null?m.protA:o.protA;ss.protB=m.protB!=null?m.protB:o.protB;ss.tab='conv';ss.t=o.t||0}
   KV.set('bvc-session',JSON.stringify(ss));
 }
 async function restoreSession(){
@@ -2839,7 +2865,8 @@ async function restoreSession(){
     }
     if(ss.tab==='cmp')showTab('cmp');
   }finally{RESTORING=false}
-  for(const x of ['A','B'])if(ss[x])await realScan(x,ss[x]);
+  const m2s=sessM2();if(m2s&&(m2s.t||0)>(ss.t||0)){ss.A=m2s.A;ss.B=m2s.B}
+  if(!DUALWANT()){for(const x of ['A','B'])if(ss[x])await realScan(x,ss[x])}else DFOLD=ss;
   saveSession();
 }
 ['#protA','#protB'].forEach(id=>$(id).addEventListener('change',()=>{if(REAL&&INFO)saveSession();renderCmp()}));
@@ -2858,10 +2885,10 @@ async function realInit(){
   $('#oTopic').value=INFO.config.ntfy||('butchies-'+Math.random().toString(36).slice(2,10));
   if(!INFO.config.ntfy)api('/api/config',{ntfy:$('#oTopic').value}).catch(()=>{});
   if(INFO.config.plan&&!KV.get('bvc-plan')){Object.assign(PLAN,INFO.config.plan);planUI()}api('/api/config',{plan:PLAN}).catch(()=>{});
-  if(INFO.config.bench)benchLearn(INFO.config.bench);else setTimeout(()=>{if(!RUN.on)runBench(true)},25000);
+  if(INFO.config.bench)benchLearn(INFO.config.bench);else if(!M2)setTimeout(()=>{if(!RUN.on)runBench(true)},25000);
   markEnc();applyAuto();update();
-  await restoreSession();
-  tourAuto();
+  if(M2)await m2Restore();else await restoreSession();
+  if(!M2)tourAuto();
   $('#codecTbl').innerHTML='<table><thead><tr><th>Format</th><th>Wiedergabe</th></tr></thead><tbody>'+CODECS.map(([n])=>`<tr><td>${n}</td><td style="color:var(--ok)">✓ ${/MKV|AVI|HEVC|MPEG-2|AC-3|DTS|High 10/.test(n)?'live über ffmpeg':'direkt'}</td></tr>`).join('')+'</tbody></table>';
 }
 function markEnc(){if(!INFO)return;[...$('#sEnc').options].forEach(o=>{const ok=INFO.hw[o.value]!==false;o.disabled=!ok;if(!ok&&!/nicht verfügbar/.test(o.text))o.text+=' – nicht verfügbar'});
@@ -3062,6 +3089,98 @@ function loadSet(){let v;try{v=JSON.parse(KV.get('bvc-set')||'null')}catch(e){}i
 loadSet();
 SETIDS.forEach(id=>{const e=$(id);if(e)e.addEventListener('change',()=>setTimeout(saveSet,0))});
 $$('#sFam button,#sMode button,.am button').forEach(b=>b.addEventListener('click',()=>setTimeout(saveSet,0)));
+
+/* ================= Zwei-Monitor-Ansicht ================= */
+var DSTART=false,DFOLD=null,DOPEN=false,DINFO={n:1,on:false,side:'l',dir:'auto'},M2READY=null;
+const wapi=()=>window.pywebview&&window.pywebview.api;
+const dwait=t=>new Promise(r=>setTimeout(r,t));
+const RED=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
+function sessM2(){try{return JSON.parse(KV.get('bvc-m2s')||'null')}catch(e){return null}}
+function dDir(){const d=$('#dualDir')?$('#dualDir').value:DINFO.dir;return d==='l'||d==='r'?d:(DINFO.side||'l')}
+function spUnhold(sp){sp.classList.remove('hold','m2wait');sp.querySelectorAll('.sp-kicker,.sp-title,.sp-tag,.sp-skip').forEach(e=>{e.style.animation='none';void e.offsetWidth;e.style.animation=''})}
+function dFlash(){const f=document.createElement('div');f.className='dflash';document.body.appendChild(f);setTimeout(()=>f.remove(),700)}
+function dStreak(to){if(RED())return;const e=document.createElement('div');e.className='dstreak'+(to==='r'?' rt':'');document.body.appendChild(e);
+  const k=to==='l'?[{left:'50%',width:'0%'},{left:'-15%',width:'65%'}]:[{left:'50%',width:'0%'},{left:'50%',width:'65%'}];
+  e.animate(k,{duration:600,easing:'cubic-bezier(.6,0,.4,1)',fill:'forwards'}).onfinish=()=>e.remove()}
+/* Logo fliegt in Richtung d ('l'/'r') aus dem Bild */
+async function flyOut(el,d){if(!el)return;el.style.animation='none';el.style.transition='transform .7s cubic-bezier(.6,0,.4,1),opacity .7s';void el.offsetWidth;
+  dStreak(d);el.style.transform=`translateX(${d==='l'?-110:110}vw) scale(.8)`;el.style.opacity='0';setTimeout(dFlash,250);await dwait(RED()?50:650)}
+/* Logo kommt von Seite d ('l'/'r') herein */
+async function flyIn(el,d){if(!el)return;el.style.animation='none';el.style.transition='none';el.style.transform=`translateX(${d==='l'?-110:110}vw) scale(.8)`;el.style.opacity='0';void el.offsetWidth;
+  dFlash();el.style.transition='transform .75s cubic-bezier(.2,.8,.3,1),opacity .6s';requestAnimationFrame(()=>{el.style.transform='none';el.style.opacity='1'});await dwait(RED()?50:750)}
+const opp=d=>d==='l'?'r':'l';
+function dualUi(){const on=document.body.classList.contains('dual')||M2;
+  $('#dualBtn').hidden=!(M2||DINFO.n>1);$('#dualLbl').textContent=on?'1 Monitor':'2 Monitore';$('#dualBtn').firstChild.textContent=on?'🖥':'🖥🖥';
+  $('#swapBtn').hidden=!on;$('#dualDirRow').hidden=!(DINFO.n>1);if($('#dualDir')&&DINFO.dir)$('#dualDir').value=DINFO.dir}
+function dualMain(on){document.body.classList.toggle('dual',on);
+  if(on){if($('#v-cmp').classList.contains('on'))_showTab('conv');_setMode('ab')}else{_setMode(KV.get('bvc-pmode')==='ab'?'ab':'play')}dualUi()}
+function m2Ready(){if(M2READY)M2READY.r()}
+function newReady(){let r;const p=new Promise(x=>r=x);M2READY={p,r};return Promise.race([p,dwait(9000)])}
+/* Studio-Fenster: beim Start rüber springen */
+async function dualBoot(){const w=wapi();if(!w||!w.dual_info||M2)return;
+  DINFO=await w.dual_info().catch(()=>DINFO);dualUi();
+  const sp=$('#splash'),on=DINFO.on&&DINFO.n>1;
+  if(!on){if(KV.get('bvc-dual')==='1'){KV.set('bvc-dual','0');if(DFOLD){const ss=DFOLD;DFOLD=null;for(const x of ['A','B'])if(ss[x])realScan(x,ss[x])}}
+    if(sp&&sp.classList.contains('hold')&&!DSTART){DSTART=true;spUnhold(sp);setTimeout(splashLeave,2400)}return}
+  DSTART=true;KV.set('bvc-dual','1');SRC.A=SRC.B='';dualMain(true);const ready=newReady();await w.dual_prepare();
+  if(sp&&sp.classList.contains('hold')){await dwait(RED()?200:1500);await ready;const d=dDir();
+    await flyOut(sp.querySelector('.sp-logo'),d);await w.dual_show();DOPEN=true;w.send('m2',`m2Arrive('${opp(d)}')`);await dwait(300);splashLeave()}
+  else{await ready;await w.dual_show();DOPEN=true;w.send('m2',`m2Arrive('${opp(dDir())}')`)}}
+/* Knopf „2 Monitore“ / „1 Monitor“ */
+async function dualToggle(){const w=wapi();if(!w||!w.dual_set)return;
+  if(!document.body.classList.contains('dual')){if(DINFO.n<2)return toast('Nur ein Bildschirm gefunden.');
+    KV.set('bvc-dual','1');await w.dual_set(true);DINFO.on=true;dualMain(true);const ready=newReady();await w.dual_prepare();await ready;
+    const d=dDir();dStreak(d);dFlash();await dwait(350);await w.dual_show();DOPEN=true;w.send('m2',`m2Arrive('${opp(d)}')`);
+    SRC.A=SRC.B='';toast('🖥🖥 Ordner-Abgleich + Player laufen jetzt auf dem anderen Bildschirm.')}
+  else{const d=dDir();if(DOPEN){w.send('m2',`m2Bye('${d}',1)`);await dwait(RED()?400:1900)}await w.dual_hide();DOPEN=false;
+    KV.set('bvc-dual','0');await w.dual_set(false);DINFO.on=false;dStreak(opp(d));dFlash();dualMain(false);
+    const m=sessM2();if(m)for(const x of ['A','B'])if(m[x])realScan(x,m[x]);toast('🖥 Alles wieder in einem Fenster.')}}
+$('#dualBtn').onclick=()=>{if(M2){const w=wapi();if(w)w.send('main','dualToggle()')}else dualToggle()};
+$('#swapBtn').onclick=async()=>{const w=wapi();if(w&&w.dual_swap){await w.dual_swap();DINFO=await w.dual_info().catch(()=>DINFO);if(!M2)w.send('m2','m2Info()');else w.send('main','dualInfo()')}};
+async function dualInfo(){const w=wapi();if(w)DINFO=await w.dual_info().catch(()=>DINFO);dualUi()}
+$('#dualDir').onchange=e=>{const w=wapi();DINFO.dir=e.target.value;if(w&&w.dual_dir)w.dual_dir(e.target.value)};
+/* Beenden: erst Monitor 2, dann rüber zum Hauptmonitor */
+{const quit0=$('#quitBtn').onclick;
+ $('#quitBtn').onclick=async()=>{const w=wapi();
+  if(M2){if(w)w.send('main',"document.getElementById('quitBtn').click()");return}
+  const g=$('#goodbye');g.classList.remove('late');
+  if(DOPEN&&w){const d=dDir();g.dataset.from=d;w.send('m2',`m2Bye('${d}')`);await dwait(RED()?500:3100);await w.dual_hide();DOPEN=false;g.classList.add('late');
+    const lg=g.querySelector('.g-logo');setTimeout(()=>flyIn(lg,d),60)}
+  return quit0()}}
+/* Player gehört bei 2 Monitoren auf den anderen Bildschirm */
+const _oip=openInPlayer,_showTab=showTab,_setMode=setMode,_applyTheme=applyTheme;
+openInPlayer=function(q){if(!M2&&document.body.classList.contains('dual')&&DOPEN&&q&&q.fid){P.item=q;const o={};['id','fid','name','path','size','w','h','dur','fps','hdr','vcodec','direct','bad','force'].forEach(k=>o[k]=q[k]);
+  wapi().send('m2','m2Play('+JSON.stringify(JSON.stringify(o))+')');toast('▶ Läuft auf dem anderen Bildschirm.');return}return _oip(q)};
+showTab=function(v){if(M2){if(v==='play')_setMode('play');else if(v==='cmp')_showTab('cmp');return}
+  if(document.body.classList.contains('dual')){if(v==='play')return;if(v==='cmp'){toast('Der Ordner-Abgleich ist auf dem anderen Bildschirm.');return}}return _showTab(v)};
+setMode=function(m){if(M2)m='play';else if(document.body.classList.contains('dual'))m='ab';return _setMode(m)};
+applyTheme=function(id){_applyTheme(id);const w=wapi();if(!M2&&DOPEN&&w)w.send('m2',`applyTheme('${id}')`)};
+async function playEntry(x){if(!REAL||!x.full)return;try{const r=await api('/api/add',{paths:[x.full]});const e=r.files[0];if(!e)return toast('Datei nicht lesbar.');
+  let q=Q.find(y=>y.fid===e.id)||PL.find(y=>y.fid===e.id);if(!q){q=eToQ(e);PL.push(q)}openInPlayer(q);showTab('play')}catch(err){toast(err.message)}}
+/* ---------- Fenster 2 (Monitor 2) ---------- */
+function m2Play(js){const o=JSON.parse(js);let q=PL.find(y=>y.fid===o.fid);if(!q){q=Object.assign({id:++uid},o);PL.push(q)}_oip(q)}
+async function m2Arrive(d){const sp=$('#splash');DINFO.on=true;dualUi();
+  if(!sp){dFlash();return}sp.classList.remove('m2wait');const lg=sp.querySelector('.sp-logo');await flyIn(lg,d);spUnhold(sp);await dwait(RED()?500:2600);splashLeave()}
+async function m2Bye(d,quick){try{pPause()}catch(e){}const g=$('#goodbye');g.hidden=false;g.classList.remove('closing','done','late');$('#gBack').hidden=true;
+  $('#gHint').textContent=quick?'Alles wieder auf einem Bildschirm.':'Bis zum nächsten Film.';requestAnimationFrame(()=>g.classList.add('show'));
+  await dwait(quick?(RED()?100:900):(RED()?300:2100));g.querySelector('.g-center').querySelectorAll('p,h1,.g-actions').forEach(e=>{e.style.transition='opacity .35s';e.style.opacity='0'});await dwait(300);
+  await flyOut(g.querySelector('.g-logo'),d)}
+async function m2Info(){const w=wapi();if(w)DINFO=await w.dual_info().catch(()=>DINFO);dualUi()}
+async function m2Restore(){const m=sessM2();let o={};try{o=JSON.parse(KV.get('bvc-session')||'{}')||{}}catch(e){}const s=m&&(m.t||0)>=(o.t||0)?m:Object.assign({},o,m||{});
+  $('#protA').checked=!!s.protA;$('#protB').checked=s.protB!==false;RESTORING=false;for(const x of ['A','B'])if(s[x])await realScan(x,s[x]);saveSession()}
+if(M2){document.body.classList.add('m2');document.title='Butchies Video Converter AI – Ordner-Abgleich';
+  $('.brand b').innerHTML='Ordner-Abgleich <span class="ai-mark">· Monitor 2</span>';$('.brand small').textContent='Ordner A ↔ B · KI-Suche · Player';
+  const cmp=$('#bCmp').closest('.card'),low=document.createElement('div');low.className='m2low';cmp.parentNode.insertBefore(low,cmp);low.appendChild(cmp);low.appendChild($('#stageCard'));
+  $('#stageCard').classList.remove('mini');_setMode('play');_showTab('cmp');dualUi();
+  /* Einstellungen der Abgleich-Regeln getrennt merken, damit Fenster 2 nichts vom Studio überschreibt */
+  saveSet=function(){const v={};['#cTh','#cVid','#cImg','#cDb','#cSub','#pUp'].forEach(id=>{const e=$(id);if(e)v[id]=e.type==='checkbox'?e.checked:e.value});KV.set('bvc-m2set',JSON.stringify(v))};
+  try{const v=JSON.parse(KV.get('bvc-m2set')||'null');if(v)Object.keys(v).forEach(id=>{const e=$(id);if(!e)return;if(e.type==='checkbox')e.checked=!!v[id];else e.value=v[id]})}catch(e){}
+  realAdd=async function(paths,open){const w=wapi();if(!w||!paths||!paths.length)return [];w.send('main',`realAdd(${JSON.stringify(paths)},${open?'true':'false'})`);
+    if(!open)toast(`${paths.length} Datei(en) an das Studio übergeben.`);return paths.map(p=>({path:p}))};
+  addEventListener('pywebviewready',()=>setTimeout(()=>{const w=wapi();if(w){w.send('main','m2Ready()');m2Info()}},300));
+  setTimeout(()=>{const w=wapi();if(w)w.send('main','m2Ready()')},2500)}
+else addEventListener('pywebviewready',()=>setTimeout(dualBoot,200));
+window.m2Play=m2Play;window.m2Arrive=m2Arrive;window.m2Bye=m2Bye;window.m2Info=m2Info;window.m2Ready=m2Ready;window.dualToggle=dualToggle;window.dualInfo=dualInfo;window.applyTheme=applyTheme;window.realAdd=(...a)=>realAdd(...a);
 bindRows();renderPresets();applyAuto();applyCmpAuto();renderBil();
 if(REAL)realInit();
 update();

@@ -35,6 +35,14 @@ FFmpeg mit allen Codecs ist dabei (inklusive VMAF-Messung und HDR). WebView2 wir
 **Neu in 1.1.3**
 - Das Programm **merkt sich jetzt alles** bis zum nächsten Start: Design, Start-Animation an/aus, Auto/Manuell-Schalter, eigene Einstellungen (Codec, Zielgröße, Zeitplan …) und eigene Vorlagen. Bisher ging das beim Neustart verloren
 
+**Neu in 1.7.0: Zwei-Monitor-Ansicht**
+- 🖥🖥 Neuer Knopf oben rechts „2 Monitore“: Studio auf dem Hauptmonitor, **Ordner-Abgleich + normaler Player** auf dem anderen Bildschirm. Vorher/Nachher bleibt im Studio
+- ⇄ „Monitore tauschen“ und „1 Monitor“ (zurück zu einem Fenster) in beiden Fenstern
+- Wird beim Beenden gemerkt: beim nächsten Start geht es wieder genauso auf
+- Start: Logo erscheint auf dem Hauptmonitor, springt mit Flash rüber – erst dann öffnet sich das zweite Fenster und die Schrift erscheint dort. Beenden genau umgekehrt
+- Richtung der Animation einstellbar (Design-Fenster): automatisch, nach links oder nach rechts – passt sich jedem Design an
+- ▶ Jede Datei im Ordner-Abgleich direkt abspielen
+
 **Neu in 1.6.3 – Final (stabile Version)**
 - 🧠 KI-Analyse: Film anklicken → klappt auf (wie immer). Während umgewandelt wird bleibt sie zu, nach dem Ende klappt sie wieder auf
 

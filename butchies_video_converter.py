@@ -10,7 +10,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 APP_NAME = 'Butchies Video Converter'
-VERSION = '1.6.3'
+VERSION = '1.7.0'
 FROZEN = getattr(sys, 'frozen', False)
 BASE = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent))
 UI = BASE / 'ui'
@@ -104,7 +104,10 @@ def save_config(conf):
 def update_config(**kw):
     with CONF_LOCK:
         conf = load_config()
+        add = kw.pop('lsset', None)
         conf.update(kw)
+        if isinstance(add, dict):          # nur geänderte Werte (zwei Fenster überschreiben sich sonst gegenseitig)
+            conf['ls'] = dict(conf.get('ls') or {}, **add)
         save_config(conf)
         return conf
 
@@ -2023,7 +2026,7 @@ class Handler(BaseHTTPRequestHandler):
                 power(d.get('action', 'cancel'))
                 return self.send_json(200, {'ok': True})
             if path == '/api/config':
-                update_config(**{k: d[k] for k in ('outdir', 'theme', 'intro', 'tmdb', 'ntfy', 'auto', 'presets', 'ls', 'monoff', 'load', 'plan') if k in d})
+                update_config(**{k: d[k] for k in ('outdir', 'theme', 'intro', 'tmdb', 'ntfy', 'auto', 'presets', 'ls', 'lsset', 'monoff', 'load', 'plan') if k in d})
                 return self.send_json(200, {'ok': True, 'outdir': outdir()})
             if path == '/api/show':
                 target = d.get('path') or outdir()
@@ -2393,7 +2396,132 @@ class WinFrame:
     def close(self):
         self.save_state()
         stop_all()
+        try:
+            if WIN2[0]:
+                WIN2[0].destroy()
+        except Exception:  # noqa: BLE001
+            pass
         self.win.destroy()
+
+
+WIN2 = [None]      # zweites Fenster (Monitor 2: Ordner-Abgleich + Player)
+
+
+class Dual:
+    """Zwei-Monitor-Ansicht: Hauptfenster = Studio, zweites Fenster = Ordner-Abgleich + normaler Player."""
+
+    def __init__(self, frame, url, make_api):
+        self.frame, self.url, self.make_api = frame, url, make_api
+        self.f2 = WinFrame()
+
+    def mons(self):
+        try:
+            return self.frame.monitors()
+        except Exception:  # noqa: BLE001
+            return []
+
+    def extra(self):
+        """Der andere Monitor (nicht der, auf dem das Studio gerade ist)."""
+        mons = self.mons()
+        cur = self.frame._cur_monitor()
+        rest = [m for m in mons if m != cur]
+        return cur, (rest[0] if rest else None)
+
+    def info(self):
+        c = load_config()
+        cur, ex = self.extra()
+        side = 'l'
+        if cur and ex:
+            side = 'l' if ex[0] + ex[2] / 2 < cur[0] + cur[2] / 2 else 'r'
+        return {'n': len(self.mons()), 'on': bool(c.get('dual')), 'side': side, 'dir': c.get('dualdir') or 'auto', 'open': bool(WIN2[0])}
+
+    def prepare(self):
+        """Fenster 2 unsichtbar vorbereiten (lädt im Hintergrund), damit es beim Flash sofort da ist."""
+        if WIN2[0]:
+            return True
+        cur, ex = self.extra()
+        if not ex:
+            return False
+        import webview
+        u = self.url.replace('/#', '/?m2=1#', 1)
+        w = webview.create_window(APP_NAME + ' – Ordner-Abgleich', u, x=ex[0] + 40, y=ex[1] + 40, width=min(1400, ex[2] - 80),
+                                  height=min(900, ex[3] - 80), min_size=(960, 620), frameless=True, easy_drag=False, hidden=True,
+                                  background_color='#000000', js_api=self.make_api('m2'), text_select=True)
+        self.f2 = WinFrame()
+        self.f2.win = w
+        WIN2[0] = w
+
+        def on_loaded(*a):
+            try:
+                from webview.dom import DOMEventHandler
+
+                def on_drop(ev):
+                    files = (ev.get('dataTransfer') or {}).get('files') or []
+                    paths = [f.get('pywebviewFullPath') for f in files if f.get('pywebviewFullPath')]
+                    if paths:
+                        w.evaluate_js('window.nativeDrop && window.nativeDrop(%s)' % json.dumps(paths))
+                w.dom.document.events.drop += DOMEventHandler(on_drop, True, True)
+            except Exception:  # noqa: BLE001
+                pass
+        w.events.loaded += on_loaded
+        return True
+
+    def show(self):
+        """Beim Flash: Fenster 2 auf dem anderen Monitor maximiert zeigen und dort die Ankunft abspielen."""
+        if not WIN2[0] and not self.prepare():
+            return False
+        cur, ex = self.extra()
+        w = WIN2[0]
+        try:
+            w.show()
+            time.sleep(0.05)
+            f = self.f2
+            f.hwnd = 0
+            f.saved = None
+            if ex:
+                f._place(ex[0] + 40, ex[1] + 40, ex[2] - 80, ex[3] - 80)
+            f.toggle_max()
+        except Exception as ex2:  # noqa: BLE001
+            print('Fenster 2:', ex2, flush=True)
+        return True
+
+    def hide(self):
+        w = WIN2[0]
+        WIN2[0] = None
+        if w:
+            try:
+                w.destroy()
+            except Exception:  # noqa: BLE001
+                pass
+        return True
+
+    def swap(self):
+        """Monitore tauschen: Studio und Ordner-Abgleich wechseln den Bildschirm."""
+        cur, ex = self.extra()
+        if not (cur and ex):
+            return False
+        for f, m in ((self.frame, ex), (self.f2 if WIN2[0] else None, cur)):
+            if not f:
+                continue
+            full = bool(f.full)
+            f.full = None
+            f.saved = None
+            f._place(m[0] + 40, m[1] + 40, m[2] - 80, m[3] - 80)
+            f.toggle_max()
+            if full:
+                f.toggle_full()
+        self.frame.save_state()
+        return True
+
+    def to(self, target, js):
+        w = WIN2[0] if target == 'm2' else self.frame.win
+        if not w:
+            return False
+        try:
+            w.evaluate_js(js)
+        except Exception:  # noqa: BLE001
+            return False
+        return True
 
 
 def native_window(url):
@@ -2407,43 +2535,93 @@ def native_window(url):
     NATIVE[0] = True
 
     class Api:
+        def __init__(self, role='main'):
+            self.role = role
+
+        def _f(self):
+            return dual.f2 if self.role == 'm2' else frame
+
         def minimize(self):
-            frame.minimize()
+            self._f().minimize()
+
+        def dual_info(self):
+            try:
+                d = dual.info()
+                d['role'] = self.role
+                return d
+            except Exception:  # noqa: BLE001
+                return {'n': 1, 'on': False, 'side': 'l', 'dir': 'auto', 'role': self.role}
+
+        def dual_set(self, on):
+            update_config(dual=bool(on))
+            if not on:
+                dual.hide()
+            return True
+
+        def dual_dir(self, d):
+            update_config(dualdir=str(d) if d in ('auto', 'l', 'r') else 'auto')
+            return True
+
+        def dual_prepare(self):
+            try:
+                return dual.prepare()
+            except Exception as ex:  # noqa: BLE001
+                print('Fenster 2:', ex, flush=True)
+                return False
+
+        def dual_show(self):
+            return dual.show()
+
+        def dual_hide(self):
+            return dual.hide()
+
+        def dual_swap(self):
+            try:
+                return dual.swap()
+            except Exception:  # noqa: BLE001
+                return False
+
+        def send(self, target, js):
+            return dual.to(str(target), str(js))
 
         def toggle_max(self):
-            return frame.toggle_max()
+            return self._f().toggle_max()
 
         def is_max(self):
-            return frame.is_max()
+            return self._f().is_max()
 
         def drag(self):
-            frame.drag()
+            self._f().drag()
 
         def resize(self, edge):
-            frame.resize(str(edge))
+            self._f().resize(str(edge))
 
         def close(self):
+            if self.role == 'm2':
+                return dual.to('main', "document.getElementById('quitBtn').click()")
             frame.close()
 
         def toggle_fullscreen(self):
             try:
-                r = frame.toggle_full()
+                r = self._f().toggle_full()
                 frame.save_state()
                 return r
             except Exception:  # noqa: BLE001
                 return False
 
         def is_full(self):
-            return bool(frame.full)
+            return bool(self._f().full)
 
         def fit_full(self):
             try:
-                return frame.fit_full()
+                return self._f().fit_full()
             except Exception:  # noqa: BLE001
                 return False
 
         def next_monitor(self):
             try:
+                if self.role == 'm2' or WIN2[0]:
+                    return dual.swap()
                 r = frame.next_monitor()
                 frame.save_state()
                 return r
@@ -2458,7 +2636,7 @@ def native_window(url):
 
         def pick_folder(self, start=''):
             try:
-                res = frame.win.create_file_dialog(webview.FOLDER_DIALOG, directory=start or '')
+                res = self._f().win.create_file_dialog(webview.FOLDER_DIALOG, directory=start or '')
             except Exception:  # noqa: BLE001
                 return ''
             return res[0] if res else ''
@@ -2467,6 +2645,7 @@ def native_window(url):
     win = webview.create_window(APP_NAME, url, width=1400, height=920, min_size=(960, 620), frameless=True, easy_drag=False,
                                 background_color='#0d0a05', js_api=Api(), text_select=True)
     frame.win = win
+    dual = Dual(frame, url, Api)
     WIN[0] = win
 
     def on_loaded(*a):
