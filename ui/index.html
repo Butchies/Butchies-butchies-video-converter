@@ -527,6 +527,27 @@ dialog[open]{animation:dlg .3s ease}
 .dstreak{position:fixed;top:50%;height:6px;margin-top:-3px;z-index:399;pointer-events:none;border-radius:6px;box-shadow:0 0 24px var(--b)}
 .dstreak.rt{background:linear-gradient(270deg,transparent,#fff,var(--b),var(--a))}
 .goodbye.instant{transition:none}
+/* ---------- Zwei-Monitor-Ansicht als EIN Fenster über beide Bildschirme ---------- */
+.splash,.goodbye{contain:paint}
+html.spanpre,html.spanpre body{background:#000!important}
+body.span{overflow:hidden}
+body.span .grips,body.span #winMax,body.span #winFull,body.span .tab[data-v=cmp]{display:none!important}
+body.span .top{position:fixed;left:var(--mL);top:var(--mT);width:var(--mW);box-sizing:border-box}
+body.span .wrap{position:fixed;left:var(--mL);top:calc(var(--mT) + var(--hH,70px));width:var(--mW);height:calc(var(--mH) - var(--hH,70px));overflow:auto;box-sizing:border-box;max-width:none;margin:0}
+body.span .splash,body.span>.goodbye{inset:auto;left:var(--mL);top:var(--mT);width:var(--mW);height:var(--mH)}
+body.span .toast{left:calc(var(--mL) + var(--mW) / 2)}
+body.span .modal{inset:auto;left:var(--mL);top:var(--mT);width:var(--mW);height:var(--mH)}
+#pane2{display:none}
+body.span #pane2{display:flex;flex-direction:column;position:fixed;left:var(--oL);top:var(--oT);width:var(--oW);height:var(--oH);contain:paint;z-index:30;background:radial-gradient(60% 60% at 50% 30%,var(--bg2),var(--bg));border-left:1px solid var(--line)}
+#pane2 .p2head{display:flex;align-items:center;gap:10px;padding:12px 20px;border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--bg) 65%,transparent)}
+#pane2 .p2head b{font:800 18px var(--fh)}
+#p2body{flex:1;overflow:auto;padding:16px 20px}
+#p2body #v-cmp{display:block}#p2body #stageCard{margin-bottom:14px}#p2body #stageCard:not(.mini) #plWrap{max-width:calc(58vh * 16 / 9);margin:0 auto}
+#p2body #pMiniAb,#p2body #stMode [data-m=ab]{display:none!important}
+#p2cover{position:absolute;inset:0;background:#000;z-index:200;transition:opacity .25s}#p2cover.off{opacity:0;pointer-events:none}
+body.span dialog[open]{margin:0;position:fixed;left:calc(var(--mL) + var(--mW) / 2);top:calc(var(--mT) + var(--mH) / 2);transform:translate(-50%,-50%);max-height:calc(var(--mH) - 40px);animation:none}
+body.span dialog.on2[open]{left:calc(var(--oL) + var(--oW) / 2);top:calc(var(--oT) + var(--oH) / 2);max-height:calc(var(--oH) - 40px)}
+
 /* Scrollleisten unsichtbar (Scrollen mit Mausrad/Touchpad geht weiter) */
 *{scrollbar-width:none}*::-webkit-scrollbar{width:0!important;height:0!important;display:none}
 .mswrap{display:inline-flex;gap:4px;margin-left:auto;margin-right:10px;flex:none}.pg-head .mswrap{margin-right:0}
@@ -2929,7 +2950,7 @@ async function restoreSession(){
     if(ss.tab==='cmp')showTab('cmp');
   }finally{RESTORING=false}
   const m2s=sessM2();if(m2s&&(m2s.t||0)>(ss.t||0)){ss.A=m2s.A;ss.B=m2s.B}
-  if(!DUALWANT()){for(const x of ['A','B'])if(ss[x])await realScan(x,ss[x])}else DFOLD=ss;
+  for(const x of ['A','B'])if(ss[x])await realScan(x,ss[x]);
   saveSession();
 }
 ['#protA','#protB'].forEach(id=>$(id).addEventListener('change',()=>{if(REAL&&INFO)saveSession();renderCmp()}));
@@ -3175,7 +3196,7 @@ function stkBg(head){const c=ANIM.color==='white'?'#fff,#fff':ANIM.color==='rain
 /* Lichtstreifen: mode 'out' = vom Logo zur Kante (Logo fliegt nach d raus), 'in' = von der Kante d bis zur Mitte (Logo kommt von d).
    Er bleibt stehen, bis das Logo wieder steht, und blendet dann aus – auf beiden Monitoren sichtbar. */
 function dStreak(d,mode,root,hold,ref){if(RED()||ANIM.streak==='off')return;const e=document.createElement('div');e.className='dstreak';
-  const h=ANIM.streak==='thin'?3:8;const R=root?root.getBoundingClientRect():{left:0,top:0,width:innerWidth,height:innerHeight};
+  const h=ANIM.streak==='thin'?3:8;const hostR=!root&&ref&&ref.closest('.splash,.goodbye');const R=root?root.getBoundingClientRect():hostR?hostR.getBoundingClientRect():{left:0,top:0,width:innerWidth,height:innerHeight};
   /* Höhe und Lage am Logo ausrichten (das Logo sitzt nicht immer in der Bildschirmmitte) */
   let cy=R.height/2,cx=R.width/2,rad=0;if(ref){const tr=ref.style.transform,tn=ref.style.transition;ref.style.transition='none';ref.style.transform='none';const r=ref.getBoundingClientRect();ref.style.transform=tr;void ref.offsetWidth;ref.style.transition=tn;if(r.width){cy=r.top-R.top+r.height/2;cx=r.left-R.left+r.width/2;rad=r.width/2}}
   e.style.height=h+'px';e.style.top=(cy-h/2)+'px';e.style.marginTop='0';
@@ -3202,9 +3223,9 @@ function dStreak(d,mode,root,hold,ref){if(RED()||ANIM.streak==='off')return;cons
     e.style.transition=`opacity ${f}s ease-out, transform ${f}s ease-out`;e.style.opacity='0';e.style.transform=mode==='in'?'scaleX(.25) scaleY(.4)':'scaleY(.4)';setTimeout(()=>e.remove(),f*1000+100)},T+keep)}
 /* Logo fliegt in Richtung d ('l'/'r') aus dem Bild */
 async function flyOut(el,d,hold){if(!el)return;const k=AK();el.style.animation='none';el.style.transition=`transform ${.7*k}s cubic-bezier(.6,0,.4,1),opacity ${.7*k}s`;void el.offsetWidth;
-  dStreak(d,'out',null,hold,el);el.style.transform=`translateX(${d==='l'?-110:110}vw) scale(.8)`;el.style.opacity='0';setTimeout(()=>dFlash(),250*k);await dwait(RED()?50:650*k)}
+  dStreak(d,'out',null,hold,el);{const H=el.closest('.splash,.goodbye'),D=(H?H.clientWidth:innerWidth)*1.1;el.style.transform=`translateX(${d==='l'?-D:D}px) scale(.8)`}el.style.opacity='0';setTimeout(()=>dFlash(),250*k);await dwait(RED()?50:650*k)}
 /* Logo kommt von Seite d ('l'/'r') herein */
-async function flyIn(el,d){if(!el)return;const k=AK();el.style.animation='none';el.style.transition='none';el.style.transform=`translateX(${d==='l'?-110:110}vw) scale(.8)`;el.style.opacity='0';void el.offsetWidth;
+async function flyIn(el,d){if(!el)return;const k=AK();el.style.animation='none';el.style.transition='none';{const H=el.closest('.splash,.goodbye'),D=(H?H.clientWidth:innerWidth)*1.1;el.style.transform=`translateX(${d==='l'?-D:D}px) scale(.8)`}el.style.opacity='0';void el.offsetWidth;
   dFlash();dStreak(d,'in',null,null,el);el.style.transition=`transform ${.75*k}s cubic-bezier(.2,.8,.3,1),opacity ${.6*k}s`;requestAnimationFrame(()=>{el.style.transform='none';el.style.opacity='1'});await dwait(RED()?50:750*k)}
 const opp=d=>d==='l'?'r':'l';
 function animUi(){$('#anSpeed').value=ANIM.speed;$('#anFlash').value=ANIM.flash;$('#anStreak').value=ANIM.streak;$('#anColor').value=ANIM.color}
@@ -3223,7 +3244,7 @@ async function animPrev(bye){const id=++APV,d=dDir(),k=AK();const box=$('#anPrev
   await dwait(1500*k);if(id!==APV)return;if(bye){from.classList.add('off')}}
 $('#anPlay').onclick=()=>animPrev(false);$('#anPlayB').onclick=()=>animPrev(true);
 animUi();
-function dualUi(){const on=document.body.classList.contains('dual')||M2;
+function dualUi(){if(!M2)return dualUi2();const on=document.body.classList.contains('dual')||M2;
   $('#dualBtn').hidden=!(M2||DINFO.n>1);$('#dualLbl').textContent=on?'1 Monitor':'2 Monitore';$('#dualBtn').firstChild.textContent=on?'🖥':'🖥🖥';
   $('#swapBtn').hidden=true;if($('#dualDir')&&DINFO.dir)$('#dualDir').value=DINFO.dir}
 function dualMain(on){document.body.classList.toggle('dual',on);
@@ -3298,7 +3319,7 @@ if(M2){document.body.classList.add('m2');document.title='Butchies Video Converte
     if(!open)toast(`${paths.length} Datei(en) an das Studio übergeben.`);return paths.map(p=>({path:p}))};
   addEventListener('pywebviewready',()=>setTimeout(()=>{const w=wapi();if(w){w.send('main','m2Ready()');m2Info()}},300));
   setTimeout(()=>{const w=wapi();if(w)w.send('main','m2Ready()')},2500)}
-else if(!new URLSearchParams(location.search).get('pop'))addEventListener('pywebviewready',()=>setTimeout(dualBoot,200));
+/* 2-Fenster-Start ersetzt durch spanBoot (ein Fenster über beide Monitore) */
 
 
 /* ---------- Player: Vollbild mit allen Steuerelementen + einstellbarer Statistik ---------- */
@@ -3402,6 +3423,62 @@ if(POP){document.body.classList.add('pop');const sp=$('#splash');if(sp)sp.remove
     const t=el.tagName==='LABEL'?(el.querySelector('input')||el):el,s=sel(t);if(!s)return;e.preventDefault();fwd(`popAct(${JSON.stringify(POP)},${JSON.stringify(s)},'click')`)},true);
   document.addEventListener('change',e=>{const el=e.target,s=sel(el);if(!s||el.type==='checkbox'||el.type==='radio')return;fwd(`popAct(${JSON.stringify(POP)},${JSON.stringify(s)},'change',${JSON.stringify(el.value)})`)},true);
   addEventListener('pywebviewready',()=>setTimeout(()=>fwd(`popReady(${JSON.stringify(POP)})`),200));setTimeout(()=>fwd(`popReady(${JSON.stringify(POP)})`),1500)}
+
+/* ================= Zwei-Monitor-Ansicht: EIN Fenster über beide Bildschirme ================= */
+let SPAN=null;const SPL_HTML=$('#splash')?$('#splash').innerHTML:'',GB_HTML=$('#goodbye').innerHTML;
+const isSpan=()=>document.body.classList.contains('span');
+const P2=document.createElement('div');P2.id='pane2';P2.innerHTML='<div class="p2head"><b>🗂️ Ordner-Abgleich</b><small style="color:var(--muted)">Monitor 2 · Player</small><span style="flex:1"></span><button class="btn ghost sm" id="p2swap" title="Monitore tauschen">⇄</button><button class="btn ghost sm" id="p2one">🖥 1 Monitor</button></div><div id="p2body"></div><div id="p2cover"></div>';document.body.appendChild(P2);
+const HOME_CMP={p:$('#v-cmp').parentNode,n:$('#v-cmp').nextSibling},HOME_STAGE={p:$('#stageCard').parentNode,n:$('#stageCard').nextSibling};
+function spanVars(){if(!SPAN)return;const sw=KV.get('bvc-spanswap')==='1',m=sw?SPAN.other:SPAN.main,o=sw?SPAN.main:SPAN.other,b=document.body.style;
+  [['m',m],['o',o]].forEach(([k,r])=>{b.setProperty('--'+k+'L',r[0]+'px');b.setProperty('--'+k+'T',r[1]+'px');b.setProperty('--'+k+'W',r[2]+'px');b.setProperty('--'+k+'H',r[3]+'px')});
+  DINFO.side=o[0]<m[0]?'l':'r';requestAnimationFrame(()=>b.setProperty('--hH',$('.top').offsetHeight+'px'))}
+function stagePlace(where){const st=$('#stageCard');if(!isSpan()){if(st.parentNode!==HOME_STAGE.p)HOME_STAGE.p.insertBefore(st,HOME_STAGE.n);return}
+  if(where==='p2'){if(st.parentNode!==$('#p2body'))$('#p2body').insertBefore(st,$('#p2body').firstChild)}else if(st.parentNode!==HOME_STAGE.p)HOME_STAGE.p.insertBefore(st,HOME_STAGE.n)}
+function spanNodes(on){const c=$('#v-cmp');if(on){_showTab('conv');$('#p2body').appendChild(c);stagePlace('p2');try{playerMini(true)}catch(e){}}
+  else{HOME_CMP.p.insertBefore(c,HOME_CMP.n);c.classList.remove('on');stagePlace('main')}dualUi2()}
+function dualUi2(){const on=isSpan();$('#dualBtn').hidden=!(DINFO.n>1||on);$('#dualLbl').textContent=on?'1 Monitor':'2 Monitore';$('#dualBtn').firstChild.textContent=on?'🖥':'🖥🖥'}
+async function spanGo(){const w=wapi();document.documentElement.classList.add('spanpre');const sp=$('#splash');if(sp){sp.style.width=innerWidth+'px';sp.style.height=innerHeight+'px';sp.style.inset='0 auto auto 0'}
+  const g=await w.span_set(true).catch(()=>null);if(!g){document.documentElement.classList.remove('spanpre');if(sp){sp.style.width=sp.style.height=sp.style.inset=''}return false}
+  SPAN=g;$('#p2cover').classList.remove('off');document.body.classList.add('span');spanVars();spanNodes(true);if(sp){sp.style.width=sp.style.height=sp.style.inset=''}
+  setTimeout(()=>document.documentElement.classList.remove('spanpre'),50);return true}
+async function arrive2(d){const c=$('#p2cover');const sp=document.createElement('div');sp.className='splash hold m2wait';sp.innerHTML=SPL_HTML;$('#pane2').appendChild(sp);
+  c.classList.add('off');const lg=sp.querySelector('.sp-logo');sp.classList.remove('m2wait');await flyIn(lg,d);spUnhold(sp);await dwait(RED()?500:2600);sp.classList.add('leave');setTimeout(()=>sp.remove(),950)}
+async function spanBoot(){const w=wapi();if(!w||!w.span_set||M2||POP)return;DINFO=await w.dual_info().catch(()=>DINFO);dualUi2();
+  const sp=$('#splash'),on=DINFO.on&&DINFO.n>1;
+  if(!on||!(await spanGo())){if(KV.get('bvc-dual')==='1')KV.set('bvc-dual','0');if(sp&&sp.classList.contains('hold')&&!DSTART){DSTART=true;spUnhold(sp);setTimeout(splashLeave,2400)}return}
+  DSTART=true;KV.set('bvc-dual','1');const d=dDir();
+  if(sp&&sp.classList.contains('hold')){await dwait(RED()?200:1500);await flyOut(sp.querySelector('.sp-logo'),d);arrive2(opp(d));await dwait(300);sp.classList.add('nofx');splashLeave()}
+  else{dFlash();arrive2(opp(d))}}
+async function spanToggle(){const w=wapi();if(!w||!w.span_set)return;
+  if(!isSpan()){if(DINFO.n<2)return toast('Nur ein Bildschirm gefunden.');KV.set('bvc-dual','1');await w.dual_set(true);DINFO.on=true;if(!(await spanGo()))return;
+    const d=dDir();dFlash();await dwait(150);const c=$('#p2cover');c.classList.add('off');dFlash($('#pane2'));dStreak(opp(d),'in',$('#pane2'));toast('🖥🖥 Ordner-Abgleich + Player jetzt auf dem anderen Bildschirm.')}
+  else{const c=$('#p2cover');dFlash($('#pane2'));c.classList.remove('off');await dwait(350);KV.set('bvc-dual','0');await w.dual_set(false);await w.span_set(false);
+    SPAN=null;document.body.classList.remove('span');spanNodes(false);DINFO.on=false;dFlash();toast('🖥 Alles wieder in einem Fenster.')}}
+$('#dualBtn').onclick=()=>spanToggle();$('#p2one').onclick=()=>spanToggle();
+const spanSwap=()=>{KV.set('bvc-spanswap',KV.get('bvc-spanswap')==='1'?'0':'1');spanVars();dFlash()};$('#p2swap').onclick=spanSwap;
+{const wm=$('#winMon').onclick;$('#winMon').onclick=e=>{if(isSpan())return spanSwap();return wm&&wm(e)}}
+addEventListener('resize',()=>{if(isSpan())spanVars()});
+/* Player/Vorher-Nachher: Player auf Monitor 2, Vorher/Nachher bleibt im Studio */
+{const sm=setMode;setMode=function(m){if(isSpan())stagePlace(m==='ab'?'main':'p2');return sm(m)};
+ const oi=openInPlayer;openInPlayer=function(q){if(isSpan()){stagePlace('p2');try{playerMini(false)}catch(e){}return _oip(q)}return oi(q)};
+ const st=showTab;showTab=function(v){if(isSpan()){if(v==='play')return setMode('play');if(v==='cmp'){$('#p2body').scrollTop=0;return}if(v==='ab')return setMode('ab')}return st(v)}}
+/* Fenster (Dialoge): kleine Knöpfe „Haupt / Monitor 2“ – innerhalb des Programms verschieben */
+let DPANE={};try{DPANE=JSON.parse(KV.get('bvc-dpane')||'{}')||{}}catch(e){}
+function spanMon(id){const d=$('#'+id);if(!d)return;const head=d.querySelector('.dlg-head,.pg-head');if(!head)return;let wrap=head.querySelector('.mswrap');
+  if(!isSpan()){if(wrap)wrap.remove();d.classList.remove('on2');return}
+  if(!wrap){wrap=document.createElement('span');wrap.className='mswrap';const x=head.querySelector('.x');x?head.insertBefore(wrap,x):head.appendChild(wrap)}
+  const on2=!!DPANE[id];d.classList.toggle('on2',on2);
+  wrap.innerHTML=[['0','Studio-Monitor',!on2],['1','Monitor 2',on2]].map(([v,t,a])=>`<button type="button" class="msw ${a?'on':''}" data-dp="${id}:${v}" title="Fenster auf den ${t}">${SVGMON}<i>${v==='0'?'1':'2'}</i></button>`).join('')}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-dp]');if(!b)return;e.preventDefault();e.stopPropagation();const [id,v]=b.dataset.dp.split(':');DPANE[id]=v==='1';KV.set('bvc-dpane',JSON.stringify(DPANE));spanMon(id)},true);
+{const _sm2=HTMLDialogElement.prototype.showModal;HTMLDialogElement.prototype.showModal=function(){const r=_sm2.call(this);if(DLGS.includes(this.id))spanMon(this.id);return r}}
+/* Beenden: erst Monitor 2, dann der Hauptmonitor – alles im selben Fenster */
+{const q0=$('#quitBtn').onclick;$('#quitBtn').onclick=async()=>{if(!isSpan())return q0();const d=dDir(),g=$('#goodbye');
+  const g2=document.createElement('section');g2.className='goodbye';g2.innerHTML=GB_HTML;$('#pane2').appendChild(g2);requestAnimationFrame(()=>g2.classList.add('show'));
+  await dwait(RED()?300:2100);g2.querySelectorAll('p,h1,.g-actions').forEach(e=>{e.style.transition='opacity .35s';e.style.opacity='0'});await dwait(300);
+  flyOut(g2.querySelector('.g-logo'),opp(d));await dwait(250*AK());$('#p2cover').classList.remove('off');
+  g.classList.add('late','instant');const lg=g.querySelector('.g-logo');lg.style.opacity='0';DOPEN=false;const r=q0();requestAnimationFrame(()=>flyIn(lg,d));setTimeout(()=>g.classList.remove('instant'),1700*AK());return r}}
+if(!M2&&!POP)addEventListener('pywebviewready',()=>setTimeout(spanBoot,200));
+window.monSpanTest=g=>{SPAN=g;document.body.classList.add('span');spanVars();spanNodes(true);$('#p2cover').classList.add('off')};
 window.monSet=a=>{MONS=a};window.popGone=popGone;window.popReady=popReady;window.popAct=popAct;
 window.flyIn=flyIn;window.flyOut=flyOut;window.m2Play=m2Play;window.m2Arrive=m2Arrive;window.m2Bye=m2Bye;window.m2Info=m2Info;window.m2Ready=m2Ready;window.dualToggle=dualToggle;window.dualInfo=dualInfo;window.applyTheme=applyTheme;window.realAdd=(...a)=>realAdd(...a);
 bindRows();renderPresets();applyAuto();applyCmpAuto();renderBil();

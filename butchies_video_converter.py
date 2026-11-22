@@ -10,7 +10,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 APP_NAME = 'Butchies Video Converter'
-VERSION = '1.8.3'
+VERSION = '1.9.0'
 FROZEN = getattr(sys, 'frozen', False)
 BASE = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent))
 UI = BASE / 'ui'
@@ -2433,6 +2433,8 @@ class WinFrame:
 
     def save_state(self):
         """Bildschirm, Vollbild und Maximiert merken – beim nächsten Start geht das Fenster genau so wieder auf."""
+        if getattr(self, 'span', None):        # über beide Monitore: der Hauptmonitor ist gemerkt
+            return
         try:
             update_config(win={'mon': list(self._cur_monitor() or []), 'full': bool(self.full), 'max': bool(self.saved)})
         except Exception:  # noqa: BLE001
@@ -2577,6 +2579,49 @@ class Dual:
         self.frame.save_state()
         return True
 
+    # ---- EIN Fenster über beide Monitore (Zwei-Monitor-Ansicht ohne zweites Fenster) ----
+    def work_of(self, mon):
+        """Arbeitsfläche (ohne Taskleiste) eines Monitors."""
+        import ctypes
+        from ctypes import wintypes
+        u = ctypes.windll.user32
+
+        class MI(ctypes.Structure):
+            _fields_ = [('cbSize', wintypes.DWORD), ('rcMonitor', wintypes.RECT), ('rcWork', wintypes.RECT), ('dwFlags', wintypes.DWORD)]
+        u.MonitorFromPoint.restype = wintypes.HANDLE
+        u.MonitorFromPoint.argtypes = [wintypes.POINT, wintypes.DWORD]
+        u.GetMonitorInfoW.argtypes = [wintypes.HANDLE, ctypes.POINTER(MI)]
+        mi = MI()
+        mi.cbSize = ctypes.sizeof(MI)
+        u.GetMonitorInfoW(u.MonitorFromPoint(wintypes.POINT(mon[0] + mon[2] // 2, mon[1] + mon[3] // 2), 2), ctypes.byref(mi))
+        w = mi.rcWork
+        return (w.left, w.top, w.right - w.left, w.bottom - w.top)
+
+    def span_set(self, on):
+        f = self.frame
+        if on:
+            mons = self.mons()
+            if len(mons) < 2:
+                return None
+            main = tuple(getattr(f, 'span', None) or f._cur_monitor() or mons[0])
+            other = next((m for m in mons if tuple(m) != main), None)
+            a, b = self.work_of(main), self.work_of(other)
+            x, y = min(a[0], b[0]), min(a[1], b[1])
+            x2, y2 = max(a[0] + a[2], b[0] + b[2]), max(a[1] + a[3], b[1] + b[3])
+            f.full = None
+            f.saved = f.saved or f._rect()
+            f.span = main
+            f._place(x, y, x2 - x, y2 - y)
+            sc = f._scale() or 1
+            rel = lambda r: [round((r[0] - x) / sc), round((r[1] - y) / sc), round(r[2] / sc), round(r[3] / sc)]
+            return {'main': rel(a), 'other': rel(b), 'side': 'l' if b[0] < a[0] else 'r'}
+        main = getattr(f, 'span', None)
+        f.span = None
+        if main:
+            f.saved = f.saved or [main[0] + 40, main[1] + 40, main[2] - 80, main[3] - 80]
+            f._place(*self.work_of(main))
+        return True
+
     # ---- Extra-Fenster (Dialoge) auf einen anderen Monitor auslagern ----
     def monitors(self):
         cur = self.frame._cur_monitor()
@@ -2704,6 +2749,13 @@ def native_window(url):
 
         def send(self, target, js):
             return dual.to(str(target), str(js))
+
+        def span_set(self, on):
+            try:
+                return dual.span_set(bool(on))
+            except Exception as ex:  # noqa: BLE001
+                print('Zwei-Monitor:', ex, flush=True)
+                return None
 
         def monitors(self):
             try:
