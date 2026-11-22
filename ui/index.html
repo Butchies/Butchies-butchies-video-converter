@@ -333,6 +333,8 @@ table{width:100%;border-collapse:collapse;font-size:13px}
 th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
 th{color:var(--muted);font-weight:800;font-size:11px;letter-spacing:.06em;text-transform:uppercase;position:sticky;top:0;background:var(--bg2);z-index:1}
 td .p{color:var(--muted);font-size:11px;word-break:break-all}
+#cmpTbl table,#qres table{table-layout:fixed}#cmpTbl td,#qres td{overflow-wrap:anywhere;word-break:break-word}#cmpTbl .fc>div{min-width:0}
+body.m2 #cmpTbl{max-height:calc(100vh - 300px);min-height:360px}
 .tbl{max-height:480px;overflow:auto;border:1px solid var(--line);border-radius:14px}
 .score{font:700 12px var(--fb);padding:2px 9px;border-radius:99px;display:inline-block}
 .answer{margin-top:12px;padding:12px 14px;border-radius:14px;background:color-mix(in srgb,var(--a) 12%,transparent);border:1px solid color-mix(in srgb,var(--a) 35%,transparent);display:none}
@@ -3166,8 +3168,8 @@ function dStreak(d,mode,root,hold,ref){if(RED()||ANIM.streak==='off')return;cons
       if(now-t0<T+60)requestAnimationFrame(step)};requestAnimationFrame(step)}
   else e.animate(fr,{duration:mode==='out'?T*.45:T,easing:mode==='in'?'cubic-bezier(.2,.8,.3,1)':'cubic-bezier(.6,0,.4,1)',fill:'forwards'});
   /* auf dem Ankunfts-Bildschirm nur kurz, dann weg */
-  const keep=mode==='in'?0:(hold!=null?hold:800*k);
-  setTimeout(()=>{/* weich ausblenden: wird dünner, kürzer (zum Logo hin) und blasser */const f=(mode==='in'?.65:.6)*k;e.style.transformOrigin=mode==='in'?(d==='l'?'right center':'left center'):'center';
+  const keep=0;
+  setTimeout(()=>{/* weich ausblenden: wird dünner, kürzer (zum Logo hin) und blasser */const f=(mode==='in'?.65:.4)*k;e.style.transformOrigin=mode==='in'?(d==='l'?'right center':'left center'):'center';
     e.style.transition=`opacity ${f}s ease-out, transform ${f}s ease-out`;e.style.opacity='0';e.style.transform=mode==='in'?'scaleX(.25) scaleY(.4)':'scaleY(.4)';setTimeout(()=>e.remove(),f*1000+100)},T+keep)}
 /* Logo fliegt in Richtung d ('l'/'r') aus dem Bild */
 async function flyOut(el,d,hold){if(!el)return;const k=AK();el.style.animation='none';el.style.transition=`transform ${.7*k}s cubic-bezier(.6,0,.4,1),opacity ${.7*k}s`;void el.offsetWidth;
