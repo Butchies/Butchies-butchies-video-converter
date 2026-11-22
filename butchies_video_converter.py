@@ -10,7 +10,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 APP_NAME = 'Butchies Video Converter'
-VERSION = '2.0.0'
+VERSION = '2.0.1'
 FROZEN = getattr(sys, 'frozen', False)
 BASE = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent))
 UI = BASE / 'ui'
@@ -2708,9 +2708,13 @@ class Dual:
             else:
                 u.SetWindowPos(h, 1, x, y, rect[2], rect[3], 0x0010 | 0x0040)
             self.bg = True
+            if self.proxy:
+                u.PostMessageW(self.proxy, 0x0401, 0, 0)
             return True
         if not on and self.bg:
             self.bg = False
+            if self.proxy:
+                u.PostMessageW(self.proxy, 0x0402, 0, 0)
             u.SetParent(h, 0)
             r = getattr(self, 'bg_rect', None) or f._rect()
             u.SetWindowPos(h, 0, r[0], r[1], r[2], r[3], 0x0040)
@@ -2723,15 +2727,62 @@ class Dual:
             return True
         return self.bg
 
+    proxy = 0
+
     def hotkey_loop(self):
-        """Strg+Alt+B holt das Programm aus dem Hintergrund zurück (oder schickt es hinein)."""
+        """Strg+Alt+B holt das Programm aus dem Hintergrund zurück (oder schickt es hinein).
+        Dazu ein kleines Stellvertreter-Fenster: Solange das Programm Hintergrund ist, steht es unten in der
+        Taskleiste (und bei Alt+Tab) – ein Klick darauf holt das Programm wieder nach vorne."""
         import ctypes
         from ctypes import wintypes
-        u = ctypes.windll.user32
-        if not u.RegisterHotKey(None, 0xB7, 0x0002 | 0x0001 | 0x4000, ord('B')):
-            return
+        u, k = ctypes.windll.user32, ctypes.windll.kernel32
+        LRESULT = ctypes.c_ssize_t
+        WNDPROC = ctypes.WINFUNCTYPE(LRESULT, wintypes.HWND, wintypes.UINT, wintypes.WPARAM, wintypes.LPARAM)
+        u.DefWindowProcW.argtypes = [wintypes.HWND, wintypes.UINT, wintypes.WPARAM, wintypes.LPARAM]
+        u.DefWindowProcW.restype = LRESULT
+
+        def back():
+            try:
+                self.bg_set(False)
+            except Exception:  # noqa: BLE001
+                pass
+
+        def wndproc(h, m, wp, lp):
+            if m == 0x0401:                      # zeigen (minimiert in der Taskleiste)
+                u.ShowWindow(h, 7)
+                return 0
+            if m == 0x0402:                      # verstecken
+                u.ShowWindow(h, 0)
+                return 0
+            if (m == 0x0112 and (wp & 0xFFF0) == 0xF120) or (m == 0x0006 and wp & 0xFFFF) or m == 0x0010:
+                if self.bg:                      # Klick in der Taskleiste / Alt+Tab / Schließen -> Programm nach vorne
+                    u.ShowWindow(h, 0)
+                    threading.Thread(target=back, daemon=True).start()
+                    return 0
+            return u.DefWindowProcW(h, m, wp, lp)
+        self._wndproc = WNDPROC(wndproc)
+
+        class WNDCLASSW(ctypes.Structure):
+            _fields_ = [('style', wintypes.UINT), ('lpfnWndProc', WNDPROC), ('cbClsExtra', ctypes.c_int), ('cbWndExtra', ctypes.c_int),
+                        ('hInstance', wintypes.HINSTANCE), ('hIcon', wintypes.HICON), ('hCursor', wintypes.HANDLE), ('hbrBackground', wintypes.HBRUSH),
+                        ('lpszMenuName', wintypes.LPCWSTR), ('lpszClassName', wintypes.LPCWSTR)]
+        try:
+            hinst = k.GetModuleHandleW(None)
+            ico = ctypes.windll.shell32.ExtractIconW(hinst, sys.executable, 0) or 0
+            wc = WNDCLASSW(0, self._wndproc, 0, 0, hinst, ico, 0, 0, None, 'BVCBackProxy')
+            u.RegisterClassW(ctypes.byref(wc))
+            u.CreateWindowExW.restype = wintypes.HWND
+            self.proxy = u.CreateWindowExW(0x00040000, 'BVCBackProxy', APP_NAME + ' – zurückholen', 0x00CF0000, -32000, -32000, 200, 100,
+                                           None, None, hinst, None) or 0
+        except Exception as ex:  # noqa: BLE001
+            print('Taskleisten-Knopf:', ex, flush=True)
+        u.RegisterHotKey(None, 0xB7, 0x0002 | 0x0001 | 0x4000, ord('B'))
         msg = wintypes.MSG()
         while u.GetMessageW(ctypes.byref(msg), None, 0, 0) != 0:
+            if msg.message != 0x0312:
+                u.TranslateMessage(ctypes.byref(msg))
+                u.DispatchMessageW(ctypes.byref(msg))
+                continue
             if msg.message == 0x0312:
                 try:
                     if self.bg:
