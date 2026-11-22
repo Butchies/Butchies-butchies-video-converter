@@ -10,7 +10,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 APP_NAME = 'Butchies Video Converter'
-VERSION = '2.0.2'
+VERSION = '2.0.3'
 FROZEN = getattr(sys, 'frozen', False)
 BASE = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent))
 UI = BASE / 'ui'
@@ -1360,12 +1360,27 @@ def space(path):
         return {'path': p, 'free': None, 'total': None, 'kind': kind}
 
 
+SCAN_CACHE = HOME / 'scancache'
+
+
+def scan_cache_file(folder, recursive):
+    return SCAN_CACHE / (hashlib.sha1(('%s|%d' % (str(Path(folder)).lower(), bool(recursive))).encode('utf-8')).hexdigest()[:20] + '.json')
+
+
 def task_scan(tid, folder, recursive=True):
     T = TASKS[tid]
     files = scan(folder, T=T, recursive=recursive)
     T['result'] = {'root': str(Path(folder)), 'files': files, 'dirs': T.get('dirs', 0), 'space': space(folder),
                    'pending': T.get('pending', [])}
     T['pct'], T['state'] = 100, 'fertig'
+    try:                                      # merken -> beim nächsten Start sofort da (NAS nicht jedes Mal komplett lesen)
+        SCAN_CACHE.mkdir(parents=True, exist_ok=True)
+        f = scan_cache_file(folder, recursive)
+        tmp = f.with_suffix('.tmp')
+        tmp.write_text(json.dumps(dict(T['result'], t=int(time.time())), ensure_ascii=False), encoding='utf-8')
+        os.replace(tmp, f)
+    except Exception:  # noqa: BLE001
+        pass
 
 
 # ---------- Gruppen-Name am Ende (z. B. „-WAYNE“) -> „Butchies-Groove“ ----------
@@ -2027,6 +2042,14 @@ class Handler(BaseHTTPRequestHandler):
                 e = fpath(d.get('id', ''))
                 return self.send_json(200, {'task': start_task(task_abshot, e, list(d.get('vargs') or []), fnum(d.get('frac'), .5))})
             if path == '/api/scan':
+                rec = d.get('recursive', True) is not False
+                if d.get('cached'):
+                    try:
+                        c = json.loads(scan_cache_file(d.get('path', ''), rec).read_text(encoding='utf-8'))
+                        c['space'] = None
+                        return self.send_json(200, {'cached': c})
+                    except (OSError, ValueError):
+                        pass
                 if not Path(d.get('path', '')).is_dir():
                     raise ValueError('Ordner nicht gefunden')
                 return self.send_json(200, {'task': start_task(task_scan, d.get('path', ''), d.get('recursive', True) is not False)})

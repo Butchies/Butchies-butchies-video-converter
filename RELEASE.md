@@ -35,6 +35,10 @@ FFmpeg mit allen Codecs ist dabei (inklusive VMAF-Messung und HDR). WebView2 wir
 **Neu in 1.1.3**
 - Das Programm **merkt sich jetzt alles** bis zum nächsten Start: Design, Start-Animation an/aus, Auto/Manuell-Schalter, eigene Einstellungen (Codec, Zielgröße, Zeitplan …) und eigene Vorlagen. Bisher ging das beim Neustart verloren
 
+**Neu in 2.0.3**
+- 🗂️ Ordner-Abgleich: Die Ordner A/B werden sofort gemerkt (auch wenn das Einlesen noch läuft) – kein erneutes Auswählen der Festplatten mehr nach dem Neustart
+- ⚡ Beim Start ist die Liste **sofort** da (gemerkte Liste vom letzten Mal), neue/gelöschte Dateien werden danach still im Hintergrund nachgelesen – das Fenster hängt nicht mehr beim Einlesen des NAS. „⟳ Neu abgleichen“ liest weiterhin alles frisch ein
+
 **Neu in 2.0.2**
 - 2 Monitore: Player und Vorher/Nachher sind jetzt **getrennt** – Vorher/Nachher ist eine eigene Karte im Studio (beim Start offen, klappt nach ca. 10 s ohne Maus zu, ▾/▴ jederzeit), der Player bleibt auf dem Monitor mit dem Ordner-Abgleich. Abspielen nimmt dem Studio nichts mehr weg
 

@@ -2094,7 +2094,7 @@ function renderCmp(){
 function updMk(){try{renderBil()}catch(e){}const n=MK.size,sz=[...MK].reduce((s,x)=>s+x.size,0);$('#mkInfo').textContent=n?`${n} markiert · ${fmtMB(sz/1048576)}`:'';$('#bDelMk').disabled=!n;$('#bProcMk').disabled=!n;
   $('#trashInfo').innerHTML=TRASH.length?`🗑 Papierkorb: ${TRASH.length} Datei(en) · ${fmtMB(TRASH.reduce((s,x)=>s+x.size,0)/1048576)} <button class="btn sm" id="bRestore">Alle wiederherstellen</button>`:'';
   const br=$('#bRestore');if(br)br.onclick=()=>restore(TRASH.slice())}
-$('#bCmp').onclick=async()=>{if(REAL&&(SRC.A||SRC.B)){for(const x of ['A','B'])if(SRC[x])await realScan(x,SRC[x]);return}compare()}; $('#cTh').onchange=()=>CMP&&compare(); $('#cVid').onchange=()=>autoCmp();
+$('#bCmp').onclick=async()=>{if(REAL&&(SRC.A||SRC.B)){for(const x of ['A','B'])if(SRC[x])await realScan(x,SRC[x],false,true);return}compare()}; $('#cTh').onchange=()=>CMP&&compare(); $('#cVid').onchange=()=>autoCmp();
 $('#bMarkNone').onclick=()=>{MK.clear();renderCmp()};
 $('#bDelMk').onclick=()=>askDelete([...MK]);
 $('#bProcMk').onclick=()=>{procEntries([...MK]);MK.clear();renderCmp()};
@@ -2747,11 +2747,15 @@ $('#cSub').addEventListener('change',()=>{['A','B'].forEach(x=>{if(SRC[x])realSc
 function prog(id,txtId,pctId,p,txt){const el=$('#'+id);if(p==null){el.hidden=true;return}el.hidden=false;const ps=el.querySelector('.pstop');if(ps)ps.hidden=p>=100;const n=Math.floor(p/5);el.querySelectorAll('.segbar i').forEach((e,i)=>e.classList.toggle('on',i<n));
   el.querySelector('.segbar').classList.toggle('done',p>=100);$('#'+pctId).textContent=Math.floor(p)+' %';if(txt!=null)$('#'+txtId).textContent=txt}
 const SCANNING={A:false,B:false};
-async function realScan(side,path,quiet){
-  if(SCANNING[side])return;SCANNING[side]=true;
+async function realScan(side,path,quiet,fresh){
+  if(SCANNING[side])return;SCANNING[side]=true;SRC[side]=path; /* Ordner sofort merken – auch wenn das Einlesen noch läuft */
   if(!quiet){$('#cnt'+side).textContent='lese …';prog('scan'+side,'scanTxt'+side,'scanPct'+side,0,'Lese '+path+' …')}
-  try{const {task}=await api('/api/scan',{path,recursive:$('#cSub').checked});
-    const r=await waitTask(task,quiet?null:t=>{prog('scan'+side,'scanTxt'+side,'scanPct'+side,t.pct||0,t.phase||'Lese Ordner …');$('#cnt'+side).textContent=`lese … ${t.pct||0} %`},!quiet);
+  try{let r=null;
+    /* zuerst die gemerkte Liste (sofort da), danach still im Hintergrund nachsehen, was neu ist */
+    if(!quiet&&!fresh){const c=await api('/api/scan',{path,recursive:$('#cSub').checked,cached:true}).catch(()=>null);
+      if(c&&c.cached){r=c.cached;setTimeout(()=>realScan(side,path,true),4000)}}
+    if(!r){const {task}=await api('/api/scan',{path,recursive:$('#cSub').checked});
+    r=await waitTask(task,quiet?null:t=>{prog('scan'+side,'scanTxt'+side,'scanPct'+side,t.pct||0,t.phase||'Lese Ordner …');$('#cnt'+side).textContent=`lese … ${t.pct||0} %`},!quiet)}
     if(quiet){const old=new Map(RAW[side].map(f=>[f.full,f.size])),neu=r.files.filter(f=>old.get(f.full)!==f.size),gone=RAW[side].length+neu.length-r.files.length;
       META[side]={dirs:r.dirs||0,space:r.space||null,pending:r.pending||[]};
       if(!neu.length&&!gone){renderDirInfo(side);return}
@@ -2935,7 +2939,7 @@ function saveSession(){
   const ss={q:Q.filter(q=>q.fid&&q.path).map(q=>({p:q.path,done:q.state==='done',out:q.out||'',swap:!!q.swap})),sel:(selQ()||{}).path||'',
     A:SRC.A,B:SRC.B,protA:$('#protA').checked,protB:$('#protB').checked,tab:$('#v-cmp').classList.contains('on')?'cmp':'conv',t:Date.now()};
   if(M2){KV.set('bvc-m2s',JSON.stringify({A:SRC.A,B:SRC.B,protA:ss.protA,protB:ss.protB,t:ss.t}));return}
-  if(document.body.classList.contains('dual')||DFOLD){let o={};try{o=JSON.parse(KV.get('bvc-session')||'{}')||{}}catch(e){}const m=sessM2()||{};
+  if(false){let o={};try{o=JSON.parse(KV.get('bvc-session')||'{}')||{}}catch(e){}const m=sessM2()||{};
     ss.A=m.A||o.A;ss.B=m.B||o.B;ss.protA=m.protA!=null?m.protA:o.protA;ss.protB=m.protB!=null?m.protB:o.protB;ss.tab='conv';ss.t=o.t||0}
   KV.set('bvc-session',JSON.stringify(ss));
 }
@@ -2954,7 +2958,6 @@ async function restoreSession(){
     }
     if(ss.tab==='cmp')showTab('cmp');
   }finally{RESTORING=false}
-  const m2s=sessM2();if(m2s&&(m2s.t||0)>(ss.t||0)){ss.A=m2s.A;ss.B=m2s.B}
   for(const x of ['A','B'])if(ss[x])await realScan(x,ss[x]);
   saveSession();
 }
