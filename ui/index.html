@@ -226,7 +226,7 @@ body:not(.real) .real-only{display:none!important}
 .dsave .btn,.dodd .btn{margin-left:auto;flex:none}
 .dok{font-size:12.5px;color:var(--ok)}
 .dtwo{display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12.5px}.dtwo div{padding:9px 11px;border-radius:12px;background:var(--panel);border:1px solid var(--line);min-width:0;overflow-wrap:anywhere}.dtwo small{color:var(--muted);display:block;font-size:11.5px}
-.dhead{display:flex;align-items:center;gap:8px}.dhead b{font:800 15px var(--fh);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dhead{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.dhead b{font:800 15px var(--fh);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dimenu{position:absolute;right:16px;top:58px;z-index:20;display:grid;gap:8px;padding:14px 16px;border-radius:14px;background:var(--bg2);border:1px solid var(--line);box-shadow:0 14px 40px rgba(0,0,0,.35);font-size:13px}
 .dimenu[hidden]{display:none}
 @media(max-width:1300px){.dstats{grid-template-columns:repeat(2,1fr)}.dtwo{grid-template-columns:1fr}}
@@ -325,7 +325,7 @@ canvas{width:100%;height:140px;display:block;background:var(--deep);border:1px s
 .log .t{opacity:.6;margin-right:8px}
 .log .ok{color:var(--ok)}.log .warn{color:var(--warn)}.log .bad{color:var(--bad)}.log .ai{color:var(--a);font-weight:600}
 .view{display:none}.view.on{display:block;animation:pop .3s ease}
-.cmpgrid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.cmpgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}.cmpgrid>*,.cmpgrid .card,.card>*{min-width:0;max-width:100%;box-sizing:border-box}
 .res{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0}
 .pill{border:1px solid var(--line);background:var(--panel);padding:0 12px;min-height:34px;display:inline-flex;align-items:center;border-radius:99px;cursor:pointer;font-weight:700;font-size:12.5px}
 .pill:hover{border-color:var(--a)}
@@ -628,6 +628,9 @@ body.twowin #bgBtn,body.m2 #bgBtn{display:none!important}
 .ctxm button{display:flex;gap:10px;align-items:center;width:100%;text-align:left;background:none;border:0;color:inherit;padding:7px 10px;border-radius:8px;cursor:pointer;font:inherit}
 .ctxm button:hover{background:color-mix(in srgb,var(--acc) 14%,transparent)}.ctxm hr{border:0;border-top:1px solid var(--line,#0002);margin:4px 0}
 .ctxrow{display:flex;gap:10px;align-items:center;padding:6px 4px;border-bottom:1px solid var(--line,#0001)}.clsec{margin-bottom:12px}
+/* 2.6.5: nichts darf aus seiner Karte ragen – Zeilen umbrechen statt überlaufen */
+.card .row,.card .actions,.card .btns{flex-wrap:wrap}
+.card img,.card video,.card canvas,.card table{max-width:100%}
 </style>
 </head>
 <body data-theme="neon" data-skin="club">

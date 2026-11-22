@@ -1,3 +1,6 @@
+**Neu in 2.6.5**
+- Kleines Fenster / Größe Klein: Im Ordner-Abgleich ragt nichts mehr aus den Ordner-Karten heraus – Kästen werden schmaler und Knöpfe brechen in die nächste Zeile um.
+
 **Neu in 2.6.4**
 - Lichtstreifen beim Monitor-Wechsel: Auf dem Ankunfts-Bildschirm kommt er höchstens ein Viertel weit herein und löst sich dann auf – er läuft nicht mehr mit dem Logo bis zur Mitte.
 
