@@ -35,6 +35,9 @@ FFmpeg mit allen Codecs ist dabei (inklusive VMAF-Messung und HDR). WebView2 wir
 **Neu in 1.1.3**
 - Das Programm **merkt sich jetzt alles** bis zum nächsten Start: Design, Start-Animation an/aus, Auto/Manuell-Schalter, eigene Einstellungen (Codec, Zielgröße, Zeitplan …) und eigene Vorlagen. Bisher ging das beim Neustart verloren
 
+**Neu in 1.9.2**
+- Beenden mit 2 Monitoren: „Bis bald!“ erscheint jetzt zuerst auf dem Monitor mit dem Ordner-Abgleich (vorher blieb das Programm dort stehen), dann wird er schwarz und der Abschied springt mit Flash auf den Hauptmonitor
+
 **Neu in 1.9.1**
 - Beenden mit 2 Monitoren: Der Abschied auf dem Hauptmonitor sitzt wieder richtig in der Mitte und liegt über allem (vorher halb über beide Bildschirme verteilt)
 - Vorher/Nachher bleibt im Studio (auch mit 2 Monitoren) – nach dem Start ca. 10 s offen, dann klappt es von selbst zu. Erst beim Abspielen wandert der Player auf Monitor 2

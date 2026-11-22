@@ -536,6 +536,8 @@ body.span .top{position:fixed;left:var(--mL);top:var(--mT);width:var(--mW);box-s
 body.span .wrap{position:fixed;left:var(--mL);top:calc(var(--mT) + var(--hH,70px));width:var(--mW);height:calc(var(--mH) - var(--hH,70px));overflow:auto;box-sizing:border-box;max-width:none;margin:0}
 body.span>.splash,body.span #goodbye{inset:auto;left:var(--mL);top:var(--mT);width:var(--mW);height:var(--mH)}
 body.span .toast{left:calc(var(--mL) + var(--mW) / 2)}
+body.span #goodbye.on2{left:var(--oL);top:var(--oT);width:var(--oW);height:var(--oH)}
+#p2black{display:none}body.span #p2black.on{display:block;position:fixed;left:var(--oL);top:var(--oT);width:var(--oW);height:var(--oH);background:#000;z-index:400}
 body.span .modal{inset:auto;left:var(--mL);top:var(--mT);width:var(--mW);height:var(--mH)}
 #pane2{display:none}
 body.span #pane2{display:flex;flex-direction:column;position:fixed;left:var(--oL);top:var(--oT);width:var(--oW);height:var(--oH);contain:paint;z-index:30;background:radial-gradient(60% 60% at 50% 30%,var(--bg2),var(--bg));border-left:1px solid var(--line)}
@@ -3474,10 +3476,15 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-dp]');if(!
 {const _sm2=HTMLDialogElement.prototype.showModal;HTMLDialogElement.prototype.showModal=function(){const r=_sm2.call(this);if(DLGS.includes(this.id))spanMon(this.id);return r}}
 /* Beenden: erst Monitor 2, dann der Hauptmonitor – alles im selben Fenster */
 {const q0=$('#quitBtn').onclick;$('#quitBtn').onclick=async()=>{if(!isSpan())return q0();const d=dDir(),g=$('#goodbye');
-  const g2=document.createElement('section');g2.className='goodbye';g2.innerHTML=GB_HTML;$('#pane2').appendChild(g2);requestAnimationFrame(()=>g2.classList.add('show'));
-  await dwait(RED()?300:2100);g2.querySelectorAll('p,h1,.g-actions').forEach(e=>{e.style.transition='opacity .35s';e.style.opacity='0'});await dwait(300);
-  flyOut(g2.querySelector('.g-logo'),opp(d));await dwait(250*AK());$('#p2cover').classList.remove('off');
-  g.classList.add('late','instant');const lg=g.querySelector('.g-logo');lg.style.opacity='0';DOPEN=false;const r=q0();requestAnimationFrame(()=>flyIn(lg,d));setTimeout(()=>g.classList.remove('instant'),1700*AK());return r}}
+  /* 1) Abschied zuerst auf Monitor 2 – mit demselben Abschiedsbild, nur auf die andere Seite gelegt */
+  try{pPause()}catch(e){}
+  g.hidden=false;g.classList.remove('closing','done','late','instant');g.classList.add('on2');$('#gBack').hidden=true;void g.offsetWidth;g.classList.add('show');
+  await dwait(RED()?300:2100);const tx=[...g.querySelectorAll('.g-center p,.g-center h1,.g-actions')];tx.forEach(e=>{e.style.transition='opacity .35s';e.style.opacity='0'});await dwait(300);
+  const lg=g.querySelector('.g-logo');await flyOut(lg,opp(d));
+  /* 2) Monitor 2 aus (schwarz), Abschied springt auf den Hauptmonitor */
+  let bl=$('#p2black');if(!bl){bl=document.createElement('div');bl.id='p2black';document.body.appendChild(bl)}bl.classList.add('on');
+  g.classList.add('instant','late');g.classList.remove('on2','show');tx.forEach(e=>{e.style.transition='';e.style.opacity=''});lg.style.opacity='0';
+  DOPEN=false;const r=q0();requestAnimationFrame(()=>flyIn(lg,d));setTimeout(()=>g.classList.remove('instant'),1700*AK());return r}}
 if(!M2&&!POP)addEventListener('pywebviewready',()=>setTimeout(spanBoot,200));
 window.monSpanTest=g=>{SPAN=g;document.body.classList.add('span');spanVars();spanNodes(true);$('#p2cover').classList.add('off')};
 window.monSet=a=>{MONS=a};window.popGone=popGone;window.popReady=popReady;window.popAct=popAct;
