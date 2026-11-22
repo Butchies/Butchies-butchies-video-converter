@@ -10,7 +10,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 APP_NAME = 'Butchies Video Converter'
-VERSION = '1.6.1'
+VERSION = '1.6.2'
 FROZEN = getattr(sys, 'frozen', False)
 BASE = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent))
 UI = BASE / 'ui'
@@ -1876,7 +1876,7 @@ class Handler(BaseHTTPRequestHandler):
                 conf = load_config()
                 return self.send_json(200, {'version': VERSION, 'ffmpeg': bool(FFMPEG and FFPROBE), 'hw': HW, 'filters': FILTERS, 'gpus': GPU, 'workers': WORKERS, 'cores': os.cpu_count() or 4,
                                             'disks': disks(), 'outdir': outdir(), 'config': conf, 'native': NATIVE[0],
-                                            'groups': GROUPS, 'grptag': GROUP_TAG})
+                                            'groups': GROUPS, 'grptag': GROUP_TAG, 'outdir_default': str(default_outdir())})
             if path == '/api/stats':
                 return self.send_json(200, {'stats': stats_load(), 'bench': load_config().get('bench'), 'plan': plan_conf()})
             if path == '/api/jobs':

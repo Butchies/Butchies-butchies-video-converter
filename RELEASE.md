@@ -35,7 +35,11 @@ FFmpeg mit allen Codecs ist dabei (inklusive VMAF-Messung und HDR). WebView2 wir
 **Neu in 1.1.3**
 - Das Programm **merkt sich jetzt alles** bis zum nächsten Start: Design, Start-Animation an/aus, Auto/Manuell-Schalter, eigene Einstellungen (Codec, Zielgröße, Zeitplan …) und eigene Vorlagen. Bisher ging das beim Neustart verloren
 
-**Neu in 1.6.1 – Final (stabile Version)**
+**Neu in 1.6.2 – Final (stabile Version)**
+- 🌡️ PC-Auslastung: **Auto = immer 100 %** (volle Leistung). Nur auf „Manuell“ kann man herunterstellen – dein Wert wird gemerkt
+- 📁 Ausgabe: Deine Einstellungen bleiben gespeichert, auch auf **Auto**. Neuer Knopf **↺ Auf Original zurücksetzen**, falls man aus Versehen etwas verstellt hat
+
+**Neu in 1.6.1**
 - ↩️ KI-Autopilot wieder mit allen Bereichen (Grafikkarten, Codec, Qualität, Auflösung, Ton & Untertitel, Ausgabe) – was du auf „Manuell“ stellst, wird gespeichert und heißt jetzt **⭐ Dein Standard**
 - 🧹 „Ausgabe“ aufgeräumt: nur noch Ordner + Dateiname (+ Vorschau der Namen)
 - ⚙ **Einstellungen** (Knopf oben im KI-Autopilot): PC & Strom (Auslastung, Nacht-Planer, Start, Danach, Ruhezustand/Monitore), Dateinamen (Codec im Namen, Gruppen-Name), Profi-Optionen Video (Inhalt erkennen, HDR), Benachrichtigung, Aussehen & Hilfe

@@ -1111,16 +1111,17 @@ function setModeS(m){if(S.mode!==m){S.mode=m;$$('#sMode button').forEach(x=>x.cl
 /* ---------- PC-Auslastung: 25/50/75 %, dann 80–100 % in 5er-Schritten, Standard 90 % ---------- */
 const LD_STEPS=[25,50,75,80,85,90,95,100];
 let LOAD=90;try{const v=+KV.get('bvc-load');if(LD_STEPS.includes(v))LOAD=v}catch(e){}
-function setLoad(v,silent){LOAD=v;KV.set('bvc-load',String(v));if(REAL&&INFO)api('/api/config',{load:v}).catch(()=>{});if(!silent){try{updSums()}catch(e){}}}
+function setLoad(v,silent){LOAD=v;if(!AUTO.load)KV.set('bvc-load',String(v));if(REAL&&INFO)api('/api/config',{load:v}).catch(()=>{});if(!silent){try{updSums()}catch(e){}}}
 function renderLoad(){const box=$('#ldSteps');if(!box)return;
   const col=p=>p<=75?'var(--ok)':p<=90?'var(--a)':'var(--warn)';
-  box.innerHTML=LD_STEPS.map(p=>`<button type="button" data-ld="${p}" class="${p===LOAD?'on':''}" style="--w:${p===25||p===50||p===75?25:5};--c:${col(p)}"><i style="height:${18+p*.42}px"></i><b>${p}${p===90?'<small>Std.</small>':''}</b></button>`).join('');
-  box.querySelectorAll('[data-ld]').forEach(b=>b.onclick=()=>{AUTO.load=+b.dataset.ld===90&&AUTO.load;if(+b.dataset.ld!==90)AUTO.load=false;saveAuto();setLoad(+b.dataset.ld);update()});
+  box.innerHTML=LD_STEPS.map(p=>`<button type="button" data-ld="${p}" class="${p===LOAD?'on':''}" style="--w:${p===25||p===50||p===75?25:5};--c:${col(p)}"><i style="height:${18+p*.42}px"></i><b>${p}</b></button>`).join('');
+  box.querySelectorAll('[data-ld]').forEach(b=>b.onclick=()=>{AUTO.load=false;saveAuto();setLoad(+b.dataset.ld);update()});
   $('#ldInfo').innerHTML=LOAD>=100?'Volle Leistung: Umwandeln nutzt alle Prozessor-Kerne ohne Pause (mit niedrigerer Priorität, damit du weiterarbeiten kannst).'
     :`Umwandeln nutzt <b>alle Prozessor-Kerne</b>, macht aber jede Sekunde eine kurze Pause – im Schnitt höchstens <b>${LOAD} %</b> Auslastung. Gilt sofort, auch für laufende Umwandlungen.${LOAD<75?' <b style="color:var(--warn)">Umwandeln dauert dann deutlich länger.</b>':''}`}
 function applyAuto(){
   const yt=$('#sYt').checked;
-  if(AUTO.load&&LOAD!==90)setLoad(90,true);
+  /* Auslastung: Auto = immer volle Leistung (100 %), Manuell = dein gespeicherter Wert */
+  if(AUTO.load){if(LOAD!==100)setLoad(100,true)}else{const m=+KV.get('bvc-load');if(LD_STEPS.includes(m)&&m!==LOAD)setLoad(m,true)}
   if(AUTO.par)setSel('#parMode','auto');
   if(AUTO.codec){setFam(yt?'h264':'h265');setEnc(yt?'libx264':'libx265');setSel('#sProf',yt?'high':'main10');setSel('#sPre','slow');setSel('#sLvl','auto');setSel('#sCont',yt?'mp4':'mkv')}
   if(AUTO.quality){setModeS('size');$('#s2p').checked=true}
@@ -1128,7 +1129,7 @@ function applyAuto(){
   if(AUTO.content)setSel('#sTune','–');
   if(AUTO.tracks){setSel('#sAud','aac');setSel('#sAbr','160')}
   if(AUTO.snd){setSel('#sVoice','light');setSel('#sLoud','tv');$('#sNight').checked=false}
-  if(AUTO.out){$('#oDir').value=REAL&&INFO?INFO.outdir:'Videos\\Butchies Converter';setSel('#oName','db');setSel('#oStart','now');setSel('#oAfter','none')}
+  /* Ausgabe: Auto ändert nichts mehr – deine Einstellungen bleiben gespeichert. Zurücksetzen über den Knopf. */
   $$('.arow').forEach(r=>{const k=r.dataset.sec;r.classList.toggle('man',!AUTO[k]);r.classList.toggle('shut',!!SHUT[k]);r.querySelectorAll('.am button').forEach(b=>b.classList.toggle('on',(b.dataset.a==='auto')===!!AUTO[k]))});
 }
 function bindRows(){
@@ -1300,7 +1301,7 @@ function updSums(){
   const encS={libx264:'x264',libx265:'x265',h264_amf:'AMD',hevc_amf:'AMD',h264_nvenc:'NVIDIA',hevc_nvenc:'NVIDIA',h264_qsv:'Intel',hevc_qsv:'Intel'}[s.enc];
   const set=(k,t)=>{const e=$('#sum-'+k);if(e)e.textContent=(AUTO[k]?'KI: ':'⭐ Dein Standard: ')+t};
   if(REAL&&INFO&&INFO.workers){const sl=parSlots();set('par',sl.map(x=>wName(x)).join(' + ')+(sl.length>1?' – parallel':''));try{renderPar()}catch(e){}}
-  {const pt=typeof planTxt==='function'?planTxt():'';set('load',(LOAD>=100?'volle Leistung':`höchstens ${LOAD} %`+(AUTO.load?' (Standard)':''))+(pt?' · '+pt:''))}try{renderLoad()}catch(e){}
+  {const pt=typeof planTxt==='function'?planTxt():'';set('load',(LOAD>=100?'volle Leistung (100 %)':`höchstens ${LOAD} %`)+(pt?' · '+pt:''))}try{renderLoad()}catch(e){}
   set('codec',`${s.fam==='h265'?'H.265':'H.264'} · ${encS} ${s.pre} · ${s.profName.split(' (')[0]} · ${s.cont.toUpperCase()}`);
   set('snd',sndTxt(sndTool())+' · eigenes Werkzeug (🎙️ Ton)');
   set('quality',S.mode==='vmaf'?`Ziel-Qualität ${s.vm} (VMAF) – KI testet vorher`:S.mode==='size'?`Zielgröße treffen${s.twoPass?' · 2-Pass':''}`:S.mode==='crf'?`Qualität CRF ${s.crf}`:`Feste Bitrate ${s.cbr} kbit/s`);
@@ -2885,7 +2886,9 @@ addEventListener('resize',()=>{const w=window.pywebview&&window.pywebview.api;if
 addEventListener('keydown',e=>{if(e.key==='F11'){e.preventDefault();toggleFull()}else if(e.key==='Escape'&&document.body.classList.contains('full'))toggleFull()});
 $('#oPick').onclick=async()=>{try{const r=await api('/api/pick',{kind:'folder',start:$('#oDir').value});if(r.paths[0]){$('#oDir').value=r.paths[0];api('/api/config',{outdir:r.paths[0]}).then(x=>{if(INFO)INFO.outdir=x.outdir});update()}}catch(e){toast(e.message)}};
 $('#oShow').onclick=()=>api('/api/show',{path:$('#oDir').value}).catch(e=>toast(e.message));
-$('#oDir').addEventListener('change',()=>{if(REAL&&!AUTO.out)api('/api/config',{outdir:$('#oDir').value}).then(x=>{if(INFO)INFO.outdir=x.outdir}).catch(()=>{})});
+function outReset(){$('#oDir').value=REAL&&INFO?(INFO.outdir_default||INFO.outdir):'Videos\\Butchies Converter';setSel('#oName','db');setSel('#oSwap','ask');setSel('#oGrp','replace');
+  $('#oDir').dispatchEvent(new Event('change'));['#oName','#oSwap','#oGrp'].forEach(id=>$(id).dispatchEvent(new Event('change')));try{saveSet()}catch(e){}update();toast('↺ Ausgabe auf Original zurückgesetzt.')}
+$('#oDir').addEventListener('change',()=>{if(REAL)api('/api/config',{outdir:$('#oDir').value}).then(x=>{if(INFO)INFO.outdir=x.outdir}).catch(()=>{})});
 $('#oTopic').addEventListener('change',()=>{if(REAL)api('/api/config',{ntfy:$('#oTopic').value}).catch(()=>{})});
 /* Eigene (manuelle) Einstellungen merken und beim nächsten Start wiederherstellen */
 /* ---------- Aufgeräumt: KI-Autopilot behält seine Bereiche; Selten-Gebrauchtes unter ⚙ Einstellungen ---------- */
@@ -2904,9 +2907,11 @@ $('#oTopic').addEventListener('change',()=>{if(REAL)api('/api/config',{ntfy:$('#
   /* Namen-Vorschau bleibt bei „Ausgabe“ */
   const out=rows.querySelector('.arow[data-sec=out]');if(gp&&out){const f=fOf('#oName');if(f)f.after(gp)}
   if(out){const b=out.querySelector('.atx b');if(b)b.textContent='Ausgabe'}
+  if(out){const fm=out.querySelector('.form');if(fm){const d=document.createElement('div');d.className='f full';d.innerHTML='<button type="button" class="btn sm" id="oReset" title="Ausgabeordner, Dateiname, Codec- und Gruppen-Name wieder auf die Grundeinstellung">↺ Auf Original zurücksetzen</button><div class="hint" style="margin:6px 0 0">Deine Einstellungen hier bleiben gespeichert – auch wenn du auf <b>Auto</b> stellst.</div>';fm.appendChild(d)}}
   const sn=rows.querySelector('.arow[data-sec=snd]');if(sn)$('#snBody').appendChild(sn);
   const h=card.querySelector('#apHead .sub');if(h){const bt=document.createElement('button');bt.className='btn sm';bt.id='setOpen';bt.type='button';bt.textContent='⚙ Einstellungen';h.prepend(bt)}
 })();
+$('#oReset').onclick=()=>ask('↺ Ausgabe zurücksetzen?','<p>Ausgabeordner, Dateiname, Codec im Namen und Gruppen-Name gehen wieder auf die Grundeinstellung.</p>',[{t:'Abbrechen'},{t:'Zurücksetzen',cls:'pri',fn:outReset}]);
 $('#sdTheme').onclick=()=>{$('#setDlg').close();$('#themeBtn').click()};
 $('#sdTour').onclick=()=>{$('#setDlg').close();$('#helpBtn').click()};
 $('#setOpen').onclick=e=>{e.stopPropagation();const d=$('#setDlg');try{d.showModal()}catch(e){d.setAttribute('open','')}};
