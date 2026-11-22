@@ -1,3 +1,6 @@
+**Neu in 2.6.3**
+- Lichtstreifen wieder dezent (heller, leicht durchsichtig), mit mehr Abstand zum Logo. Beim Umschalten auf 2 Fenster läuft kein Streifen mehr quer über den ganzen Bildschirm.
+
 **Neu in 2.6.2**
 - Start-/Beenden-Animation bei Größe Mittel/Klein: Lichtstreifen wieder genau mittig am Logo. Auch Rechtsklick-Menü und Kurzanleitung sitzen richtig.
 

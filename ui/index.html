@@ -3277,7 +3277,7 @@ const aj=()=>JSON.stringify(ANIM);
 function setAnim(o){if(o)Object.assign(ANIM,o)}
 function dFlash(root){const op={off:0,l:.5,s:.95}[ANIM.flash];if(!op||RED())return;const f=document.createElement('div');f.className='dflash';f.style.setProperty('--fo',op);
   f.style.animationDuration=(.7*AK())+'s';(root||document.body).appendChild(f);setTimeout(()=>f.remove(),800*AK())}
-function stkBg(head){const c=ANIM.color==='white'?'#fff,#fff':ANIM.color==='rainbow'?'#ff4d4d,#ffb84d,#fff84d,#4dff88,#4dc3ff,#b84dff':'var(--a),var(--b),#fff';
+function stkBg(head){const c=ANIM.color==='white'?'#fff,#fff':ANIM.color==='rainbow'?'#ff4d4d,#ffb84d,#fff84d,#4dff88,#4dc3ff,#b84dff':'color-mix(in srgb,var(--a) 45%,#fff),color-mix(in srgb,var(--b) 45%,#fff),#fff';
   return `linear-gradient(${head==='l'?'270deg':'90deg'},transparent,${c})`}
 /* Lichtstreifen: mode 'out' = vom Logo zur Kante (Logo fliegt nach d raus), 'in' = von der Kante d bis zur Mitte (Logo kommt von d).
    Er bleibt stehen, bis das Logo wieder steht, und blendet dann aus – auf beiden Monitoren sichtbar. */
@@ -3287,22 +3287,22 @@ function dStreak(d,mode,root,hold,ref){if(RED()||ANIM.streak==='off')return;cons
   const h=ANIM.streak==='thin'?3:8;const hostR=!root&&ref&&ref.closest('.splash,.goodbye');const R=root?zr(root):hostR?zr(hostR):{left:0,top:0,width:innerWidth/ZF(),height:innerHeight/ZF()};
   /* Höhe und Lage am Logo ausrichten (das Logo sitzt nicht immer in der Bildschirmmitte) */
   let cy=R.height/2,cx=R.width/2,rad=0;if(ref){const tr=ref.style.transform,tn=ref.style.transition;ref.style.transition='none';ref.style.transform='none';const r=zr(ref);ref.style.transform=tr;void ref.offsetWidth;ref.style.transition=tn;if(r.width){cy=r.top-R.top+r.height/2;cx=r.left-R.left+r.width/2;rad=r.width/2}}
-  e.style.height=h+'px';e.style.top=(cy-h/2)+'px';e.style.marginTop='0';
+  e.style.opacity='.7';e.style.height=h+'px';e.style.top=(cy-h/2)+'px';e.style.marginTop='0';
   const head=mode==='in'?(d==='l'?'r':'l'):d;e.style.background=stkBg(head);
   /* unter das Logo legen (im Start-/Abschiedsbild), damit es nie im Logo zu sehen ist */
   const host=!root&&ref&&ref.closest('.splash,.goodbye');if(host){e.style.zIndex='1';ref.style.zIndex='2';host.insertBefore(e,host.firstChild)}else(root||document.body).appendChild(e);
   const k=AK(),T=(mode==='in'?750:700)*k,W=R.width,px=v=>Math.max(0,v)+'px';
   let fr;
-  const gap=rad+6;
+  const gap=rad+18;
   /* raus: Streifen schießt vom Logo-Rand zur Bildschirmkante, das Logo fliegt darüber */
   if(mode==='out')fr=d==='l'?[{left:px(cx-gap),width:'0px'},{left:'0px',width:px(cx-gap)}]:[{left:px(cx+gap),width:'0px'},{left:px(cx+gap),width:px(W-cx-gap)}];
-  else{const stop=rad+10;fr=d==='l'?[{left:'0px',width:'0px'},{left:'0px',width:px(cx-stop)}]:[{left:px(W),width:'0px'},{left:px(cx+stop),width:px(W-cx-stop)}]}
+  else{const stop=rad+18;fr=d==='l'?[{left:'0px',width:'0px'},{left:'0px',width:px(cx-stop)}]:[{left:px(W),width:'0px'},{left:px(cx+stop),width:px(W-cx-stop)}]}
   if(mode==='out'&&ref){/* Schweif HINTER dem Logo: nie schneller als das Logo, beginnt dort, wo das Logo stand */const t0=performance.now(),x0=cx;
-    const step=now=>{const r=zr(ref);e.style.top=(r.top-R.top+r.height/2-h/2)+'px';if(d==='l'){const l=Math.max(0,r.right-R.left+6),end=x0+rad;e.style.left=px(l);e.style.width=px(end-l)}
-      else{const st=x0-rad,rr=Math.min(W,r.left-R.left-6);e.style.left=px(st);e.style.width=px(rr-st)}
+    const step=now=>{const r=zr(ref);e.style.top=(r.top-R.top+r.height/2-h/2)+'px';if(d==='l'){const l=Math.max(0,r.right-R.left+18),end=x0+rad;e.style.left=px(l);e.style.width=px(end-l)}
+      else{const st=x0-rad,rr=Math.min(W,r.left-R.left-18);e.style.left=px(st);e.style.width=px(rr-st)}
       if(now-t0<T*1.15+80)requestAnimationFrame(step)};e.style.width='0px';requestAnimationFrame(step)}
   else if(mode==='in'&&ref){/* Streifen hängt hinten am Logo und geht nie hinein */const t0=performance.now();
-    const Q=W/4;const step=now=>{const r=zr(ref);e.style.top=(r.top-R.top+r.height/2-h/2)+'px';if(d==='l'){const end=r.left-R.left-6,w=Math.min(Q,end);e.style.left=px(end-w);e.style.width=px(w)}else{const l=r.right-R.left+6;e.style.left=px(l);e.style.width=px(Math.min(Q,W-l))}
+    const Q=W/4;const step=now=>{const r=zr(ref);e.style.top=(r.top-R.top+r.height/2-h/2)+'px';if(d==='l'){const end=r.left-R.left-18,w=Math.min(Q,end);e.style.left=px(end-w);e.style.width=px(w)}else{const l=r.right-R.left+18;e.style.left=px(l);e.style.width=px(Math.min(Q,W-l))}
       if(now-t0<T+60)requestAnimationFrame(step)};requestAnimationFrame(step)}
   else e.animate(fr,{duration:mode==='out'?T*.45:T,easing:mode==='in'?'cubic-bezier(.2,.8,.3,1)':'cubic-bezier(.6,0,.4,1)',fill:'forwards'});
   /* auf dem Ankunfts-Bildschirm nur kurz, dann weg */
@@ -3353,10 +3353,10 @@ async function dualBoot(){const w=wapi();if(!w||!w.dual_info||M2)return;
 async function dualToggle(){const w=wapi();if(!w||!w.dual_set)return;
   if(!document.body.classList.contains('dual')){if(DINFO.n<2)return toast('Nur ein Bildschirm gefunden.');
     KV.set('bvc-dual','1');await w.dual_set(true);DINFO.on=true;dualMain(true);const ready=newReady();await w.dual_prepare();await ready;
-    const d=dDir();dStreak(d,'out');dFlash();await dwait(350);await w.dual_show();DOPEN=true;w.send('m2',`m2Arrive('${opp(d)}',${aj()})`);
+    const d=dDir();dFlash();await dwait(350);await w.dual_show();DOPEN=true;w.send('m2',`m2Arrive('${opp(d)}',${aj()})`);
     SRC.A=SRC.B='';toast('🖥🖥 Ordner-Abgleich + Player laufen jetzt auf dem anderen Bildschirm.')}
   else{const d=dDir();if(DOPEN){w.send('m2',`m2Bye('${opp(d)}',1,${aj()})`);await dwait(RED()?400:1200+250*AK())}setTimeout(()=>w.dual_hide(),1600*AK());DOPEN=false;
-    KV.set('bvc-dual','0');await w.dual_set(false);DINFO.on=false;dStreak(d,'in');dFlash();dualMain(false);
+    KV.set('bvc-dual','0');await w.dual_set(false);DINFO.on=false;dFlash();dualMain(false);
     const m=sessM2();if(m)for(const x of ['A','B'])if(m[x])realScan(x,m[x]);toast('🖥 Alles wieder in einem Fenster.')}}
 $('#dualBtn').onclick=()=>{if(M2){const w=wapi();if(w)w.send('main','dualToggle()')}else dualToggle()};
 $('#swapBtn').onclick=async()=>{const w=wapi();if(w&&w.dual_swap){await w.dual_swap();DINFO=await w.dual_info().catch(()=>DINFO);if(!M2)w.send('m2','m2Info()');else w.send('main','dualInfo()')}};
