@@ -631,6 +631,12 @@ body.twowin #bgBtn,body.m2 #bgBtn{display:none!important}
 /* 2.6.5: nichts darf aus seiner Karte ragen – Zeilen umbrechen statt überlaufen */
 .card .row,.card .actions,.card .btns{flex-wrap:wrap}
 .card img,.card video,.card canvas,.card table{max-width:100%}
+.netp{margin-top:10px;padding:12px;border-radius:14px;background:var(--panel);border:1px solid var(--line)}
+.nett{font-weight:800;margin-bottom:8px}.nett small{font-weight:400;color:var(--muted)}
+.netg{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}.netg div{padding:8px 10px;border-radius:10px;background:var(--inset);min-width:0}
+.netg small{display:block;font-size:11px;color:var(--muted)}.netg b{font:800 15px var(--fh);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.netsvg{width:100%;height:70px;margin-top:8px;border-radius:10px;background:var(--inset);display:block}
+.netwarn{margin-top:8px;padding:9px 11px;border-radius:10px;background:#fef3c7;border:1px solid #f59e0b;color:#78350f;font-size:13px}
 </style>
 </head>
 <body data-theme="neon" data-skin="club">
@@ -918,7 +924,7 @@ body.twowin #bgBtn,body.m2 #bgBtn{display:none!important}
       <div class="segbar" id="pAll"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
       <canvas id="chart" width="900" height="280"></canvas>
       <div class="hint">Linie = Bitrate · gestrichelt = Ziel · rot = Obergrenze · <span id="mProj"></span></div>
-      <div class="log" id="log"><div><span class="t">--:--:--</span>KI-Monitor bereit.</div></div>
+      <div class="netp"><div class="nett">📶 Netzwerk <small class="netsrc">– keine Umwandlung über Netzwerk –</small></div><div class="netg"><div><small>Lesen von NAS</small><b data-n="rd">–</b></div><div><small>Schreiben auf NAS</small><b data-n="wr">–</b></div><div><small>Gebraucht für volles Tempo</small><b data-n="need">–</b></div><div><small>Verbindung</small><b data-n="con">–</b></div></div><svg class="netsvg" viewBox="0 0 400 70" preserveAspectRatio="none"></svg><div class="netwarn" hidden></div></div><div class="log" id="log" hidden><div><span class="t">--:--:--</span>KI-Monitor bereit.</div></div>
     </div>
   </div>
 </div>
@@ -1076,7 +1082,7 @@ body.twowin #bgBtn,body.m2 #bgBtn{display:none!important}
    <div><small>Restzeit</small><b id="pgEta">–</b></div>
   </div>
   <div class="pg-par" id="pgPar"></div>
-  <div class="log" id="pgLog"></div>
+  <div class="netp"><div class="nett">📶 Netzwerk <small class="netsrc">– keine Umwandlung über Netzwerk –</small></div><div class="netg"><div><small>Lesen von NAS</small><b data-n="rd">–</b></div><div><small>Schreiben auf NAS</small><b data-n="wr">–</b></div><div><small>Gebraucht für volles Tempo</small><b data-n="need">–</b></div><div><small>Verbindung</small><b data-n="con">–</b></div></div><svg class="netsvg" viewBox="0 0 400 70" preserveAspectRatio="none"></svg><div class="netwarn" hidden></div></div><div class="log" id="pgLog" hidden></div>
   <div class="pg-actions">
    <button type="button" class="btn" id="pgPause">⏸ Pause</button>
    <button type="button" class="btn" id="pgHide">Im Hintergrund weiter</button>
@@ -1750,7 +1756,7 @@ function renderQ(){
   $$('[data-qprobe]').forEach(b=>b.onclick=e=>{e.stopPropagation();const q=Q.find(x=>x.id==b.dataset.qprobe);if(!q)return;selId=q.id;renderQ();update();runProbe(q,q.a)});
   $$('[data-qab]').forEach(b=>b.onclick=e=>{e.stopPropagation();const q=Q.find(x=>x.id==b.dataset.qab);if(!q)return;selId=q.id;openInPlayer(q);showTab('play');setMode('ab')});
   $$('[data-qsrc]').forEach(b=>b.onclick=e=>{e.stopPropagation();const q=Q.find(x=>x.id==b.dataset.qsrc);if(q)api('/api/show',{path:q.path}).catch(()=>{})});
-  $$('#queue .qi').forEach(el=>el.onclick=()=>{selId=+el.dataset.id;anaFold(!!RUN.on);renderQ();update()});
+  $$('#queue .qi').forEach(el=>el.onclick=()=>{selId=+el.dataset.id;const q=Q.find(x=>x.id===selId);anaFold(!!RUN.on&&!!q&&q.state==='run');renderQ();update()});
   $$('[data-show]').forEach(b=>b.onclick=e=>{e.stopPropagation();const q=Q.find(x=>x.id==b.dataset.show);if(q&&q.out)api('/api/show',{path:q.out}).catch(()=>{})});
   $$('[data-play]').forEach(b=>b.onclick=e=>{e.stopPropagation();openInPlayer(Q.find(x=>x.id==b.dataset.play));showTab('play')});
   $$('[data-rm]').forEach(b=>b.onclick=e=>{e.stopPropagation();const q=Q.find(x=>x.id==b.dataset.rm);if(q)rmQ(q)});
@@ -1824,64 +1830,25 @@ $('#bClear').onclick=()=>{if(RUN.on)return;Q=[];selId=null;renderQ();update()};
 
 /* ---------- Log + Chart ---------- */
 /* 2.5.0: Netzwerk-Überwachung – Meldungen im Protokoll, nur wenn die Datei auf der NAS/im Netzwerk liegt */
-const NETW={best:{},st:{},t:0};
+const NETW={best:{},st:{},t:0,h:[]};
 function netWatch(runs,net){const now=Date.now(),f=n=>(n||0).toLocaleString('de-DE',{maximumFractionDigits:1});
-  const con=net.kind?(net.kind==='WLAN'?`📶 WLAN ${net.sig} %${net.name?' ('+esc(net.name)+')':''}`:'🔌 Kabel'):'';
-  for(const {q,j} of runs){const src=j.src||'',out=(j.folder||'');const nsrc=src.startsWith('\\\\'),nout=out.startsWith('\\\\');if(!(nsrc||nout)||j.phase)continue;
-    const k=j.slot||'cpu',sp=j.speed||0;if(j.nrd==null)continue;const st=NETW.st[j.id]||(NETW.st[j.id]={slow:0,warn:false,info:0});
-    if(sp>(NETW.best[k]||0))NETW.best[k]=sp;const best=NETW.best[k]||0;
-    const need=j.dur?(j.ssize||0)/j.dur/1048576*Math.max(best,1):0;
-    if(!st.info||now-st.info>60000){st.info=now;log('',`📡 Netzwerk: liest ${f(j.nrd)} MB/s · schreibt ${f(j.nwr)} MB/s${con?' · '+con:''}`)}
+  const con=net.kind?(net.kind==='WLAN'?`📶 WLAN ${net.sig} %`:'🔌 Kabel'):'–';let shown=null;
+  for(const {q,j} of runs){const src=j.src||'',out=(j.folder||'');const nsrc=src.startsWith('\\\\'),nout=out.startsWith('\\\\');if(!(nsrc||nout)||j.phase||j.nrd==null)continue;
+    const k=j.slot||'cpu',sp=j.speed||0;const st=NETW.st[j.id]||(NETW.st[j.id]={slow:0,warn:false,since:''});
+    if(sp>(NETW.best[k]||0))NETW.best[k]=sp;const best=NETW.best[k]||0;const need=j.dur?(j.ssize||0)/j.dur/1048576*Math.max(best,1):0;
     if(best>=1.5&&sp<best*.45&&nsrc&&j.nrd<need*.6)st.slow++;else if(sp>=best*.7)st.slow=0;
-    if(st.slow>=3&&!st.warn){st.warn=true;log('bad',`⚠️ Die NAS liefert zu langsam: ${f(j.nrd)} MB/s statt ≈ ${f(need)} MB/s – die Grafikkarte wartet auf Daten (${Math.round(j.fps)} fps). Tipp: Netzwerkkabel nutzen, prüfen ob die NAS beschäftigt ist (z. B. Emby-Scan) oder Film vorher auf den PC kopieren.`)}
-    if(st.warn&&st.slow===0){st.warn=false;log('ok',`✓ Netzwerk wieder schnell: ${f(j.nrd)} MB/s · ${Math.round(j.fps)} fps`)}}}
-/* 2.6.0: Rechtsklick-Menü im Ordner-Abgleich + Aufräumen-Fenster */
-function ctxClose(){const m=$('#ctxMenu');if(m)m.remove()}
-document.addEventListener('contextmenu',e=>{const c=e.target.closest('#cmpTbl .fc');if(!c)return;const b=c.querySelector('[data-mk]');const x=b&&entry(b.dataset.mk);if(!x)return;
-  e.preventDefault();ctxClose();const m=document.createElement('div');m.id='ctxMenu';m.className='ctxm';
-  const it=[['✏️','Umbenennen …',()=>ctxRename(x)],['🏷','Gruppen-Tag setzen',()=>ctxTag(x)],['🔎','Ähnliche Filme suchen',()=>ctxSimilar(x)],['🖼','Standbild als JPG speichern',()=>ctxJpg(x)],null,
-    ['▶','Abspielen',()=>playEntry(x)],['⚙','In den Konverter',()=>procEntries([x])],['📂','Im Explorer zeigen',()=>api('/api/show',{path:x.full}).catch(()=>{})],null,
-    ['🧹','Aufräumen …',()=>cleanOpen()],['🗑','Löschen',()=>askDelete([x])]];
-  m.innerHTML=`<div class="ctxh">${esc(x.name)}</div>`+it.map((t,i)=>t?`<button data-ci="${i}"><span>${t[0]}</span>${t[1]}</button>`:'<hr>').join('');
-  document.body.appendChild(m);const r=m.getBoundingClientRect(),z=ZF();m.style.left=Math.min(e.clientX,innerWidth-r.width-8)/z+'px';m.style.top=Math.min(e.clientY,innerHeight-r.height-8)/z+'px';
-  m.onclick=ev=>{const bt=ev.target.closest('[data-ci]');if(!bt)return;ctxClose();it[+bt.dataset.ci][2]()}},true);
-addEventListener('mousedown',e=>{if(!e.target.closest('#ctxMenu'))ctxClose()},true);addEventListener('keydown',e=>{if(e.key==='Escape')ctxClose()});addEventListener('blur',ctxClose);
-const ctxStem=x=>x.name.replace(/\.[^.]+$/,''),ctxExt=x=>(x.name.match(/\.[^.]+$/)||[''])[0];
-function ctxRename(x,val){ask('✏️ Umbenennen',`<p>Neuer Name für <b style="color:var(--text)">${esc(x.name)}</b>:</p><input id="ctxNm" class="inp" style="width:100%;margin-top:8px" value="${esc(val||ctxStem(x))}"><p style="margin-top:6px;font-size:12px">Endung ${esc(ctxExt(x))} bleibt. Untertitel/Bilder mit gleichem Namen werden nicht mit umbenannt.</p>`,
-  [{t:'Abbrechen'},{t:'🏷 Mit Gruppen-Tag',fn:()=>setTimeout(()=>ctxRename(x,grpApply($('#ctxNm')?.value||ctxStem(x),'replace')),0)},{t:'Umbenennen',cls:'pri',fn:()=>{}}]);
-  const ok=[...$('#mdBtns').children].pop(),inp=$('#ctxNm');setTimeout(()=>{inp.focus();inp.select()},50);
-  const go=()=>{const v=(inp.value||'').trim().replace(/[\\/:*?"<>|]/g,'');$('#modal').classList.remove('on');if(!v||v===ctxStem(x))return;
-    if(!REAL){x.name=v+ctxExt(x);x.n=norm(x.name);autoCmp();return toast('Umbenannt (Vorschau).')}realRename([{x,nn:v+ctxExt(x)}])};
-  ok.onclick=go;inp.onkeydown=e=>{if(e.key==='Enter')go()}}
-function ctxTag(x){const nn=grpApply(ctxStem(x),'replace');if(nn===ctxStem(x))return toast('Der Name hat schon den richtigen Gruppen-Tag.');ctxRename(x,nn)}
-function ctxSimilar(x){const all=[...DIR.A,...DIR.B].filter(y=>y!==x&&VID.test(y.name)).map(y=>({y,s:sim(x,y)})).filter(o=>o.s>=.45).sort((a,b)=>b.s-a.s).slice(0,30);
-  ask(`🔎 Ähnliche Filme zu „${esc(ctxStem(x))}“`,all.length?`<div style="max-height:55vh;overflow:auto">${all.map(o=>`<div class="ctxrow"><span class="score">${Math.round(o.s*100)} %</span><div style="flex:1;min-width:0"><b style="color:var(--text)">${esc(o.y.name)}</b><div style="font-size:12px">Ordner ${o.y.side} · ${esc(o.y.path)} · ${fmtMB(o.y.size/1048576)}</div></div><button class="btn sm" data-simmk="${o.y.u}">${MK.has(o.y)?'✓ markiert':'Markieren'}</button></div>`).join('')}</div>`:'<p>Keine ähnlichen Filme gefunden.</p>',[{t:'Schließen'}]);
-  $$('[data-simmk]').forEach(b=>b.onclick=()=>{const y=entry(b.dataset.simmk);if(!y)return;MK.has(y)?MK.delete(y):MK.add(y);b.textContent=MK.has(y)?'✓ markiert':'Markieren';renderCmp()})}
-async function ctxJpg(x){if(!REAL||!x.full)return toast('Geht nur im Windows-Programm.');toast('🖼 Standbild wird erstellt …');
-  try{const r=await api('/api/snap',{path:x.full});toast('🖼 Gespeichert: '+r.path.split(/[\\/]/).pop(),'Zeigen',()=>api('/api/show',{path:r.path}))}catch(e){toast('Standbild nicht möglich: '+e.message)}}
-/* Aufräumen: doppelte Filme (kleinere Kopie), verwaiste Begleitdateien, Platz */
-function cleanOpen(){const dup=[],orphan=[];
-  if(CMP)for(const r of CMP.same){if(r.hash==='Inhalt unterschiedlich'||!r.a||!r.b)continue;dup.push(r.a.size/r.b.size>1.03?r.b:r.a)}
-  for(const sd of ['A','B']){const vids=new Set(DIR[sd].filter(y=>VID.test(y.name)).map(y=>y.path.replace(/\.[^.\/]+$/,'').toLowerCase()));
-    for(const y of DIR[sd]){if(VID.test(y.name)||!/\.(srt|sub|idx|ass|ssa|nfo|jpg|png|txt)$/i.test(y.name))continue;const st=y.path.replace(/\.[^.\/]+$/,'').toLowerCase().replace(/(-bild|-fanart|-poster|\.forced|\.[a-z]{2,3})$/,'');
-      if(![...vids].some(v=>st===v||st.startsWith(v+'.')))orphan.push(y)}}
-  const grp=(t,ic,l,why)=>`<div class="clsec"><label><input type="checkbox" data-clall="${t}" checked> <b>${ic} ${l}</b> – ${l.length?'':''}${why}</label>${l.length?l.slice(0,300).map(y=>`<label class="ctxrow"><input type="checkbox" data-cl="${t}" value="${y.u}" checked><div style="flex:1;min-width:0">${esc(y.name)}<div style="font-size:12px">Ordner ${y.side} · ${fmtMB(y.size/1048576)}</div></div></label>`).join(''):'<div style="font-size:12px;padding:4px 0">nichts gefunden ✓</div>'}</div>`;
-  const tot=[...dup,...orphan].reduce((s,y)=>s+y.size,0);
-  ask('🧹 Aufräumen',`<p>Die KI hat <b style="color:var(--text)">${dup.length+orphan.length}</b> Dateien gefunden, die du vermutlich nicht brauchst (${fmtMB(tot/1048576)}).</p><div style="max-height:55vh;overflow:auto;margin-top:8px">${grp('dup','🎬',dup,'doppelte Filme (jeweils die kleinere Kopie)')}${grp('orph','📄',orphan,'Untertitel/Bilder/Infos ohne passenden Film')}</div>${CMP?'':'<p style="margin-top:8px">Tipp: Erst Ordner A und B abgleichen, dann findet die KI auch doppelte Filme.</p>'}`,
-    [{t:'Abbrechen'},{t:'🗑 Angehakte löschen',style:'background:linear-gradient(135deg,#ef5b5b,#c2362f);color:#fff;border:0',fn:()=>{}}]);
-  $$('[data-clall]').forEach(c=>c.onchange=()=>$$(`[data-cl="${c.dataset.clall}"]`).forEach(b=>b.checked=c.checked));
-  [...$('#mdBtns').children].pop().onclick=()=>{const l=$$('[data-cl]:checked').map(b=>entry(b.value)).filter(Boolean);$('#modal').classList.remove('on');if(l.length)setTimeout(()=>askDelete(l),50);else toast('Nichts angehakt.')}}
-/* 2.6.0: Größe Klein/Mittel/Groß – nur der Inhalt wird skaliert (Rahmen, Monitore, Animationen bleiben unberührt) */
-var UZ=1;function uzVh(){document.documentElement.style.setProperty('--vh',(innerHeight/(UZ||1))+'px')}addEventListener('resize',uzVh);
-function uiSize(v,save){const z=+v||1;document.documentElement.style.zoom=z;UZ=z;document.documentElement.style.setProperty('--iz',1/z);uzVh();if(save)KV.set('bvc-uisize',String(z));const e=$('#uiSize');if(e)e.value=String(z);
-  requestAnimationFrame(()=>{try{const t=$('.top');if(t)document.body.style.setProperty('--hH',t.offsetHeight+'px');if(typeof spanVars==='function')spanVars()}catch(e){}dispatchEvent(new Event('resize'))})}
-setTimeout(()=>{uiSize(KV.get('bvc-uisize')||1);const e=$('#uiSize');if(e)e.onchange=()=>{uiSize(e.value,true);toast('🔠 Größe: '+e.selectedOptions[0].text)}},0);
-/* 2.4.1: Modus in der Versions-Leiste */
-var VBASE=VBASE||'';function verMode(){const b=document.body.classList,v=$('#verBadge');if(!v||!VBASE)return;
-  const m=b.contains('span')?'🖥🖥 1 Fenster über 2 Monitore':(b.contains('dual')||b.contains('m2'))?'🖥🖥 2 Fenster':'🖥 1 Monitor';
-  const t=VBASE+' · '+m;if(v.textContent!==t)v.textContent=t}
-setInterval(verMode,1000);
-
+    if(st.slow>=3&&!st.warn){st.warn=true;st.since=new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})}if(st.warn&&st.slow===0)st.warn=false;
+    shown={j,need,st,nsrc};break}
+  if(shown){NETW.h.push({rd:shown.j.nrd,need:shown.need,slow:shown.st.warn});if(NETW.h.length>120)NETW.h.shift()}
+  $$('.netp').forEach(p=>{const b=k=>p.querySelector(`[data-n="${k}"]`);
+    if(!shown){p.querySelector('.netsrc').textContent='– keine Umwandlung über Netzwerk –';['rd','wr','need'].forEach(k=>b(k).textContent='–');b('con').textContent=con;p.querySelector('.netwarn').hidden=true;return}
+    const {j,need,st}=shown;p.querySelector('.netsrc').textContent=(net.name?net.name+' · ':'')+esc((j.src||'').split('\\').slice(0,3).join('\\'));
+    b('rd').textContent=f(j.nrd)+' MB/s';b('wr').textContent=f(j.nwr)+' MB/s';b('need').textContent=need?'≈ '+f(need)+' MB/s':'–';b('con').textContent=con;
+    const H=NETW.h,mx=Math.max(1,...H.map(x=>Math.max(x.rd,x.need)))*1.15,X=i=>i/(119)*400,Y=v=>70-v/mx*64;
+    let red='',pts=H.map((x,i)=>`${X(i)},${Y(x.rd)}`).join(' ');H.forEach((x,i)=>{if(x.slow)red+=`<rect x="${X(i)-1.7}" y="0" width="3.4" height="70" fill="#ef444422"/>`});
+    const nd=H.length?Y(H[H.length-1].need):70;
+    p.querySelector('.netsvg').innerHTML=red+(H.length>1?`<polyline points="0,70 ${pts} ${X(H.length-1)},70" fill="color-mix(in srgb,var(--a) 18%,transparent)" stroke="none"/><polyline points="${pts}" fill="none" stroke="var(--a)" stroke-width="2" vector-effect="non-scaling-stroke"/>`:'')+`<line x1="0" x2="400" y1="${nd}" y2="${nd}" stroke="var(--b)" stroke-dasharray="6 4" vector-effect="non-scaling-stroke"/>`;
+    const w=p.querySelector('.netwarn');w.hidden=!st.warn;if(st.warn)w.innerHTML=`⚠️ <b>Die NAS liefert zu langsam</b> (seit ${st.since}) – die Grafikkarte wartet auf Daten (${Math.round(j.fps)} fps). Tipp: Netzwerkkabel nutzen, prüfen ob die NAS beschäftigt ist (z. B. Emby-Scan) oder den Film vorher auf den PC kopieren.`})}
 function log(cls,msg){const d=new Date().toLocaleTimeString('de-DE');const el=document.createElement('div');el.innerHTML=`<span class="t">${d}</span><span class="${cls}">${msg}</span>`;$('#log').appendChild(el);$('#log').scrollTop=1e9;const pl=$('#pgLog');if(pl){pl.appendChild(el.cloneNode(true));while(pl.children.length>80)pl.firstChild.remove();pl.scrollTop=1e9}}
 const cv=$('#chart'),cx=cv.getContext('2d');
 function cssv(n){return getComputedStyle(document.body).getPropertyValue(n).trim()}

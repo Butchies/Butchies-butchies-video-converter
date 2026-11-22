@@ -1,3 +1,7 @@
+**Neu in 2.6.6**
+- Netzwerk-Überwachung als eigener Kasten (statt Text im Protokoll): Lesen/Schreiben NAS, gebrauchtes Tempo, WLAN/Kabel, Verlaufskurve und gelbe Warnung, wenn die NAS bremst – im KI-Monitor und im Fortschrittsfenster. Das Textprotokoll ist ausgeblendet.
+- KI-Analyse klappt beim Klick auf einen wartenden Film wieder auf (nur beim gerade laufenden bleibt sie zu).
+
 **Neu in 2.6.5**
 - Kleines Fenster / Größe Klein: Im Ordner-Abgleich ragt nichts mehr aus den Ordner-Karten heraus – Kästen werden schmaler und Knöpfe brechen in die nächste Zeile um.
 
