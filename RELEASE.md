@@ -35,6 +35,10 @@ FFmpeg mit allen Codecs ist dabei (inklusive VMAF-Messung und HDR). WebView2 wir
 **Neu in 1.1.3**
 - Das Programm **merkt sich jetzt alles** bis zum nächsten Start: Design, Start-Animation an/aus, Auto/Manuell-Schalter, eigene Einstellungen (Codec, Zielgröße, Zeitplan …) und eigene Vorlagen. Bisher ging das beim Neustart verloren
 
+**Neu in 1.7.9**
+- 🖥 Extra-Fenster (Umwandeln-Fortschritt, Warteschlange, Details, Statistik, Einstellungen, Ton, Gruppen-Namen, Design) haben oben kleine Monitor-Knöpfe 1 / 2: ein Klick schiebt das Fenster auf den anderen Monitor, zurück auf den Hauptmonitor genauso
+- Das Programm merkt sich, auf welchem Monitor jedes Fenster sein soll, und öffnet es beim nächsten Mal wieder dort
+
 **Neu in 1.7.8**
 - Start/Beenden: Der Lichtstreifen löst sich auf dem Monitor, den das Logo verlässt, wie ein Flash auf, sobald das Logo drüben ist – er bleibt nicht mehr stehen
 - Ordner-Abgleich: Tabelle passt sich der Breite an – Ordner B ist nicht mehr abgeschnitten, lange Namen brechen um, keine Quer-Scrollleiste mehr. Auf Monitor 2 ist die Liste höher

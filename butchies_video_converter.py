@@ -10,7 +10,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 APP_NAME = 'Butchies Video Converter'
-VERSION = '1.7.8'
+VERSION = '1.7.9'
 FROZEN = getattr(sys, 'frozen', False)
 BASE = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent))
 UI = BASE / 'ui'
@@ -2453,6 +2453,12 @@ class WinFrame:
     def close(self):
         self.save_state()
         stop_all()
+        for rec in list(POPS.values()):
+            rec['bye'] = True
+            try:
+                rec['win'].destroy()
+            except Exception:  # noqa: BLE001
+                pass
         try:
             if WIN2[0]:
                 WIN2[0].destroy()
@@ -2461,6 +2467,7 @@ class WinFrame:
         self.win.destroy()
 
 
+POPS = {}          # ausgelagerte Extra-Fenster (Dialog-ID -> Fenster)
 WIN2 = [None]      # zweites Fenster (Monitor 2: Ordner-Abgleich + Player)
 
 
@@ -2570,8 +2577,65 @@ class Dual:
         self.frame.save_state()
         return True
 
+    # ---- Extra-Fenster (Dialoge) auf einen anderen Monitor auslagern ----
+    def monitors(self):
+        cur = self.frame._cur_monitor()
+        m2 = None
+        if WIN2[0]:
+            try:
+                m2 = self.f2._cur_monitor()
+            except Exception:  # noqa: BLE001
+                m2 = None
+        return [{'i': i, 'x': m[0], 'y': m[1], 'w': m[2], 'h': m[3], 'main': m == cur, 'm2': m == m2} for i, m in enumerate(self.mons())]
+
+    def pop_open(self, did, title, mon, w, h):
+        mons = self.mons()
+        if not mons:
+            return False
+        m = mons[max(0, min(int(mon), len(mons) - 1))]
+        w, h = int(min(max(w, 480), m[2] - 60)), int(min(max(h, 320), m[3] - 80))
+        x, y = m[0] + (m[2] - w) // 2, m[1] + (m[3] - h) // 2
+        old = POPS.get(did)
+        if old:
+            try:
+                f = old['f']
+                f.hwnd = 0
+                f._place(x, y, w, h)
+                old['win'].show()
+                return True
+            except Exception:  # noqa: BLE001
+                POPS.pop(did, None)
+        import webview
+        u = self.url.replace('/#', '/?pop=%s#' % urllib.parse.quote(did), 1)
+        win = webview.create_window(str(title) or APP_NAME, u, x=x, y=y, width=w, height=h, min_size=(420, 300), resizable=True,
+                                    background_color='#000000', js_api=self.make_api('pop:' + did), text_select=True)
+        f = WinFrame()
+        f.win = win
+        POPS[did] = {'win': win, 'f': f, 'bye': False}
+
+        def closed(*a):
+            rec = POPS.pop(did, None)
+            if rec and not rec.get('bye'):
+                self.to('main', 'window.popGone && popGone(%s)' % json.dumps(did))
+        win.events.closed += closed
+        return True
+
+    def pop_close(self, did):
+        rec = POPS.pop(did, None)
+        if rec:
+            rec['bye'] = True
+            try:
+                rec['win'].destroy()
+            except Exception:  # noqa: BLE001
+                pass
+        return True
+
     def to(self, target, js):
-        w = WIN2[0] if target == 'm2' else self.frame.win
+        if target.startswith('pop:'):
+            rec = POPS.get(target[4:])
+            w = rec['win'] if rec else None
+        else:
+            w = WIN2[0] if target == 'm2' else self.frame.win
         if not w:
             return False
         try:
@@ -2641,6 +2705,22 @@ def native_window(url):
         def send(self, target, js):
             return dual.to(str(target), str(js))
 
+        def monitors(self):
+            try:
+                return dual.monitors()
+            except Exception:  # noqa: BLE001
+                return []
+
+        def pop_open(self, did, title, mon, w=900, h=700):
+            try:
+                return dual.pop_open(str(did), str(title), int(mon), int(w), int(h))
+            except Exception as ex:  # noqa: BLE001
+                print('Extra-Fenster:', ex, flush=True)
+                return False
+
+        def pop_close(self, did):
+            return dual.pop_close(str(did))
+
         def toggle_max(self):
             return self._f().toggle_max()
 
@@ -2654,6 +2734,8 @@ def native_window(url):
             self._f().resize(str(edge))
 
         def close(self):
+            if self.role.startswith('pop:'):
+                return dual.pop_close(self.role[4:])
             if self.role == 'm2':
                 return dual.to('main', "document.getElementById('quitBtn').click()")
             frame.close()

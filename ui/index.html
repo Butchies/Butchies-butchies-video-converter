@@ -513,6 +513,15 @@ dialog[open]{animation:dlg .3s ease}
 .dstreak{position:fixed;top:50%;height:6px;margin-top:-3px;z-index:399;pointer-events:none;border-radius:6px;box-shadow:0 0 24px var(--b)}
 .dstreak.rt{background:linear-gradient(270deg,transparent,#fff,var(--b),var(--a))}
 .goodbye.instant{transition:none}
+.mswrap{display:inline-flex;gap:4px;margin-left:auto;margin-right:10px;flex:none}.pg-head .mswrap{margin-right:0}
+.msw{display:inline-flex;align-items:center;gap:3px;height:26px;padding:0 7px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--muted);font:700 11px var(--fb);cursor:pointer}
+.msw i{font-style:normal}.msw.on{background:linear-gradient(110deg,var(--a),var(--b));color:#fff;border-color:transparent}.msw:hover{color:var(--text)}
+dialog.popped{display:none!important}
+body.pop .top,body.pop .wrap,body.pop .grips,body.pop footer,body.pop .toast,body.pop #goodbye{display:none!important}
+body.pop dialog:not(.popview){display:none!important}
+body.pop{overflow:auto;min-height:100vh;background:radial-gradient(60% 60% at 50% 40%,var(--bg2),var(--bg))}
+body.pop dialog.popview{animation:none;position:static;display:block;inset:auto;margin:0 auto;width:100%;max-width:none;max-height:none;border:0;box-shadow:none;background:transparent;padding:10px;transform:none;opacity:1}
+body.pop dialog.popview>*{max-width:none!important;width:auto!important;margin:0!important;box-shadow:none}
 .anset{margin:10px 0;padding:12px;border-radius:14px;background:var(--panel);border:1px solid var(--line)}.anset small{color:var(--muted)}
 .anrow{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-top:8px}.anrow label{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:700;color:var(--muted)}
 .dprev{display:flex;gap:14px;justify-content:center;margin-top:10px}.dprev .pm{position:relative;width:240px;height:135px;border-radius:10px;border:4px solid #1e293b;overflow:hidden;background:radial-gradient(60% 60% at 50% 40%,var(--bg2),var(--bg))}
@@ -3241,7 +3250,7 @@ openInPlayer=function(q){if(!M2&&document.body.classList.contains('dual')&&DOPEN
 showTab=function(v){if(M2){if(v==='play')_setMode('play');else if(v==='cmp')_showTab('cmp');return}
   if(document.body.classList.contains('dual')){if(v==='play')return;if(v==='cmp'){toast('Der Ordner-Abgleich ist auf dem anderen Bildschirm.');return}}return _showTab(v)};
 setMode=function(m){if(M2)m='play';else if(document.body.classList.contains('dual'))m='ab';return _setMode(m)};
-applyTheme=function(id){_applyTheme(id);const w=wapi();if(!M2&&DOPEN&&w)w.send('m2',`applyTheme('${id}')`)};
+applyTheme=function(id){_applyTheme(id);const w=wapi();if(!M2&&DOPEN&&w)w.send('m2',`applyTheme('${id}')`);if(!M2&&w&&typeof POPPED!=='undefined')for(const p in POPPED)w.send('pop:'+p,`applyTheme('${id}')`)};
 async function playEntry(x){if(!REAL||!x.full)return;try{const r=await api('/api/add',{paths:[x.full]});const e=r.files[0];if(!e)return toast('Datei nicht lesbar.');
   let q=Q.find(y=>y.fid===e.id)||PL.find(y=>y.fid===e.id);if(!q){q=eToQ(e);PL.push(q)}openInPlayer(q);showTab('play')}catch(err){toast(err.message)}}
 /* ---------- Fenster 2 (Monitor 2) ---------- */
@@ -3266,10 +3275,61 @@ if(M2){document.body.classList.add('m2');document.title='Butchies Video Converte
     if(!open)toast(`${paths.length} Datei(en) an das Studio übergeben.`);return paths.map(p=>({path:p}))};
   addEventListener('pywebviewready',()=>setTimeout(()=>{const w=wapi();if(w){w.send('main','m2Ready()');m2Info()}},300));
   setTimeout(()=>{const w=wapi();if(w)w.send('main','m2Ready()')},2500)}
-else addEventListener('pywebviewready',()=>setTimeout(dualBoot,200));
+else if(!new URLSearchParams(location.search).get('pop'))addEventListener('pywebviewready',()=>setTimeout(dualBoot,200));
+
+/* ================= Extra-Fenster auf andere Monitore ================= */
+const POP=new URLSearchParams(location.search).get('pop');
+let POPPREF={};try{POPPREF=JSON.parse(KV.get('bvc-pops')||'{}')||{}}catch(e){}
+const POPPED={};let MONS=[];
+const DLGS=['progDlg','queueDlg','detDlg','statDlg','setDlg','sndDlg','grpDlg','themeDlg'];
+const SVGMON='<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M9 20h6M12 16v4"/></svg>';
+async function monList(){const w=wapi();if(!w||!w.monitors)return MONS;MONS=await w.monitors().catch(()=>MONS)||[];DLGS.forEach(id=>{const d=$('#'+id);if(d&&d.open)monInject(id)});return MONS}
+function monInject(id){if(M2||POP)return;const d=$('#'+id);if(!d)return;const head=d.querySelector('.dlg-head,.pg-head');if(!head)return;
+  let wrap=head.querySelector('.mswrap');if(!wrap){wrap=document.createElement('span');wrap.className='mswrap';const x=head.querySelector('.x');x?head.insertBefore(wrap,x):head.appendChild(wrap)}
+  if(MONS.length<2){wrap.innerHTML='';return}
+  const cur=POPPED[id]?POPPED[id].mon:(MONS.find(m=>m.main)||{i:0}).i;
+  wrap.innerHTML=MONS.map(m=>`<button type="button" class="msw ${m.i===cur?'on':''}" data-msw="${id}:${m.i}" title="${m.main?'Hauptmonitor (Studio)':m.m2?'Monitor mit dem Ordner-Abgleich':'Monitor '+(m.i+1)} – Fenster hierhin schieben">${SVGMON}<i>${m.i+1}</i></button>`).join('')}
+async function monMove(id,i){const m=MONS[i];if(!m)return;if(m.main){POPPREF[id]=null;await popBack(id)}else{POPPREF[id]=i;await popOut(id,i)}KV.set('bvc-pops',JSON.stringify(POPPREF))}
+async function popOut(id,i){const w=wapi(),d=$('#'+id);if(!w||!w.pop_open||!d||!d.open)return;
+  const r=(d.querySelector('.dlg,.pg')||d).getBoundingClientRect(),title=((d.querySelector('h2')||{}).textContent||'').trim()||'Butchies Video Converter AI';
+  POPPED[id]={mon:i,last:''};d._moving=true;try{d.close()}catch(e){}d.show();d._moving=false;d.classList.add('popped');monInject(id);
+  await w.pop_open(id,title,i,Math.round(r.width)+40,Math.round(r.height)+70)}
+async function popBack(id){const w=wapi(),d=$('#'+id);if(!d)return;if(w&&w.pop_close)await w.pop_close(id);const was=!!POPPED[id];delete POPPED[id];d.classList.remove('popped');
+  if(was&&d.open){d._moving=true;d.close();d.showModal();d._moving=false}monInject(id)}
+function popGone(id){const d=$('#'+id);if(!POPPED[id])return;delete POPPED[id];if(d){d.classList.remove('popped');d._moving=true;try{d.close()}catch(e){}d._moving=false}}
+function popReady(id){if(POPPED[id])POPPED[id].last=''}
+function popAct(id,sel,type,val,chk){const d=$('#'+id);if(!d)return;const el=d.querySelector(sel);if(!el)return;
+  if(type==='click'){el.click();return}
+  if(el.type==='checkbox'||el.type==='radio')el.checked=!!chk;else el.value=val;el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}))}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-msw]');if(!b||POP)return;e.preventDefault();e.stopPropagation();const [id,i]=b.dataset.msw.split(':');monMove(id,+i)},true);
+if(!M2&&!POP){
+  const _sm=HTMLDialogElement.prototype.showModal;
+  HTMLDialogElement.prototype.showModal=function(){const r=_sm.call(this);const id=this.id;
+    if(DLGS.includes(id)&&!this._moving){monInject(id);const pi=POPPREF[id];if(pi!=null&&MONS[pi]&&!MONS[pi].main)setTimeout(()=>popOut(id,pi),0)}return r};
+  DLGS.forEach(id=>{const d=$('#'+id);if(d)d.addEventListener('close',()=>{if(d._moving)return;if(POPPED[id]){delete POPPED[id];d.classList.remove('popped');const w=wapi();if(w&&w.pop_close)w.pop_close(id)}})});
+  /* Inhalt der ausgelagerten Fenster spiegeln */
+  setInterval(()=>{const w=wapi();if(!w)return;for(const id in POPPED){const d=$('#'+id);if(!d)continue;let k=0;
+    d.querySelectorAll('button,a,input,select,textarea,label,[data-gi]').forEach(el=>{k++;if(!el.id&&!el.dataset.pi)el.dataset.pi='p'+k;
+      if(el.tagName==='INPUT'){if(el.type==='checkbox'||el.type==='radio'){el.checked?el.setAttribute('checked',''):el.removeAttribute('checked')}else el.setAttribute('value',el.value)}
+      else if(el.tagName==='SELECT'){[...el.options].forEach(o=>o.selected?o.setAttribute('selected',''):o.removeAttribute('selected'))}else if(el.tagName==='TEXTAREA')el.textContent=el.value});
+    const c=d.cloneNode(true),cv=d.querySelectorAll('canvas'),cc=c.querySelectorAll('canvas');cv.forEach((x,j)=>{try{const im=document.createElement('img');im.src=x.toDataURL();im.style.cssText=x.style.cssText;im.className=x.className;im.width=x.clientWidth||x.width;cc[j].replaceWith(im)}catch(e){}});
+    const html=c.innerHTML;if(html!==POPPED[id].last){POPPED[id].last=html;w.send('pop:'+id,`popRender(${JSON.stringify(html)},${JSON.stringify(d.className.replace('popped',''))})`)}}},350);
+  addEventListener('pywebviewready',()=>{setTimeout(monList,800);setInterval(monList,6000)});
+}
+if(POP){document.body.classList.add('pop');const sp=$('#splash');if(sp)sp.remove();const d=$('#'+POP);
+  if(d){document.body.appendChild(d);d.classList.add('popview');d.setAttribute('open','')}
+  window.popRender=(html,cls)=>{const d=$('#'+POP);if(!d)return;const a=document.activeElement;if(a&&d.contains(a)&&/INPUT|SELECT|TEXTAREA/.test(a.tagName)&&a.type!=='checkbox')return;
+    d.innerHTML=html;d.className=cls+' popview';d.setAttribute('open','')};
+  const sel=el=>el.id?'#'+CSS.escape(el.id):el.dataset.pi?`[data-pi="${el.dataset.pi}"]`:null;
+  const fwd=js=>{const w=wapi();if(w)w.send('main',js)};
+  document.addEventListener('click',e=>{const d=$('#'+POP);const el=e.target.closest('button,a,input[type=checkbox],input[type=radio],label,[data-gi]');if(!el||!d.contains(el))return;
+    const t=el.tagName==='LABEL'?(el.querySelector('input')||el):el,s=sel(t);if(!s)return;e.preventDefault();fwd(`popAct(${JSON.stringify(POP)},${JSON.stringify(s)},'click')`)},true);
+  document.addEventListener('change',e=>{const el=e.target,s=sel(el);if(!s||el.type==='checkbox'||el.type==='radio')return;fwd(`popAct(${JSON.stringify(POP)},${JSON.stringify(s)},'change',${JSON.stringify(el.value)})`)},true);
+  addEventListener('pywebviewready',()=>setTimeout(()=>fwd(`popReady(${JSON.stringify(POP)})`),200));setTimeout(()=>fwd(`popReady(${JSON.stringify(POP)})`),1500)}
+window.monSet=a=>{MONS=a};window.popGone=popGone;window.popReady=popReady;window.popAct=popAct;
 window.flyIn=flyIn;window.flyOut=flyOut;window.m2Play=m2Play;window.m2Arrive=m2Arrive;window.m2Bye=m2Bye;window.m2Info=m2Info;window.m2Ready=m2Ready;window.dualToggle=dualToggle;window.dualInfo=dualInfo;window.applyTheme=applyTheme;window.realAdd=(...a)=>realAdd(...a);
 bindRows();renderPresets();applyAuto();applyCmpAuto();renderBil();
-if(REAL)realInit();
+if(REAL&&!POP)realInit();
 update();
 })();
 </script>
