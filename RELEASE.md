@@ -35,6 +35,9 @@ FFmpeg mit allen Codecs ist dabei (inklusive VMAF-Messung und HDR). WebView2 wir
 **Neu in 1.1.3**
 - Das Programm **merkt sich jetzt alles** bis zum nächsten Start: Design, Start-Animation an/aus, Auto/Manuell-Schalter, eigene Einstellungen (Codec, Zielgröße, Zeitplan …) und eigene Vorlagen. Bisher ging das beim Neustart verloren
 
+**Neu in 1.8.3**
+- Extra-Fenster werden nicht mehr als eigene Windows-Fenster auf den anderen Monitor geschoben (hat das System zu sehr belastet und den Inhalt nicht zuverlässig gezeigt). Die kleinen Monitor-Knöpfe in den Fenstern sind wieder weg
+
 **Neu in 1.8.2**
 - ◧ Vorher/Nachher klappt jetzt auch direkt nach dem Programmstart nach ca. 10 s ohne Maus von selbst zu
 

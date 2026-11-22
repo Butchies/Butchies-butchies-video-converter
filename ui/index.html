@@ -3359,7 +3359,8 @@ const POPPED={};let MONS=[];
 const DLGS=['progDlg','queueDlg','detDlg','statDlg','setDlg','sndDlg','grpDlg','themeDlg'];
 const SVGMON='<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M9 20h6M12 16v4"/></svg>';
 async function monList(){const w=wapi();if(!w||!w.monitors)return MONS;MONS=await w.monitors().catch(()=>MONS)||[];DLGS.forEach(id=>{const d=$('#'+id);if(d&&d.open)monInject(id)});return MONS}
-function monInject(id){if(M2||POP)return;const d=$('#'+id);if(!d)return;const head=d.querySelector('.dlg-head,.pg-head');if(!head)return;
+const POPOUT_ON=false; /* 1.8.3: Extra-Fenster als eigene Fenster abgeschaltet (zu viel Last, Inhalt nicht zuverlässig) */
+function monInject(id){if(M2||POP||!POPOUT_ON){const h=document.querySelector('#'+id+' .mswrap');if(h)h.remove();return}const d=$('#'+id);if(!d)return;const head=d.querySelector('.dlg-head,.pg-head');if(!head)return;
   let wrap=head.querySelector('.mswrap');if(!wrap){wrap=document.createElement('span');wrap.className='mswrap';const x=head.querySelector('.x');x?head.insertBefore(wrap,x):head.appendChild(wrap)}
   if(MONS.length<2){wrap.innerHTML='';return}
   const cur=POPPED[id]?POPPED[id].mon:(MONS.find(m=>m.main)||{i:0}).i;
@@ -3380,7 +3381,7 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-msw]');if(
 if(!M2&&!POP){
   const _sm=HTMLDialogElement.prototype.showModal;
   HTMLDialogElement.prototype.showModal=function(){const r=_sm.call(this);const id=this.id;
-    if(DLGS.includes(id)&&!this._moving){monInject(id);const pi=POPPREF[id];if(pi!=null&&MONS[pi]&&!MONS[pi].main)setTimeout(()=>popOut(id,pi),0)}return r};
+    if(DLGS.includes(id)&&!this._moving){monInject(id);const pi=POPPREF[id];if(POPOUT_ON&&pi!=null&&MONS[pi]&&!MONS[pi].main)setTimeout(()=>popOut(id,pi),0)}return r};
   DLGS.forEach(id=>{const d=$('#'+id);if(d)d.addEventListener('close',()=>{if(d._moving)return;if(POPPED[id]){delete POPPED[id];d.classList.remove('popped');const w=wapi();if(w&&w.pop_close)w.pop_close(id)}})});
   /* Inhalt der ausgelagerten Fenster spiegeln */
   setInterval(()=>{const w=wapi();if(!w)return;for(const id in POPPED){const d=$('#'+id);if(!d)continue;let k=0;
@@ -3389,7 +3390,7 @@ if(!M2&&!POP){
       else if(el.tagName==='SELECT'){[...el.options].forEach(o=>o.selected?o.setAttribute('selected',''):o.removeAttribute('selected'))}else if(el.tagName==='TEXTAREA')el.textContent=el.value});
     const c=d.cloneNode(true),cv=d.querySelectorAll('canvas'),cc=c.querySelectorAll('canvas');cv.forEach((x,j)=>{try{const im=document.createElement('img');im.src=x.toDataURL();im.style.cssText=x.style.cssText;im.className=x.className;im.width=x.clientWidth||x.width;cc[j].replaceWith(im)}catch(e){}});
     const html=c.innerHTML;if(html!==POPPED[id].last){POPPED[id].last=html;w.send('pop:'+id,`popRender(${JSON.stringify(html)},${JSON.stringify(d.className.replace('popped',''))})`)}}},350);
-  addEventListener('pywebviewready',()=>{setTimeout(monList,800);setInterval(monList,6000)});
+  if(POPOUT_ON)addEventListener('pywebviewready',()=>{setTimeout(monList,800);setInterval(monList,6000)});
 }
 if(POP){document.body.classList.add('pop');const sp=$('#splash');if(sp)sp.remove();const d=$('#'+POP);
   if(d){document.body.appendChild(d);d.classList.add('popview');d.setAttribute('open','')}
