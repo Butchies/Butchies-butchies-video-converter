@@ -35,7 +35,10 @@ FFmpeg mit allen Codecs ist dabei (inklusive VMAF-Messung und HDR). WebView2 wir
 **Neu in 1.1.3**
 - Das Programm **merkt sich jetzt alles** bis zum nächsten Start: Design, Start-Animation an/aus, Auto/Manuell-Schalter, eigene Einstellungen (Codec, Zielgröße, Zeitplan …) und eigene Vorlagen. Bisher ging das beim Neustart verloren
 
-**Neu in 1.5.6 – Final (stabile Version)**
+**Neu in 1.5.7 – Final (stabile Version)**
+- 🟦 Kamera-Symbol in Blau-Weiß (gleiche Form wie bisher, passend zum Kino-Installer) – Installer, Programm, Verknüpfung
+
+**Neu in 1.5.6**
 - 🎬 **Installer im Kino-Look (Blau-Weiß)**: Filmstreifen mit Filmklappe auf der Willkommens-Seite, blauer Kopfbereich mit Filmstreifen-Rand, Seiten als „Szenen“, „Film ab!“ und „Abspann“
 - 🟨 Wieder das goldene Kamera-Symbol (Installer, Programm, Verknüpfung)
 - Überall der volle Name „Butchies Video Converter **AI**“, alte Verknüpfungen werden ersetzt
