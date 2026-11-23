@@ -1,3 +1,6 @@
+**Neu in 2.7.2**
+- „Nach dem Umwandeln: Herunterfahren / Energiesparen“ läuft jetzt ohne Windows-Fenster, das man erst bestätigen musste – nach 60 s Wartezeit geht der PC direkt aus bzw. in den Energiesparmodus.
+
 **Neu in 2.7.1**
 - Setup-Datei heißt wieder einfach `Butchies_Video_Converter-Setup.exe` (ohne Versionsnummer). Neue Versionen kommen ab jetzt über den eingebauten Updater.
 - Enthält alles aus 2.7.0: Updates direkt im Programm (Fenster beim Start + Bereich „🔄 Updates“ in den Einstellungen).

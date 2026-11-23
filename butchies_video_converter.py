@@ -10,7 +10,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 APP_NAME = 'Butchies Video Converter'
-VERSION = '2.7.1'
+VERSION = '2.7.2'
 FROZEN = getattr(sys, 'frozen', False)
 BASE = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent))
 UI = BASE / 'ui'
@@ -1926,12 +1926,33 @@ def power(action):
         POWER['timer'] = None
     if os.name != 'nt':
         return
-    if action == 'off':
-        subprocess.Popen(['shutdown', '/s', '/t', '60', '/c', 'Butchies Video Converter: alle Videos fertig – PC fährt herunter.'],
-                         creationflags=NO_WINDOW)
-    elif action == 'sleep':
-        POWER['timer'] = threading.Timer(60, lambda: subprocess.Popen(['rundll32.exe', 'powrprof.dll,SetSuspendState', '0,1,0'],
-                                                                      creationflags=NO_WINDOW))
+    def release():
+        """Wach-halten aufheben, sonst blockiert Windows Ruhezustand/Herunterfahren bzw. fragt nach."""
+        try:
+            power_request(False)
+            import ctypes
+            ctypes.windll.kernel32.SetThreadExecutionState(0x80000000)
+        except Exception:  # noqa: BLE001
+            pass
+
+    def do_off():
+        release()
+        # /f = Programme ohne Rückfrage schließen (sonst kommt das Windows-Fenster „Schließen“), /t 0 = sofort
+        subprocess.Popen(['shutdown', '/s', '/f', '/t', '0'], creationflags=NO_WINDOW)
+        if CLOSE_APP[0]:
+            threading.Timer(1, CLOSE_APP[0]).start()
+
+    def do_sleep():
+        release()
+        try:
+            import ctypes
+            ctypes.windll.powrprof.SetSuspendState(False, True, False)    # Energiesparen (nicht Ruhezustand), ohne Rückfrage
+        except Exception:  # noqa: BLE001
+            subprocess.Popen(['rundll32.exe', 'powrprof.dll,SetSuspendState', '0,1,0'], creationflags=NO_WINDOW)
+    if action in ('off', 'sleep'):
+        # 60 s Wartezeit im Programm selbst (abbrechbar), dann ohne Windows-Rückfrage ausführen
+        POWER['timer'] = threading.Timer(60, do_off if action == 'off' else do_sleep)
+        POWER['timer'].daemon = True
         POWER['timer'].start()
     elif action == 'cancel':
         subprocess.Popen(['shutdown', '/a'], creationflags=NO_WINDOW)
