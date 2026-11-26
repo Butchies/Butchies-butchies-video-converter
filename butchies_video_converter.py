@@ -3795,8 +3795,11 @@ def start_phone_status():
                 return
             with QLOCK:
                 jobs = [
-                    {key: JOBS[job_id].get(key) for key in ('id', 'state', 'percent', 'eta', 'slot')}
-                    for job_id in QUEUE if job_id in JOBS
+                    {
+                        'id': job['id'], 'state': job['state'], 'percent': job.get('pct'),
+                        'eta': job.get('eta'), 'slot': job.get('slot'),
+                    }
+                    for job in (JOBS[job_id] for job_id in QUEUE if job_id in JOBS)
                 ]
             data = json.dumps({
                 'version': VERSION, 'jobs': jobs, 'hardware': phone_hardware_snapshot(),
