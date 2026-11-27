@@ -3801,8 +3801,17 @@ def start_phone_status():
                     }
                     for job in (JOBS[job_id] for job_id in QUEUE if job_id in JOBS)
                 ]
+            with STATS_LOCK:
+                records = [row for row in stats_load() if isinstance(row, dict)]
+            totals = {'count': len(records), 'source_bytes': 0, 'output_bytes': 0}
+            for record in records:
+                for field, key in (('src', 'source_bytes'), ('out', 'output_bytes')):
+                    value = record.get(field)
+                    if isinstance(value, int) and value >= 0:
+                        totals[key] += value
             data = json.dumps({
                 'version': VERSION, 'jobs': jobs, 'hardware': phone_hardware_snapshot(),
+                'conversion_totals': totals,
             }).encode('utf-8')
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
